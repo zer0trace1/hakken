@@ -3,6 +3,12 @@
     <!-- Header/Navbar -->
     <header class="dashboard-header">
       <div class="header-content">
+        <div class="back-button-wrapper">
+          <button class="back-btn" @click="goBack">
+            <span class="icon">←</span>
+            Volver
+          </button>
+        </div>
         <div class="logo-section">
           <img src="@/assets/hakken-logo-no-bg.png" alt="Hakken" class="header-logo" />
         </div>
@@ -131,11 +137,18 @@
 
 <script setup>
 import { ref } from 'vue'
+import { useRouter } from 'vue-router'
 
 const selectedType = ref(null)
 const searchQuery = ref('')
 const searchResults = ref(null)
 const isSearching = ref(false)
+
+const router = useRouter()
+
+const goBack = () => {
+  router.push('/')
+}
 
 const selectSearchType = (type) => {
   selectedType.value = type
@@ -222,6 +235,37 @@ const performSearch = async () => {
   display: flex;
   justify-content: space-between;
   align-items: center;
+}
+
+.back-button-wrapper {
+  display: flex;
+  align-items: center;
+}
+
+.back-btn {
+  padding: 0.7rem 1.2rem;
+  background: transparent;
+  color: #00ff99;
+  border: 1px solid rgba(0, 255, 153, 0.3);
+  border-radius: 6px;
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.back-btn:hover {
+  background: rgba(0, 255, 153, 0.1);
+  border-color: #00ff99;
+  box-shadow: 0 0 15px rgba(0, 255, 153, 0.2);
+}
+
+.back-btn .icon {
+  font-size: 1.4rem;
 }
 
 .header-logo {
