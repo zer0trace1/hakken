@@ -28,7 +28,7 @@
       <!-- Search Section -->
       <section class="search-section">
         <h1 class="section-title">
-          Investigación <span class="highlight">OSINT</span>
+          Dashboard <span class="highlight">OSINT</span>
         </h1>
         <p class="section-subtitle">Selecciona el tipo de búsqueda que deseas realizar</p>
 
@@ -474,6 +474,8 @@ const performSearch = async () => {
   align-items: center;
   justify-content: center;
   border-radius: 50%;
+  line-height: 1;
+  padding: 0;
 }
 
 .close-btn:hover {
