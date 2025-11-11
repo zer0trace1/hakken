@@ -1,6 +1,6 @@
 import axios from 'axios'
 
-const API_BASE_URL = 'https://api.hakken.cloud:8000/api/v1'
+const API_BASE_URL = 'https://api.hakken.cloud/api/v1'
 
 // Crear instancia de axios con configuración base
 const apiClient = axios.create({
