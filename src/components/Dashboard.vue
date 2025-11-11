@@ -138,6 +138,7 @@
 <script setup>
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
+import api from '@/services/api'
 
 const selectedType = ref(null)
 const searchQuery = ref('')
@@ -188,18 +189,140 @@ const performSearch = async () => {
   if (!searchQuery.value.trim()) return
   
   isSearching.value = true
+  searchError.value = null
   
-  // Simular búsqueda (aquí conectarás con tu backend)
-  setTimeout(() => {
-    searchResults.value = {
-      query: searchQuery.value,
-      type: selectedType.value,
-      timestamp: new Date().toISOString(),
-      // Aquí irán los resultados reales de tu API
-      message: 'Búsqueda simulada - Conecta con tu backend AWS aquí'
+  try {
+    let results = null
+    
+    switch(selectedType.value) {
+      case 'username':
+        results = await api.searchGitHubUser(searchQuery.value)
+        searchResults.value = formatGitHubResults(results)
+        break
+        
+      case 'ip':
+        results = await api.searchIP(searchQuery.value)
+        searchResults.value = formatIPResults(results)
+        break
+        
+      case 'domain':
+        results = await api.searchDomain(searchQuery.value)
+        searchResults.value = formatDomainResults(results)
+        break
+        
+      case 'email':
+      case 'phone':
+        // Por implementar
+        searchResults.value = generateMockResults(selectedType.value, searchQuery.value)
+        break
+        
+      default:
+        searchResults.value = generateMockResults(selectedType.value, searchQuery.value)
     }
+    
+    // Añadir al historial
+    if (settings.value.saveHistory && searchResults.value) {
+      searchHistory.value.unshift({
+        id: Date.now(),
+        query: searchQuery.value,
+        type: selectedType.value,
+        timestamp: new Date().toISOString(),
+        results: searchResults.value
+      })
+    }
+    
+  } catch (error) {
+    console.error('Error en la búsqueda:', error)
+    searchError.value = error.response?.data?.detail || 'Error al realizar la búsqueda'
+    alert(`Error: ${searchError.value}`)
+  } finally {
     isSearching.value = false
-  }, 1500)
+  }
+}
+
+// Función para formatear resultados de GitHub
+const formatGitHubResults = (githubData) => {
+  if (!githubData.exists) {
+    return {
+      query: searchQuery.value,
+      type: 'username',
+      timestamp: new Date().toISOString(),
+      socialMedia: [
+        { 
+          platform: 'GitHub', 
+          icon: '💻', 
+          url: `https://github.com/${searchQuery.value}`, 
+          found: false 
+        }
+      ]
+    }
+  }
+  
+  return {
+    query: searchQuery.value,
+    type: 'username',
+    timestamp: new Date().toISOString(),
+    socialMedia: [
+      { 
+        platform: 'GitHub', 
+        icon: '💻', 
+        url: githubData.profile_url, 
+        found: true,
+        details: {
+          nombre: githubData.name || 'N/A',
+          bio: githubData.bio || 'Sin biografía',
+          repositorios: githubData.public_repos,
+          seguidores: githubData.followers,
+          siguiendo: githubData.following,
+          empresa: githubData.company || 'N/A',
+          ubicacion: githubData.location || 'N/A',
+          blog: githubData.blog || 'N/A',
+          twitter: githubData.twitter_username || 'N/A',
+          creado: githubData.created_at ? new Date(githubData.created_at).toLocaleDateString('es-ES') : 'N/A'
+        }
+      }
+    ]
+  }
+}
+
+// Función para formatear resultados de IP
+const formatIPResults = (ipData) => {
+  return {
+    query: searchQuery.value,
+    type: 'ip',
+    timestamp: new Date().toISOString(),
+    ipInfo: {
+      country: ipData.country || 'N/A',
+      city: ipData.city || 'N/A',
+      region: ipData.region || 'N/A',
+      isp: ipData.isp || 'N/A',
+      org: ipData.organization || 'N/A',
+      timezone: ipData.timezone || 'N/A',
+      lat: ipData.latitude,
+      lon: ipData.longitude,
+      zip: ipData.zip_code || 'N/A',
+      as: ipData.as_info || 'N/A'
+    }
+  }
+}
+
+// Función para formatear resultados de Dominio
+const formatDomainResults = (domainData) => {
+  return {
+    query: searchQuery.value,
+    type: 'domain',
+    timestamp: new Date().toISOString(),
+    domainInfo: {
+      registered: domainData.exists,
+      created: 'N/A',
+      expires: 'N/A',
+      registrar: 'N/A',
+      dns: domainData.dns_records.map(record => ({
+        type: record.type_name,
+        value: record.value
+      }))
+    }
+  }
 }
 </script>
 
