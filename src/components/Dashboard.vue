@@ -144,6 +144,7 @@ const selectedType = ref(null)
 const searchQuery = ref('')
 const searchResults = ref(null)
 const isSearching = ref(false)
+const searchError = ref(null)
 
 const router = useRouter()
 
