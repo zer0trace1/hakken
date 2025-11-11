@@ -116,6 +116,13 @@
               </button>
             </div>
 
+            <!-- Mensaje de error -->
+            <div v-if="searchError" class="error-message">
+              <span class="error-icon">⚠️</span>
+              <span class="error-text">{{ searchError }}</span>
+              <button class="error-close" @click="searchError = null">✕</button>
+            </div>
+
             <!-- Results Area -->
             <div v-if="searchResults" class="results-area">
               <h3 class="results-title">Resultados de búsqueda</h3>
@@ -235,7 +242,7 @@ const performSearch = async () => {
   } catch (error) {
     console.error('Error en la búsqueda:', error)
     searchError.value = error.response?.data?.detail || 'Error al realizar la búsqueda'
-    alert(`Error: ${searchError.value}`)
+    searchResults.value = null
   } finally {
     isSearching.value = false
   }
@@ -687,6 +694,44 @@ const formatDomainResults = (domainData) => {
 
 .search-input::placeholder {
   color: #666;
+}
+
+/* Error Message */
+.error-message {
+  background: rgba(255, 68, 68, 0.1);
+  border: 1px solid rgba(255, 68, 68, 0.3);
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  animation: fadeIn 0.3s ease-out;
+}
+
+.error-icon {
+  font-size: 1.5rem;
+}
+
+.error-text {
+  flex: 1;
+  color: #ff6b6b;
+  font-size: 0.95rem;
+}
+
+.error-close {
+  background: transparent;
+  border: none;
+  color: #ff6b6b;
+  font-size: 1.2rem;
+  cursor: pointer;
+  padding: 0.2rem 0.5rem;
+  transition: all 0.3s ease;
+}
+
+.error-close:hover {
+  background: rgba(255, 68, 68, 0.2);
+  border-radius: 4px;
 }
 
 .search-btn {
