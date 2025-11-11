@@ -228,17 +228,6 @@ const performSearch = async () => {
         searchResults.value = generateMockResults(selectedType.value, searchQuery.value)
     }
     
-    // Añadir al historial
-    if (settings.value.saveHistory && searchResults.value) {
-      searchHistory.value.unshift({
-        id: Date.now(),
-        query: searchQuery.value,
-        type: selectedType.value,
-        timestamp: new Date().toISOString(),
-        results: searchResults.value
-      })
-    }
-    
   } catch (error) {
     console.error('Error en la búsqueda:', error)
     searchError.value = error.response?.data?.detail || 'Error al realizar la búsqueda'
