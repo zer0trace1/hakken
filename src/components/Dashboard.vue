@@ -1330,6 +1330,11 @@ body.light-theme .nav-btn {
   color: #495057;
 }
 
+body.light-theme .results-container {
+  color: #1a1a1a;
+  background: rgba(255, 255, 255, 0.9);
+}
+
 body.light-theme .search-input,
 body.light-theme .setting-select {
   background: rgba(0, 0, 0, 0.05);
