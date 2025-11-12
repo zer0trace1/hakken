@@ -198,7 +198,7 @@
             <div v-if="searchResults" class="results-area">
               <h3 class="results-title">Resultados de búsqueda</h3>
               <div class="results-content">
-                <!--<pre>{{ searchResults }}</pre>-->
+                <pre>{{ searchResults }}</pre>
               </div>
             </div>
           </div>
@@ -1330,9 +1330,12 @@ body.light-theme .nav-btn {
   color: #495057;
 }
 
-body.light-theme .results-container {
+body.light-theme pre {
+  background: #f8f9fa;
   color: #1a1a1a;
-  background: rgba(255, 255, 255, 0.9);
+  padding: 1rem;
+  border-radius: 8px;
+  overflow-x: auto;
 }
 
 body.light-theme .search-input,
