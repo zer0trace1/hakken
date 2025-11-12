@@ -17,18 +17,24 @@
             :class="['nav-btn', { active: currentView === 'search' }]" 
             @click="currentView = 'search'"
           >
-            <span class="icon">🔍</span>
+            <span class="icon">
+              <img src="@/assets/hakken-logo-busqueda.png" alt="hakken-logo-busqueda" class="card-icon-header">
+            </span>
             Búsqueda
           </button>
           <button class="nav-btn">
-            <span class="icon">📊</span>
+            <span class="icon">
+              <img src="@/assets/hakken-logo-historial.png" alt="hakken-logo-historial" class="card-icon-header">
+            </span>
             Historial
           </button>
           <button 
             :class="['nav-btn', { active: currentView === 'settings' }]" 
             @click="currentView = 'settings'"
           >
-            <span class="icon">⚙️</span>
+            <span class="icon">
+              <img src="@/assets/hakken-logo-ajustes.png" alt="hakken-logo-ajustes" class="card-icon-header">
+            </span>
             Ajustes
           </button>
         </nav>
@@ -48,7 +54,7 @@
         <div class="search-cards-grid">
           <!-- Username Card -->
           <div class="search-card" @click="selectSearchType('username')">
-            <div class="card-icon">👤</div>
+            <img src="@/assets/hakken-logo-usuario.png" alt="Username-logo" class="card-icon"/>
             <h3 class="card-title">Nombre de usuario</h3>
             <p class="card-description">Busca información por nombre de usuario en redes sociales</p>
             <div class="card-badge">Redes Sociales</div>
@@ -56,7 +62,7 @@
 
           <!-- Email Card -->
           <div class="search-card" @click="selectSearchType('email')">
-            <div class="card-icon">📧</div>
+            <img src="@/assets/hakken-logo-email.png" alt="Username-logo" class="card-icon"/>
             <h3 class="card-title">Email</h3>
             <p class="card-description">Investiga cuentas asociadas a direcciones de correo</p>
             <div class="card-badge">Correo Electrónico</div>
@@ -64,7 +70,7 @@
 
           <!-- Phone Card -->
           <div class="search-card" @click="selectSearchType('phone')">
-            <div class="card-icon">📱</div>
+            <img src="@/assets/hakken-logo-movil.png" alt="Username-logo" class="card-icon"/>
             <h3 class="card-title">Teléfono</h3>
             <p class="card-description">Busca información vinculada a números telefónicos</p>
             <div class="card-badge">Número de Teléfono</div>
@@ -72,7 +78,7 @@
 
           <!-- IP Card -->
           <div class="search-card" @click="selectSearchType('ip')">
-            <div class="card-icon">🌐</div>
+            <img src="@/assets/hakken-logo-ip.png" alt="Username-logo" class="card-icon"/>
             <h3 class="card-title">Dirección IP</h3>
             <p class="card-description">Obtén geolocalización y detalles de direcciones IP</p>
             <div class="card-badge">Dirección IP</div>
@@ -80,18 +86,10 @@
 
           <!-- Domain Card -->
           <div class="search-card" @click="selectSearchType('domain')">
-            <div class="card-icon">🔗</div>
+            <img src="@/assets/hakken-logo-dominio.png" alt="Username-logo" class="card-icon"/>
             <h3 class="card-title">Dominio</h3>
             <p class="card-description">Analiza información de dominios y DNS</p>
             <div class="card-badge">Dominio/DNS</div>
-          </div>
-
-          <!-- Advanced Card -->
-          <div class="search-card advanced-card">
-            <div class="card-icon">⚡</div>
-            <h3 class="card-title">Búsqueda Avanzada</h3>
-            <p class="card-description">Combina múltiples parámetros de búsqueda</p>
-            <div class="card-badge special">Próximamente</div>
           </div>
         </div>
       </section>
@@ -107,7 +105,9 @@
           <!-- Apariencia -->
           <div class="settings-group">
             <h3 class="settings-group-title">
-              <span class="icon">🎨</span>
+              <span class="icon">
+                <img src="@/assets/hakken-logo-paleta.png" alt="hakken-logo-paleta" class="card-icon-paleta">
+              </span>
               Apariencia
             </h3>
             
@@ -122,14 +122,18 @@
                   :class="['theme-btn', { active: theme === 'dark' }]" 
                   @click="theme = 'dark'"
                 >
-                  <span class="theme-icon">🌙</span>
+                  <span class="theme-icon">
+                    <img src="@/assets/hakken-logo-dark.png" alt="dark-theme-icon" class="card-icon">
+                  </span>
                   <span class="theme-name">Oscuro</span>
                 </button>
                 <button 
                   :class="['theme-btn', { active: theme === 'light' }]" 
                   @click="theme = 'light'"
                 >
-                  <span class="theme-icon">☀️</span>
+                  <span class="theme-icon">
+                    <img src="@/assets/hakken-logo-light.png" alt="light-theme-icon" class="card-icon">
+                  </span>
                   <span class="theme-name">Claro</span>
                 </button>
               </div>
@@ -189,7 +193,9 @@
 
             <!-- Mensaje de error -->
             <div v-if="searchError" class="error-message">
-              <span class="error-icon">⚠️</span>
+              <span class="error-icon">
+                <img src="@/assets/hakken-logo-advertencia.png" alt="haken-logo-error" class="card-icon-warning">
+              </span>
               <span class="error-text">{{ searchError }}</span>
               <button class="error-close" @click="searchError = null">✕</button>
             </div>
@@ -731,10 +737,38 @@ const formatDomainResults = (domainData) => {
   transform: translateY(-5px);
 }
 
-.card-icon {
+/*.card-icon {
   font-size: 3rem;
   margin-bottom: 1rem;
   filter: drop-shadow(0 0 10px rgba(0, 255, 153, 0.5));
+}*/
+
+.card-icon{
+  height: 5rem;
+  width: 5rem;
+  margin-bottom: 1rem;
+  filter: drop-shadow(0 0 20px rgba(0, 255, 153, 0.5));
+}
+
+.card-icon-paleta{
+  height: 2rem;
+  width: 2rem;
+  margin-top: 0.5rem;
+  filter: drop-shadow(0 0 20px rgba(0, 255, 153, 0.5));
+}
+
+.card-icon-header{
+  height: 1.5rem;
+  width: 1.5rem;
+  margin-top: 0.5rem;
+  filter: drop-shadow(0 0 20px rgba(0, 255, 153, 0.5));
+}
+
+.card-icon-warning{
+  height: 3rem;
+  width: 3rem;
+  margin-top: 0.5rem;
+  filter: drop-shadow(0 0 20px rgba(0, 255, 153, 0.5));
 }
 
 .card-title {
