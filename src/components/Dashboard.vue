@@ -198,7 +198,7 @@
             <div v-if="searchResults" class="results-area">
               <h3 class="results-title">Resultados de búsqueda</h3>
               <div class="results-content">
-                <pre>{{ searchResults }}</pre>
+                <!--<pre>{{ searchResults }}</pre>-->
               </div>
             </div>
           </div>
