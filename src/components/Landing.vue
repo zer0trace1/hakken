@@ -8,7 +8,7 @@
 
     <div class="content">
       <div class="logo-wrapper">
-        <img src="@/assets/hakken-logo-no-bg.png" alt="Hakken Logo" class="logo" />
+        <img src="@/assets/hakken-logo-no-bg-blanco.png" alt="Hakken Logo" class="logo" />
       </div>
       <p class="tagline">
         Un nuevo enfoque para el análisis <span class="highlight">OSINT</span>
@@ -32,6 +32,7 @@
 <script setup>
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
+import { onMounted } from 'vue'
 
 const router = useRouter()
 
@@ -39,6 +40,17 @@ const handleEnter = () => {
   router.push('/dashboard')
 }
 
+// Actualizar logo según tema guardado
+onMounted(() => {
+  const savedTheme = localStorage.getItem('hakken_theme')
+  if (savedTheme === 'light') {
+    document.body.classList.add('light-theme')
+    const logoElement = document.querySelector('.logo')
+    if (logoElement) {
+      logoElement.src = new URL('@/assets/hakken-logo-no-bg-negro.png', import.meta.url).href
+    }
+  }
+})
 const particlesOptions = ref({
   background: {
     color: 'transparent'
@@ -130,7 +142,7 @@ const particlesOptions = ref({
 <style scoped>
 @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700;900&family=Rajdhani:wght@300;400;500;600;700&display=swap');
 
-.landing-container {
+/*.landing-container {
   position: fixed;
   top: 0;
   left: 0;
@@ -139,6 +151,23 @@ const particlesOptions = ref({
   margin: 0;
   padding: 0;
   background: radial-gradient(ellipse at center, #0d0d0d 0%, #000000 100%);
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Rajdhani', sans-serif;
+}*/
+
+.landing-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  margin: 0;
+  padding: 0;
+  /*background: radial-gradient(ellipse at center, #0d0d0d 0%, #000000 100%);*/
+  background: var(--bg-primary);
   overflow: hidden;
   display: flex;
   align-items: center;
@@ -398,5 +427,39 @@ const particlesOptions = ref({
   .ambient-glow {
     filter: blur(80px);
   }
+}
+
+/*
+**************************************************************************
+****************************** CUSTOM UX *********************************
+**************************************************************************
+*/
+body.light-theme .landing-container {
+  background: linear-gradient(135deg, #ffffff 0%, #f0f0f0 100%);
+}
+
+body.light-theme .logo-container {
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+}
+
+body.light-theme .tagline {
+  color: #495057;
+}
+
+body.light-theme .enter-btn {
+  background: rgba(0, 255, 153, 0.2);
+  color: #00ff99;
+  border-color: #00ff99;
+}
+
+body.light-theme .enter-btn:hover {
+  background: #00ff99;
+  color: #000;
+}
+
+body.light-theme .grid-overlay,
+body.light-theme .ambient-glow {
+  opacity: 0.1;
 }
 </style>

@@ -10,10 +10,13 @@
           </button>
         </div>
         <div class="logo-section">
-          <img src="@/assets/hakken-logo-no-bg.png" alt="Hakken" class="header-logo" />
+          <img src="@/assets/hakken-logo-no-bg-blanco.png" alt="Hakken" class="header-logo" />
         </div>
         <nav class="nav-section">
-          <button class="nav-btn active">
+          <button 
+            :class="['nav-btn', { active: currentView === 'search' }]" 
+            @click="currentView = 'search'"
+          >
             <span class="icon">🔍</span>
             Búsqueda
           </button>
@@ -21,7 +24,10 @@
             <span class="icon">📊</span>
             Historial
           </button>
-          <button class="nav-btn">
+          <button 
+            :class="['nav-btn', { active: currentView === 'settings' }]" 
+            @click="currentView = 'settings'"
+          >
             <span class="icon">⚙️</span>
             Ajustes
           </button>
@@ -32,9 +38,9 @@
     <!-- Main Content -->
     <main class="dashboard-main">
       <!-- Search Section -->
-      <section class="search-section">
+      <section v-if="currentView === 'search'" class="search-section">
         <h1 class="section-title">
-          Dashboard <span class="highlight">OSINT</span>
+          Panel <span class="highlight">OSINT</span>
         </h1>
         <p class="section-subtitle">Selecciona el tipo de búsqueda que deseas realizar</p>
 
@@ -43,7 +49,7 @@
           <!-- Username Card -->
           <div class="search-card" @click="selectSearchType('username')">
             <div class="card-icon">👤</div>
-            <h3 class="card-title">Username</h3>
+            <h3 class="card-title">Nombre de usuario</h3>
             <p class="card-description">Busca información por nombre de usuario en redes sociales</p>
             <div class="card-badge">Redes Sociales</div>
           </div>
@@ -86,6 +92,71 @@
             <h3 class="card-title">Búsqueda Avanzada</h3>
             <p class="card-description">Combina múltiples parámetros de búsqueda</p>
             <div class="card-badge special">Próximamente</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Settings Section -->
+      <section v-else-if="currentView === 'settings'" class="settings-section">
+        <h1 class="section-title">
+          <span class="highlight">Configuración</span>
+        </h1>
+        <p class="section-subtitle">Personaliza tu experiencia HAKKEN</p>
+        
+        <div class="settings-content">
+          <!-- Apariencia -->
+          <div class="settings-group">
+            <h3 class="settings-group-title">
+              <span class="icon">🎨</span>
+              Apariencia
+            </h3>
+            
+            <!-- Tema -->
+            <div class="setting-item">
+              <div class="setting-header">
+                <label class="setting-label">Tema</label>
+                <span class="setting-description">Cambia entre modo oscuro y claro</span>
+              </div>
+              <div class="theme-selector">
+                <button 
+                  :class="['theme-btn', { active: theme === 'dark' }]" 
+                  @click="theme = 'dark'"
+                >
+                  <span class="theme-icon">🌙</span>
+                  <span class="theme-name">Oscuro</span>
+                </button>
+                <button 
+                  :class="['theme-btn', { active: theme === 'light' }]" 
+                  @click="theme = 'light'"
+                >
+                  <span class="theme-icon">☀️</span>
+                  <span class="theme-name">Claro</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Idioma -->
+            <!--<div class="setting-item">
+              <div class="setting-header">
+                <label class="setting-label">Idioma</label>
+                <span class="setting-description">Selecciona el idioma de la interfaz</span>
+              </div>
+              <select v-model="language" class="setting-select">
+                <option value="es">Español</option>
+                <option value="en">English</option>
+              </select>
+            </div>
+
+            <div class="setting-item">
+              <div class="setting-header">
+                <label class="setting-label">Animaciones</label>
+                <span class="setting-description">Activa o desactiva las animaciones visuales</span>
+              </div>
+              <label class="toggle-switch">
+                <input type="checkbox" v-model="animations" />
+                <span class="toggle-slider"></span>
+              </label>
+            </div>-->
           </div>
         </div>
       </section>
@@ -143,9 +214,20 @@
 </template>
 
 <script setup>
+/*
+**************************************************************************
+****************************** GLOBAL IMPORTS ****************************
+**************************************************************************
+*/
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import api from '@/services/api'
+
+/*
+**************************************************************************
+****************************** GLOBAL VARIABLES ****************************
+**************************************************************************
+*/
 
 const selectedType = ref(null)
 const searchQuery = ref('')
@@ -155,6 +237,113 @@ const searchError = ref(null)
 
 const router = useRouter()
 
+/*
+**************************************************************************
+****************************** CUSTOM UX *********************************
+**************************************************************************
+*/
+
+import { onMounted } from 'vue'
+import { watch } from 'vue'
+
+const currentView = ref('search')
+const theme = ref('dark')
+//const language = ref('es')
+//const animations = ref(true)
+
+const applyTheme = (selectedTheme) => {
+  const root = document.documentElement
+  
+  if (selectedTheme === 'light') {
+    root.style.setProperty('--bg-primary', '#ffffff')
+    root.style.setProperty('--bg-secondary', '#f8f9fa')
+    root.style.setProperty('--bg-card', '#ffffff')
+    root.style.setProperty('--text-primary', '#1a1a1a')
+    root.style.setProperty('--text-secondary', '#495057')
+    root.style.setProperty('--border-color', 'rgba(0, 255, 153, 0.3)')
+    
+    // Aplicar clase al body
+    document.body.classList.remove('dark-theme')
+    document.body.classList.add('light-theme')
+    
+    // Cambiar logo
+    changeLogo('light')
+  } else {
+    root.style.setProperty('--bg-primary', '#0d0d0d')
+    root.style.setProperty('--bg-secondary', '#1a1a1a')
+    root.style.setProperty('--bg-card', '#151515')
+    root.style.setProperty('--text-primary', '#ffffff')
+    root.style.setProperty('--text-secondary', '#999999')
+    root.style.setProperty('--border-color', 'rgba(0, 255, 153, 0.2)')
+    
+    // Aplicar clase al body
+    document.body.classList.remove('light-theme')
+    document.body.classList.add('dark-theme')
+    
+    // Cambiar logo
+    changeLogo('dark')
+  }
+}
+
+// Nueva función para cambiar el logo
+const changeLogo = (theme) => {
+  const logoElement = document.querySelector('.header-logo')
+  if (logoElement) {
+    if (theme === 'light') {
+      logoElement.src = new URL('@/assets/hakken-logo-no-bg-negro.png', import.meta.url).href
+    } else {
+      logoElement.src = new URL('@/assets/hakken-logo-no-bg-blanco.png', import.meta.url).href
+    }
+  }
+}
+
+onMounted(() => {
+  // Cargar configuración guardada
+  const savedTheme = localStorage.getItem('hakken_theme')
+  //const savedLanguage = localStorage.getItem('hakken_language')
+  //const savedAnimations = localStorage.getItem('hakken_animations')
+  
+  if (savedTheme) theme.value = savedTheme
+  //if (savedLanguage) language.value = savedLanguage
+  //if (savedAnimations) animations.value = savedAnimations === 'true'
+  
+  applyTheme(theme.value)
+})
+
+// Watch para cambiar tema en tiempo real
+watch(theme, (newTheme) => {
+  applyTheme(newTheme)
+  localStorage.setItem('hakken_theme', newTheme)
+})
+
+/*watch(language, (newLang) => {
+  localStorage.setItem('hakken_language', newLang)
+  // Aquí aplicarías el cambio de idioma cuando lo implementes
+})
+
+watch(animations, (newValue) => {
+  localStorage.setItem('hakken_animations', newValue)
+  // Aplicar o desactivar animaciones
+  if (newValue) {
+    document.body.classList.add('animations-enabled')
+  } else {
+    document.body.classList.remove('animations-enabled')
+  }
+})*/
+
+/*
+**************************************************************************
+****************************** CUSTOM UX *********************************
+**************************************************************************
+*/
+
+
+/*
+**************************************************************************
+*************************** FRONTED LOGIC ********************************
+**************************************************************************
+*/
+
 const goBack = () => {
   router.push('/')
 }
@@ -163,6 +352,8 @@ const selectSearchType = (type) => {
   selectedType.value = type
   searchQuery.value = ''
   searchResults.value = null
+  searchError.value = null
+  isSearching.value = false
 }
 
 const closeModal = () => {
@@ -173,7 +364,7 @@ const closeModal = () => {
 
 const getTypeLabel = (type) => {
   const labels = {
-    username: 'Username',
+    username: 'Nombre de usuario',
     email: 'Email',
     phone: 'Teléfono',
     ip: 'Dirección IP',
@@ -321,6 +512,12 @@ const formatDomainResults = (domainData) => {
     }
   }
 }
+
+/*
+**************************************************************************
+*************************** FRONTED LOGIC ********************************
+**************************************************************************
+*/
 </script>
 
 <style scoped>
@@ -332,9 +529,11 @@ const formatDomainResults = (domainData) => {
   left: 0;
   width: 100vw;
   height: 100vh;
-  background: radial-gradient(ellipse at center, #0d0d0d 0%, #000000 100%);
+  background: var(--bg-primary);
   overflow-y: auto;
   font-family: 'Rajdhani', sans-serif;
+  color: var(--text-primary);
+  transition: all 0.3s ease;
 }
 
 /* Header */
@@ -342,9 +541,9 @@ const formatDomainResults = (domainData) => {
   position: sticky;
   top: 0;
   z-index: 100;
-  background: rgba(10, 10, 10, 0.95);
+  background: var(--bg-secondary);
   backdrop-filter: blur(10px);
-  border-bottom: 1px solid rgba(0, 255, 153, 0.2);
+  border-bottom: 1px solid var(--border-color);
   box-shadow: 0 4px 20px rgba(0, 255, 153, 0.1);
 }
 
@@ -486,9 +685,20 @@ const formatDomainResults = (domainData) => {
   margin-top: 2rem;
 }
 
-.search-card {
+/*.search-card {
   background: rgba(15, 15, 15, 0.8);
   border: 1px solid rgba(0, 255, 153, 0.3);
+  border-radius: 12px;
+  padding: 2rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}*/
+
+.search-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
   border-radius: 12px;
   padding: 2rem;
   cursor: pointer;
@@ -596,7 +806,7 @@ const formatDomainResults = (domainData) => {
   }
 }
 
-.modal-content {
+/*.modal-content {
   background: rgba(15, 15, 15, 0.95);
   border: 2px solid #00ff99;
   border-radius: 12px;
@@ -610,6 +820,23 @@ const formatDomainResults = (domainData) => {
     0 0 40px rgba(0, 255, 153, 0.4),
     inset 0 0 30px rgba(0, 255, 153, 0.05);
   animation: slideUp 0.3s ease-out;
+}*/
+
+.modal-content {
+  background: var(--bg-secondary);
+  border: 2px solid #00ff99;
+  border-radius: 12px;
+  padding: 2.5rem;
+  max-width: 1000px;
+  width: 100%;
+  max-height: 85vh;
+  overflow-y: auto;
+  position: relative;
+  box-shadow: 
+    0 0 40px rgba(0, 255, 153, 0.4),
+    inset 0 0 30px rgba(0, 255, 153, 0.05);
+  animation: slideUp 0.3s ease-out;
+  margin-top: 2rem;
 }
 
 @keyframes slideUp {
@@ -876,6 +1103,271 @@ const formatDomainResults = (domainData) => {
 
   .modal-content {
     padding: 1.5rem;
+  }
+}
+
+/*
+**************************************************************************
+****************************** CUSTOM UX *********************************
+**************************************************************************
+*/
+
+.settings-section {
+  animation: fadeInUp 0.8s ease-out;
+}
+
+.settings-content {
+  margin-top: 2rem;
+}
+
+/*.settings-group {
+  background: rgba(15, 15, 15, 0.8);
+  border: 1px solid rgba(0, 255, 153, 0.2);
+  border-radius: 12px;
+  padding: 2rem;
+  margin-bottom: 2rem;
+}*/
+
+.settings-group {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 2rem;
+  margin-bottom: 2rem;
+}
+
+.settings-group-title {
+  color: white;
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin-bottom: 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid rgba(0, 255, 153, 0.2);
+}
+
+.setting-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.5rem 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.setting-item:last-child {
+  border-bottom: none;
+}
+
+.setting-header {
+  flex: 1;
+}
+
+.setting-label {
+  display: block;
+  color: #00ff99;
+  font-size: 1.1rem;
+  font-weight: 500;
+  margin-bottom: 0.3rem;
+}
+
+.setting-description {
+  color: #999;
+  font-size: 0.9rem;
+}
+
+/* Theme Selector */
+.theme-selector {
+  display: flex;
+  gap: 1rem;
+}
+
+.theme-btn {
+  padding: 1rem 1.5rem;
+  background: rgba(0, 0, 0, 0.3);
+  border: 2px solid rgba(0, 255, 153, 0.2);
+  border-radius: 8px;
+  color: white;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 100px;
+}
+
+.theme-btn:hover {
+  border-color: #00ff99;
+  background: rgba(0, 255, 153, 0.1);
+}
+
+.theme-btn.active {
+  background: rgba(0, 255, 153, 0.2);
+  border-color: #00ff99;
+  box-shadow: 0 0 20px rgba(0, 255, 153, 0.3);
+}
+
+.theme-icon {
+  font-size: 2rem;
+}
+
+.theme-name {
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+/* Select */
+.setting-select {
+  padding: 0.8rem 1rem;
+  background: rgba(0, 0, 0, 0.5);
+  border: 1px solid rgba(0, 255, 153, 0.3);
+  border-radius: 6px;
+  color: white;
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  min-width: 200px;
+}
+
+.setting-select:focus {
+  outline: none;
+  border-color: #00ff99;
+  box-shadow: 0 0 15px rgba(0, 255, 153, 0.2);
+}
+
+.setting-select option {
+  background: #1a1a1a;
+  color: white;
+}
+
+/* Toggle Switch */
+.toggle-switch {
+  position: relative;
+  display: inline-block;
+  width: 60px;
+  height: 34px;
+}
+
+.toggle-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.toggle-slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(255, 255, 255, 0.1);
+  border: 2px solid rgba(0, 255, 153, 0.3);
+  transition: 0.4s;
+  border-radius: 34px;
+}
+
+.toggle-slider:before {
+  position: absolute;
+  content: "";
+  height: 22px;
+  width: 22px;
+  left: 4px;
+  bottom: 4px;
+  background-color: #999;
+  transition: 0.4s;
+  border-radius: 50%;
+}
+
+input:checked + .toggle-slider {
+  background-color: rgba(0, 255, 153, 0.2);
+  border-color: #00ff99;
+}
+
+input:checked + .toggle-slider:before {
+  background-color: #00ff99;
+  transform: translateX(26px);
+  box-shadow: 0 0 10px rgba(0, 255, 153, 0.8);
+}
+
+/* Ajustes para modo claro */
+body.light-theme .search-modal {
+  background: rgba(255, 255, 255, 0.95);
+}
+
+body.light-theme .dashboard-container {
+  background: linear-gradient(135deg, #ffffff 0%, #f0f0f0 100%);
+}
+
+body.light-theme .dashboard-header {
+  background: rgba(255, 255, 255, 0.95);
+  border-bottom: 1px solid rgba(0, 255, 153, 0.3);
+}
+
+body.light-theme .search-card,
+body.light-theme .settings-group,
+body.light-theme .modal-content {
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+body.light-theme .card-title,
+body.light-theme .section-title,
+body.light-theme .modal-title,
+body.light-theme .settings-group-title,
+body.light-theme .social-platform {
+  color: #1a1a1a;
+}
+
+body.light-theme .card-description,
+body.light-theme .section-subtitle,
+body.light-theme .setting-description,
+body.light-theme .detail-label,
+body.light-theme .nav-btn {
+  color: #495057;
+}
+
+body.light-theme .search-input,
+body.light-theme .setting-select {
+  background: rgba(0, 0, 0, 0.05);
+  color: #1a1a1a;
+  border-color: rgba(0, 255, 153, 0.3);
+}
+
+body.light-theme .search-input::placeholder {
+  color: #6c757d;
+}
+
+body.light-theme .theme-btn {
+  background: rgba(0, 0, 0, 0.05);
+  color: #1a1a1a;
+}
+
+body.light-theme .grid-overlay {
+  opacity: 0.2;
+}
+
+body.light-theme .ambient-glow {
+  opacity: 0.05;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .setting-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+
+  .theme-selector {
+    width: 100%;
+  }
+
+  .theme-btn {
+    flex: 1;
   }
 }
 </style>
