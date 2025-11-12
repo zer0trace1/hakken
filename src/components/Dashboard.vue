@@ -1330,8 +1330,10 @@ body.light-theme .nav-btn {
   color: #495057;
 }
 
-body.light-theme .results-container {
-  background: transparent;
+body.light-theme .results-area,
+body.light-theme .results-content,
+body.light-theme .modal-body > div {
+  background: transparent !important;
 }
 
 body.light-theme pre {
