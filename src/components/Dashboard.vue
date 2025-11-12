@@ -128,7 +128,7 @@
               class="history-item"
             >
               <div class="history-icon">
-                {{ getIconForType(item.type) }}
+                <!-- icono -->
               </div>
               <div class="history-info" @click="viewHistoryItem(item)">
                 <div class="history-query">{{ item.query }}</div>
