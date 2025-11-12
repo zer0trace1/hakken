@@ -56,4 +56,39 @@ body.dark-theme {
   --text-secondary: #999999;
   --border-color: rgba(0, 255, 153, 0.2);
 }
+
+/* Scrollbar personalizado */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #00ff99, #00cc7a);
+  border-radius: 10px;
+  transition: all 0.3s ease;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #00ff99;
+  box-shadow: 0 0 10px rgba(0, 255, 153, 0.5);
+}
+
+/* Scrollbar para modo claro */
+body.light-theme ::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+body.light-theme ::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #00cc7a, #00a876);
+}
+
+body.light-theme ::-webkit-scrollbar-thumb:hover {
+  background: #00ff99;
+}
 </style>
