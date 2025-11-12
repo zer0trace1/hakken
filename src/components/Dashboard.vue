@@ -1339,9 +1339,6 @@ body.light-theme .modal-body > div {
 body.light-theme pre {
   background: #f8f9fa;
   color: #1a1a1a;
-  padding: 1rem;
-  border-radius: 8px;
-  overflow-x: auto;
 }
 
 body.light-theme .search-input,
