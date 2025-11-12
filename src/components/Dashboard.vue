@@ -22,7 +22,10 @@
             </span>
             Búsqueda
           </button>
-          <button class="nav-btn">
+          <button 
+            :class="['nav-btn', { active: currentView === 'history' }]" 
+            @click="currentView = 'history'"
+          >
             <span class="icon">
               <img src="@/assets/hakken-logo-historial.png" alt="hakken-logo-historial" class="card-icon-header">
             </span>
@@ -94,8 +97,68 @@
         </div>
       </section>
 
+      <!-- History Section -->
+      <section v-else-if="currentView === 'history'" class="history-section">
+        <h1 class="section-title">
+          Historial de <span class="highlight">Búsquedas</span>
+        </h1>
+        <p class="section-subtitle">Revisa tus búsquedas anteriores</p>
+        
+        <div class="history-content">
+          <!-- Filters -->
+          <div class="history-filters">
+            <select v-model="historyFilter" class="filter-select">
+              <option value="all">Todas las búsquedas</option>
+              <option value="username">Username</option>
+              <option value="ip">Dirección IP</option>
+              <option value="domain">Dominio</option>
+            </select>
+            
+            <button class="filter-btn" @click="clearHistory" :disabled="searchHistory.length === 0">
+              <span class="icon">🗑️</span>
+              Limpiar Historial
+            </button>
+          </div>
+
+          <!-- History List -->
+          <div v-if="filteredHistory.length > 0" class="history-list">
+            <div 
+              v-for="item in filteredHistory" 
+              :key="item.id" 
+              class="history-item"
+            >
+              <div class="history-icon">
+                {{ getIconForType(item.type) }}
+              </div>
+              <div class="history-info" @click="viewHistoryItem(item)">
+                <div class="history-query">{{ item.query }}</div>
+                <div class="history-meta">
+                  <span class="history-type">{{ getTypeLabel(item.type) }}</span>
+                  <span class="history-date">{{ formatDate(item.timestamp) }}</span>
+                </div>
+              </div>
+              <div class="history-actions">
+                <button class="icon-btn" @click="repeatSearch(item)" title="Repetir búsqueda">
+                  🔄
+                </button>
+                <button class="icon-btn delete-btn" @click="deleteHistoryItem(item.id)" title="Eliminar">
+                  ✕
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Empty State -->
+          <div v-else class="empty-history">
+            <div class="empty-icon">📋</div>
+            <p>No hay búsquedas en el historial</p>
+            <small>Realiza una búsqueda para ver tu historial aquí</small>
+          </div>
+        </div>
+      </section>
+
       <!-- Settings Section -->
-      <section v-else-if="currentView === 'settings'" class="settings-section">
+      <section v-else="currentView === 'settings'" class="settings-section">
         <h1 class="section-title">
           <span class="highlight">Configuración</span>
         </h1>
@@ -252,6 +315,7 @@ const router = useRouter()
 */
 
 import { onMounted } from 'vue'
+import { computed } from "vue";
 import { watch } from 'vue'
 
 const currentView = ref('search')
@@ -316,6 +380,11 @@ onMounted(() => {
   //if (savedAnimations) animations.value = savedAnimations === 'true'
   
   applyTheme(theme.value)
+
+  const savedHistory = localStorage.getItem('hakken_history')
+  if (savedHistory) {
+    searchHistory.value = JSON.parse(savedHistory)
+  }
 })
 
 // Watch para cambiar tema en tiempo real
@@ -342,6 +411,76 @@ watch(animations, (newValue) => {
 /*
 **************************************************************************
 ****************************** CUSTOM UX *********************************
+**************************************************************************
+*/
+
+/*
+**************************************************************************
+****************************** HISTORY ***********************************
+**************************************************************************
+*/
+
+const historyFilter = ref('all')
+const searchHistory = ref([])
+
+// Computed para filtrar historial
+const filteredHistory = computed(() => {
+  if (historyFilter.value === 'all') {
+    return searchHistory.value
+  }
+  return searchHistory.value.filter(item => item.type === historyFilter.value)
+})
+
+// Funciones del historial
+const addToHistory = (query, type, results) => {
+  const historyItem = {
+    id: Date.now(),
+    query: query,
+    type: type,
+    timestamp: new Date().toISOString(),
+    results: results
+  }
+  
+  // Añadir al inicio del array
+  searchHistory.value.unshift(historyItem)
+  
+  // Limitar a 50 búsquedas máximo
+  if (searchHistory.value.length > 50) {
+    searchHistory.value = searchHistory.value.slice(0, 50)
+  }
+  
+  // Guardar en localStorage
+  localStorage.setItem('hakken_history', JSON.stringify(searchHistory.value))
+}
+
+const viewHistoryItem = (item) => {
+  selectedType.value = item.type
+  searchQuery.value = item.query
+  searchResults.value = item.results
+}
+
+const repeatSearch = async (item) => {
+  selectedType.value = item.type
+  searchQuery.value = item.query
+  searchResults.value = null
+  await performSearch()
+}
+
+const deleteHistoryItem = (id) => {
+  searchHistory.value = searchHistory.value.filter(item => item.id !== id)
+  localStorage.setItem('hakken_history', JSON.stringify(searchHistory.value))
+}
+
+const clearHistory = () => {
+  if (confirm('¿Estás seguro de que quieres eliminar todo el historial?')) {
+    searchHistory.value = []
+    localStorage.removeItem('hakken_history')
+  }
+}
+
+/*
+**************************************************************************
+****************************** HISTORY ***********************************
 **************************************************************************
 */
 
@@ -425,6 +564,10 @@ const performSearch = async () => {
         
       default:
         searchResults.value = generateMockResults(selectedType.value, searchQuery.value)
+    }
+
+    if (searchResults.value) {
+      addToHistory(searchQuery.value, selectedType.value, searchResults.value)
     }
     
   } catch (error) {
@@ -1420,6 +1563,215 @@ body.light-theme .ambient-glow {
 
   .theme-btn {
     flex: 1;
+  }
+}
+
+/*
+**************************************************************************
+****************************** HISTORY ***********************************
+**************************************************************************
+*/
+
+/* History Section */
+.history-section {
+  animation: fadeInUp 0.8s ease-out;
+}
+
+.history-content {
+  margin-top: 2rem;
+}
+
+/* History Filters */
+.history-filters {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 2rem;
+  flex-wrap: wrap;
+}
+
+.filter-select {
+  flex: 1;
+  min-width: 200px;
+  padding: 0.8rem 1rem;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  color: var(--text-primary);
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.filter-select:focus {
+  outline: none;
+  border-color: #00ff99;
+  box-shadow: 0 0 15px rgba(0, 255, 153, 0.2);
+}
+
+.filter-select option {
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+}
+
+.filter-btn {
+  padding: 0.8rem 1.5rem;
+  background: rgba(255, 68, 68, 0.1);
+  border: 1px solid rgba(255, 68, 68, 0.3);
+  border-radius: 6px;
+  color: #ff4444;
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.filter-btn:hover:not(:disabled) {
+  background: rgba(255, 68, 68, 0.2);
+  border-color: #ff4444;
+}
+
+.filter-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* History List */
+.history-list {
+  display: grid;
+  gap: 1rem;
+}
+
+.history-item {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 1.2rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  transition: all 0.3s ease;
+}
+
+.history-item:hover {
+  border-color: #00ff99;
+  box-shadow: 0 0 20px rgba(0, 255, 153, 0.2);
+  transform: translateY(-2px);
+}
+
+.history-icon {
+  font-size: 2rem;
+  min-width: 50px;
+  text-align: center;
+}
+
+.history-info {
+  flex: 1;
+  cursor: pointer;
+}
+
+.history-query {
+  color: var(--text-primary);
+  font-size: 1.2rem;
+  font-weight: 600;
+  margin-bottom: 0.3rem;
+}
+
+.history-meta {
+  display: flex;
+  gap: 1rem;
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+}
+
+.history-type {
+  color: #00ff99;
+  font-weight: 500;
+}
+
+.history-date {
+  color: var(--text-secondary);
+}
+
+.history-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.icon-btn {
+  width: 36px;
+  height: 36px;
+  background: rgba(0, 255, 153, 0.1);
+  border: 1px solid rgba(0, 255, 153, 0.3);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+  color: var(--text-primary);
+}
+
+.icon-btn:hover {
+  background: rgba(0, 255, 153, 0.2);
+  border-color: #00ff99;
+  transform: scale(1.1);
+}
+
+.icon-btn.delete-btn:hover {
+  background: rgba(255, 68, 68, 0.2);
+  border-color: #ff4444;
+  color: #ff4444;
+}
+
+/* Empty History */
+.empty-history {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 4rem 2rem;
+  text-align: center;
+}
+
+.empty-history .empty-icon {
+  font-size: 4rem;
+  margin-bottom: 1rem;
+  opacity: 0.3;
+}
+
+.empty-history p {
+  color: var(--text-primary);
+  font-size: 1.2rem;
+  margin-bottom: 0.5rem;
+}
+
+.empty-history small {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .history-filters {
+    flex-direction: column;
+  }
+
+  .filter-select {
+    width: 100%;
+  }
+
+  .history-item {
+    flex-wrap: wrap;
+  }
+
+  .history-actions {
+    width: 100%;
+    justify-content: flex-end;
   }
 }
 </style>
