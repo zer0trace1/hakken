@@ -187,7 +187,9 @@
               />
               <button class="search-btn" @click="performSearch">
                 <span v-if="!isSearching">Buscar</span>
-                <span v-else class="loading-spinner">⚙️</span>
+                <span v-else class="loading-spinner">
+                  <img src="@/assets/hakken-logo-ajustes.png" alt="hakken-logo-ajustes" class="card-icon-loading">
+                </span>
               </button>
             </div>
 
@@ -1008,6 +1010,11 @@ const formatDomainResults = (domainData) => {
 .loading-spinner {
   display: inline-block;
   animation: spin 1s linear infinite;
+}
+
+.card-icon-loading{
+  height: 2rem;
+  width: 2rem;
 }
 
 @keyframes spin {
