@@ -1,15 +1,13 @@
 import axios from 'axios'
 
-const API_BASE_URL = 'https://api.hakken.cloud/api/v1'
+const API_BASE_URL = '/api/v1';
 
-// Crear instancia de axios con configuración base
 const apiClient = axios.create({
   baseURL: API_BASE_URL,
   timeout: 30000,
-  headers: {
-    'Content-Type': 'application/json',
-  }
-})
+  headers: { 'Content-Type': 'application/json' },
+});
+
 
 // Interceptor para manejar errores globalmente
 apiClient.interceptors.response.use(
