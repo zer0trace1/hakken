@@ -115,7 +115,9 @@
             </select>
             
             <button class="filter-btn" @click="clearHistory" :disabled="searchHistory.length === 0">
-              <span class="icon">🗑️</span>
+              <span class="icon">
+                <img src="@/assets/hakken-logo-papelera.png" alt="hakken-logo-papelera" class="card-icon-history-section">
+              </span>
               Limpiar Historial
             </button>
           </div>
@@ -139,7 +141,7 @@
               </div>
               <div class="history-actions">
                 <button class="icon-btn" @click="repeatSearch(item)" title="Repetir búsqueda">
-                  🔄
+                  <img src="@/assets/hakken-logo-repeat.png" alt="hakken-logo-papelera" class="card-icon-history-section">
                 </button>
                 <button class="icon-btn delete-btn" @click="deleteHistoryItem(item.id)" title="Eliminar">
                   ✕
@@ -150,7 +152,9 @@
 
           <!-- Empty State -->
           <div v-else class="empty-history">
-            <div class="empty-icon">📋</div>
+            <div class="empty-icon">
+              <img src="@/assets/hakken-logo-clipboard.png" alt="hakken-logo-clipboard" class="card-icon-history-section-clipboard">
+            </div>
             <p>No hay búsquedas en el historial</p>
             <small>Realiza una búsqueda para ver tu historial aquí</small>
           </div>
@@ -923,6 +927,18 @@ const formatDomainResults = (domainData) => {
   height: 3rem;
   width: 3rem;
   margin-top: 0.5rem;
+  filter: drop-shadow(0 0 20px rgba(0, 255, 153, 0.5));
+}
+
+.card-icon-history-section{
+  height: 2rem;
+  width: 2rem;
+  filter: drop-shadow(0 0 20px rgba(0, 255, 153, 0.5));
+}
+
+.card-icon-history-section-clipboard{
+  height: 7rem;
+  width: 7rem;
   filter: drop-shadow(0 0 20px rgba(0, 255, 153, 0.5));
 }
 
