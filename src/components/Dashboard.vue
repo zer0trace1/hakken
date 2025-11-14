@@ -94,6 +94,14 @@
             <p class="card-description">Analiza información de dominios y DNS</p>
             <div class="card-badge">Dominio/DNS</div>
           </div>
+
+          <!-- Google Dorks Card -->
+          <div class="search-card special-card" @click="openGoogleDorks">
+            <img src="@/assets/hakken-logo-dorks.png" alt="Dorks-logo" class="card-icon"/>
+            <h3 class="card-title">Google Dorks</h3>
+            <p class="card-description">Accede a consultas avanzadas de Google para OSINT</p>
+            <div class="card-badge special">Búsquedas Avanzadas</div>
+          </div>
         </div>
       </section>
 
@@ -109,7 +117,9 @@
           <div class="history-filters">
             <select v-model="historyFilter" class="filter-select">
               <option value="all">Todas las búsquedas</option>
-              <option value="username">Username</option>
+              <option value="username">Nombre de usuario</option>
+              <option value="username">Email</option>
+              <option value="username">Teléfono</option>
               <option value="ip">Dirección IP</option>
               <option value="domain">Dominio</option>
             </select>
@@ -162,7 +172,7 @@
       </section>
 
       <!-- Settings Section -->
-      <section v-else="currentView === 'settings'" class="settings-section">
+      <section v-else-if="currentView === 'settings'" class="settings-section">
         <h1 class="section-title">
           <span class="highlight">Configuración</span>
         </h1>
@@ -231,6 +241,143 @@
           </div>
         </div>
       </section>
+
+      <!-- Google Dorks Section - NUEVA -->
+      <section v-else="currentView === 'dorks'" class="dorks-section">
+        <div v-if="!selectedDorkCategory" class="dorks-categories-view">
+          <h1 class="section-title">
+            <span class="highlight">Google Dorks</span> OSINT
+          </h1>
+          <p class="section-subtitle">Selecciona una categoría para ver las consultas avanzadas</p>
+
+          <div class="dorks-categories-grid">
+            <!-- Username Category -->
+            <div class="dork-category-card" @click="selectDorkCategory('username')">
+              <img src="@/assets/hakken-logo-usuario.png" alt="Username" class="category-icon-large"/>
+              <h3 class="category-title">Username</h3>
+              <p class="category-desc">Dorks para buscar usuarios en redes sociales y plataformas</p>
+              <div class="category-count">5 dorks disponibles</div>
+            </div>
+
+            <!-- Email Category -->
+            <div class="dork-category-card" @click="selectDorkCategory('email')">
+              <img src="@/assets/hakken-logo-email.png" alt="Email" class="category-icon-large"/>
+              <h3 class="category-title">Email</h3>
+              <p class="category-desc">Encuentra emails en documentos, redes y bases de datos</p>
+              <div class="category-count">10 dorks disponibles</div>
+            </div>
+
+            <!-- Phone Category -->
+            <div class="dork-category-card" @click="selectDorkCategory('phone')">
+              <img src="@/assets/hakken-logo-movil.png" alt="Phone" class="category-icon-large"/>
+              <h3 class="category-title">Teléfono</h3>
+              <p class="category-desc">Busca números telefónicos en directorios y anuncios</p>
+              <div class="category-count">5 dorks disponibles</div>
+            </div>
+
+            <!-- IP Category -->
+            <div class="dork-category-card" @click="selectDorkCategory('ip')">
+              <img src="@/assets/hakken-logo-ip.png" alt="IP" class="category-icon-large"/>
+              <h3 class="category-title">Dirección IP</h3>
+              <p class="category-desc">Información sobre IPs, servicios y vulnerabilidades</p>
+              <div class="category-count">5 dorks disponibles</div>
+            </div>
+
+            <!-- Domain Category -->
+            <div class="dork-category-card" @click="selectDorkCategory('domain')">
+              <img src="@/assets/hakken-logo-dominio.png" alt="Domain" class="category-icon-large"/>
+              <h3 class="category-title">Dominio</h3>
+              <p class="category-desc">Analiza subdominios, archivos y tecnologías</p>
+              <div class="category-count">5 dorks disponibles</div>
+            </div>
+
+            <!-- Files Category -->
+            <div class="dork-category-card" @click="selectDorkCategory('files')">
+              <img src="@/assets/hakken-logo-clipboard.png" alt="Files" class="category-icon-large"/>
+              <h3 class="category-title">Archivos</h3>
+              <p class="category-desc">Encuentra documentos, configs y backups expuestos</p>
+              <div class="category-count">5 dorks disponibles</div>
+            </div>
+
+            <!-- Social Category -->
+            <div class="dork-category-card" @click="selectDorkCategory('social')">
+              <img src="@/assets/hakken-logo-busqueda.png" alt="Social" class="category-icon-large"/>
+              <h3 class="category-title">Redes Sociales</h3>
+              <p class="category-desc">Busca perfiles y contenido en plataformas sociales</p>
+              <div class="category-count">5 dorks disponibles</div>
+            </div>
+
+            <!-- Vulnerabilities Category -->
+            <div class="dork-category-card" @click="selectDorkCategory('vulnerabilities')">
+              <img src="@/assets/hakken-logo-advertencia.png" alt="Vulnerabilities" class="category-icon-large"/>
+              <h3 class="category-title">Vulnerabilidades</h3>
+              <p class="category-desc">Detecta paneles, bases de datos y credenciales</p>
+              <div class="category-count">5 dorks disponibles</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Vista de dorks de la categoría seleccionada -->
+        <div v-else class="dorks-list-view">
+          <div class="dorks-header">
+            <button class="back-btn-dorks" @click="selectedDorkCategory = null">
+              <span class="icon">←</span>
+              Volver a categorías
+            </button>
+            <h1 class="section-title">
+              {{ getCategoryTitle(selectedDorkCategory) }}
+            </h1>
+            <p class="section-subtitle">{{ getCategoryDescription(selectedDorkCategory) }}</p>
+          </div>
+
+          <!-- Input para personalizar -->
+          <div class="dorks-input-section">
+            <input
+              v-model="dorkSearchTerm"
+              type="text"
+              :placeholder="getCategoryPlaceholder(selectedDorkCategory)"
+              class="dorks-input"
+            />
+            <small class="input-hint">
+              <img src="@/assets/hakken-logo-bombilla.png" alt="hint" class="hint-icon"/>
+              Introduce un término para personalizar los dorks (opcional)
+            </small>
+          </div>
+
+          <!-- Lista de dorks -->
+          <div class="dorks-list">
+            <div 
+              v-for="dork in getFilteredDorks(selectedDorkCategory)" 
+              :key="dork.id"
+              class="dork-item"
+            >
+              <div class="dork-content">
+                <h4 class="dork-title">{{ dork.title }}</h4>
+                <div class="dork-query">
+                  <code>{{ getDorkWithTerm(dork.query) }}</code>
+                </div>
+                <p class="dork-description">{{ dork.description }}</p>
+              </div>
+              <div class="dork-actions">
+                <button class="dork-btn copy-btn" @click="copyDork(dork.query)">
+                  <img src="@/assets/hakken-logo-papelera.png" alt="copy" class="btn-icon"/>
+                  Copiar
+                </button>
+                <button class="dork-btn search-btn-dork" @click="searchWithDork(dork.query)">
+                  <img src="@/assets/hakken-logo-busqueda.png" alt="search" class="btn-icon"/>
+                  Buscar
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Notificación Toast -->
+      <div v-if="notification.show" class="notification-toast" :class="{ 'error': !notification.isSuccess }">
+        <span class="notification-icon">{{ notification.isSuccess ? '✓' : '✕' }}</span>
+        {{ notification.message }}
+      </div>
 
       <!-- Search Modal/Panel -->
       <div v-if="selectedType" class="search-modal" @click.self="closeModal">
@@ -681,6 +828,459 @@ const formatDomainResults = (domainData) => {
 /*
 **************************************************************************
 *************************** FRONTED LOGIC ********************************
+**************************************************************************
+*/
+
+/*
+**************************************************************************
+*************************** GOOGLE DORKS *********************************
+**************************************************************************
+*/
+
+// Google Dorks
+const selectedDorkCategory = ref(null)
+const dorkSearchTerm = ref('')
+const notification = ref({ show: false, message: '' })
+
+// Base de datos de Google Dorks (ACTUALIZADA con tus ejemplos de Email)
+const googleDorks = ref([
+  // EMAIL DORKS (Actualizados según tu imagen)
+  {
+    id: 1,
+    category: 'email',
+    title: 'Búsqueda general de email',
+    query: '"[TERM]" AND intext:"[TERM]" -site:gmail.com',
+    description: 'Busca el email en toda la web excluyendo Gmail'
+  },
+  {
+    id: 2,
+    category: 'email',
+    title: 'Email en LinkedIn',
+    query: 'site:linkedin.com "[TERM]"',
+    description: 'Busca perfiles de LinkedIn asociados al email'
+  },
+  {
+    id: 3,
+    category: 'email',
+    title: 'Email en Twitter/X',
+    query: 'site:x.com "[TERM]"',
+    description: 'Busca el email en la red social X (antes Twitter)'
+  },
+  {
+    id: 4,
+    category: 'email',
+    title: 'Email en Reddit',
+    query: 'site:reddit.com "[TERM]" ...',
+    description: 'Encuentra menciones del email en Reddit'
+  },
+  {
+    id: 5,
+    category: 'email',
+    title: 'Email en GitHub',
+    query: 'site:github.com "[TERM]"',
+    description: 'Busca el email en repositorios y perfiles de GitHub'
+  },
+  {
+    id: 6,
+    category: 'email',
+    title: 'Email en Pastebin',
+    query: 'site:pastebin.com "[TERM]"',
+    description: 'Busca si el email aparece en pastes (posibles brechas)'
+  },
+  {
+    id: 7,
+    category: 'email',
+    title: 'Documentos PDF con email',
+    query: 'filetype:pdf "[TERM]"',
+    description: 'Encuentra documentos PDF que contengan el email'
+  },
+  {
+    id: 8,
+    category: 'email',
+    title: 'Hojas de cálculo con email',
+    query: 'filetype:xls OR filetype:xlsx "[TERM]"',
+    description: 'Busca hojas de cálculo con el email expuesto'
+  },
+  {
+    id: 9,
+    category: 'email',
+    title: 'Username reutilizado',
+    query: '"[TERM]" site:github.com',
+    description: 'Busca si el username del email se usa en GitHub'
+  },
+  {
+    id: 10,
+    category: 'email',
+    title: 'Username en Twitter',
+    query: '"[TERM]" site:twitter.com',
+    description: 'Busca si el username del email está en Twitter'
+  },
+
+  // USERNAME DORKS
+  {
+    id: 11,
+    category: 'username',
+    title: 'Buscar usuario en redes sociales',
+    query: 'site:twitter.com OR site:facebook.com OR site:instagram.com OR site:linkedin.com "[TERM]"',
+    description: 'Busca perfiles de usuario en las principales redes sociales'
+  },
+  {
+    id: 12,
+    category: 'username',
+    title: 'Buscar usuario en foros',
+    query: 'inurl:profile "[TERM]" OR inurl:user "[TERM]"',
+    description: 'Encuentra perfiles en foros y comunidades online'
+  },
+  {
+    id: 13,
+    category: 'username',
+    title: 'Buscar menciones del usuario',
+    query: '"[TERM]" -site:facebook.com -site:twitter.com',
+    description: 'Busca menciones del usuario excluyendo redes sociales principales'
+  },
+  {
+    id: 14,
+    category: 'username',
+    title: 'Buscar usuario en GitHub',
+    query: 'site:github.com "[TERM]"',
+    description: 'Encuentra repositorios y actividad en GitHub'
+  },
+  {
+    id: 15,
+    category: 'username',
+    title: 'Buscar usuario en Reddit',
+    query: 'site:reddit.com/user "[TERM]"',
+    description: 'Busca perfiles y posts en Reddit'
+  },
+
+  // PHONE DORKS
+  {
+    id: 16,
+    category: 'phone',
+    title: 'Buscar número de teléfono',
+    query: '"[TERM]" OR "+[TERM]"',
+    description: 'Busca apariciones del número en diferentes formatos'
+  },
+  {
+    id: 17,
+    category: 'phone',
+    title: 'Buscar teléfono en directorios',
+    query: 'inurl:phonebook "[TERM]" OR inurl:directory "[TERM]"',
+    description: 'Busca el número en directorios telefónicos online'
+  },
+  {
+    id: 18,
+    category: 'phone',
+    title: 'Buscar teléfono en anuncios',
+    query: 'site:craigslist.org OR site:olx.com "[TERM]"',
+    description: 'Encuentra el teléfono en sitios de anuncios clasificados'
+  },
+  {
+    id: 19,
+    category: 'phone',
+    title: 'Buscar teléfono en documentos',
+    query: '"[TERM]" filetype:pdf OR filetype:doc OR filetype:xls',
+    description: 'Busca el número en documentos públicos'
+  },
+  {
+    id: 20,
+    category: 'phone',
+    title: 'Buscar teléfono en redes sociales',
+    query: 'site:facebook.com OR site:twitter.com "[TERM]"',
+    description: 'Busca el número en perfiles de redes sociales'
+  },
+
+  // IP DORKS
+  {
+    id: 21,
+    category: 'ip',
+    title: 'Buscar información de IP',
+    query: '"[TERM]" inurl:ip OR inurl:ipaddress',
+    description: 'Busca información pública sobre la dirección IP'
+  },
+  {
+    id: 22,
+    category: 'ip',
+    title: 'Buscar IP en logs públicos',
+    query: 'site:pastebin.com "[TERM]"',
+    description: 'Busca la IP en logs o pastes públicos'
+  },
+  {
+    id: 23,
+    category: 'ip',
+    title: 'Buscar servicios en IP',
+    query: '"[TERM]" intitle:"index of" OR intitle:"welcome to"',
+    description: 'Busca servicios web expuestos en la IP'
+  },
+  {
+    id: 24,
+    category: 'ip',
+    title: 'Buscar cámaras IP',
+    query: 'inurl:view/view.shtml "[TERM]"',
+    description: 'Busca cámaras de seguridad asociadas a la IP'
+  },
+  {
+    id: 25,
+    category: 'ip',
+    title: 'Buscar servidores vulnerables',
+    query: '"[TERM]" intitle:"Apache" OR intitle:"IIS" OR intitle:"nginx"',
+    description: 'Busca información de servidores web en la IP'
+  },
+
+  // DOMAIN DORKS
+  {
+    id: 26,
+    category: 'domain',
+    title: 'Buscar subdominios',
+    query: 'site:*.[TERM]',
+    description: 'Encuentra todos los subdominios indexados del dominio'
+  },
+  {
+    id: 27,
+    category: 'domain',
+    title: 'Buscar información WHOIS',
+    query: '"[TERM]" inurl:whois',
+    description: 'Busca registros WHOIS del dominio'
+  },
+  {
+    id: 28,
+    category: 'domain',
+    title: 'Buscar páginas de login',
+    query: 'site:[TERM] inurl:login OR inurl:admin OR inurl:administrator',
+    description: 'Encuentra páginas de inicio de sesión en el dominio'
+  },
+  {
+    id: 29,
+    category: 'domain',
+    title: 'Buscar archivos expuestos',
+    query: 'site:[TERM] intitle:"index of"',
+    description: 'Busca directorios abiertos con listado de archivos'
+  },
+  {
+    id: 30,
+    category: 'domain',
+    title: 'Buscar tecnologías usadas',
+    query: 'site:[TERM] "powered by" OR "built with"',
+    description: 'Identifica las tecnologías utilizadas en el sitio'
+  },
+
+  // FILES DORKS
+  {
+    id: 31,
+    category: 'files',
+    title: 'Buscar PDFs sensibles',
+    query: 'site:[TERM] filetype:pdf confidential OR private OR secret',
+    description: 'Busca documentos PDF con información sensible'
+  },
+  {
+    id: 32,
+    category: 'files',
+    title: 'Buscar documentos Word',
+    query: 'filetype:doc OR filetype:docx "[TERM]"',
+    description: 'Encuentra documentos de Word relacionados'
+  },
+  {
+    id: 33,
+    category: 'files',
+    title: 'Buscar hojas de cálculo',
+    query: 'filetype:xls OR filetype:xlsx "[TERM]"',
+    description: 'Busca hojas de cálculo expuestas'
+  },
+  {
+    id: 34,
+    category: 'files',
+    title: 'Buscar presentaciones',
+    query: 'filetype:ppt OR filetype:pptx "[TERM]"',
+    description: 'Encuentra presentaciones públicas'
+  },
+  {
+    id: 35,
+    category: 'files',
+    title: 'Buscar archivos de configuración',
+    query: 'filetype:conf OR filetype:config OR filetype:ini "[TERM]"',
+    description: 'Busca archivos de configuración expuestos'
+  },
+
+  // SOCIAL DORKS
+  {
+    id: 36,
+    category: 'social',
+    title: 'Buscar en Twitter',
+    query: 'site:twitter.com "[TERM]"',
+    description: 'Busca tweets y perfiles en Twitter'
+  },
+  {
+    id: 37,
+    category: 'social',
+    title: 'Buscar en Facebook',
+    query: 'site:facebook.com "[TERM]"',
+    description: 'Encuentra publicaciones y perfiles en Facebook'
+  },
+  {
+    id: 38,
+    category: 'social',
+    title: 'Buscar en Instagram',
+    query: 'site:instagram.com "[TERM]"',
+    description: 'Busca perfiles y hashtags en Instagram'
+  },
+  {
+    id: 39,
+    category: 'social',
+    title: 'Buscar en TikTok',
+    query: 'site:tiktok.com "[TERM]"',
+    description: 'Encuentra videos y usuarios en TikTok'
+  },
+  {
+    id: 40,
+    category: 'social',
+    title: 'Buscar en YouTube',
+    query: 'site:youtube.com "[TERM]"',
+    description: 'Busca videos y canales en YouTube'
+  },
+
+  // VULNERABILITIES DORKS
+  {
+    id: 41,
+    category: 'vulnerabilities',
+    title: 'Buscar paneles de administración',
+    query: 'intitle:"admin panel" OR intitle:"control panel"',
+    description: 'Encuentra paneles de administración expuestos'
+  },
+  {
+    id: 42,
+    category: 'vulnerabilities',
+    title: 'Buscar bases de datos expuestas',
+    query: 'intitle:"phpMyAdmin" OR intitle:"MySQL"',
+    description: 'Busca interfaces de bases de datos accesibles'
+  },
+  {
+    id: 43,
+    category: 'vulnerabilities',
+    title: 'Buscar cámaras sin contraseña',
+    query: 'inurl:"view/view.shtml" OR inurl:"ViewerFrame?Mode="',
+    description: 'Encuentra cámaras de seguridad vulnerables'
+  },
+  {
+    id: 44,
+    category: 'vulnerabilities',
+    title: 'Buscar archivos de backup',
+    query: 'filetype:bak OR filetype:old OR filetype:backup',
+    description: 'Busca archivos de respaldo expuestos'
+  },
+  {
+    id: 45,
+    category: 'vulnerabilities',
+    title: 'Buscar credenciales expuestas',
+    query: 'filetype:env "DB_PASSWORD" OR filetype:config "password"',
+    description: 'Busca archivos con posibles credenciales'
+  }
+])
+
+// Funciones para Google Dorks
+const openGoogleDorks = () => {
+  currentView.value = 'dorks'
+  selectedDorkCategory.value = null
+  dorkSearchTerm.value = ''
+}
+
+const selectDorkCategory = (category) => {
+  selectedDorkCategory.value = category
+  dorkSearchTerm.value = ''
+}
+
+const getFilteredDorks = (category) => {
+  return googleDorks.value.filter(dork => dork.category === category)
+}
+
+const getDorkWithTerm = (query) => {
+  if (dorkSearchTerm.value.trim()) {
+    // Extraer solo el username si es email (parte antes del @)
+    let term = dorkSearchTerm.value.trim()
+    if (term.includes('@') && selectedDorkCategory.value === 'email') {
+      const username = term.split('@')[0]
+      // Reemplazar [TERM] con el username cuando el dork lo requiera
+      if (query.includes('Username reutilizado') || query.includes('Username en Twitter')) {
+        return query.replace(/\[TERM\]/g, username)
+      }
+    }
+    return query.replace(/\[TERM\]/g, term)
+  }
+  return query
+}
+
+const copyDork = async (dorkQuery) => {
+  const finalQuery = getDorkWithTerm(dorkQuery)
+  try {
+    await navigator.clipboard.writeText(finalQuery)
+    showNotification('Dork copiado al portapapeles', true)
+  } catch (err) {
+    console.error('Error al copiar:', err)
+    showNotification('Error al copiar el dork', false)
+  }
+}
+
+const searchWithDork = (dorkQuery) => {
+  const finalQuery = getDorkWithTerm(dorkQuery)
+  const googleSearchUrl = `https://www.google.com/search?q=${encodeURIComponent(finalQuery)}`
+  window.open(googleSearchUrl, '_blank')
+}
+
+const showNotification = (message, isSuccess = true) => {
+  notification.value = { 
+    show: true, 
+    message: message,
+    isSuccess: isSuccess
+  }
+  setTimeout(() => {
+    notification.value.show = false
+  }, 3000)
+}
+
+const getCategoryTitle = (category) => {
+  const titles = {
+    username: 'Google Dorks para Username',
+    email: 'Google Dorks para Email',
+    phone: 'Google Dorks para Teléfono',
+    ip: 'Google Dorks para Dirección IP',
+    domain: 'Google Dorks para Dominio',
+    files: 'Google Dorks para Archivos',
+    social: 'Google Dorks para Redes Sociales',
+    vulnerabilities: 'Google Dorks para Vulnerabilidades'
+  }
+  return titles[category] || category
+}
+
+const getCategoryDescription = (category) => {
+  const descriptions = {
+    username: 'Consultas avanzadas para encontrar usuarios en múltiples plataformas',
+    email: 'Busca emails en redes sociales, documentos y bases de datos públicas',
+    phone: 'Encuentra números telefónicos en directorios, anuncios y documentos',
+    ip: 'Obtén información detallada sobre direcciones IP y servicios',
+    domain: 'Analiza dominios, subdominios y tecnologías web',
+    files: 'Descubre documentos y archivos sensibles expuestos',
+    social: 'Busca perfiles y contenido en redes sociales',
+    vulnerabilities: 'Identifica posibles vulnerabilidades y exposiciones'
+  }
+  return descriptions[category] || ''
+}
+
+const getCategoryPlaceholder = (category) => {
+  const placeholders = {
+    username: 'Ej: john_doe, usuario123',
+    email: 'Ej: ejemplo@gmail.com',
+    phone: 'Ej: +34600000000, 600000000',
+    ip: 'Ej: 8.8.8.8, 192.168.1.1',
+    domain: 'Ej: example.com',
+    files: 'Ej: confidential, password',
+    social: 'Ej: @usuario, #hashtag',
+    vulnerabilities: 'Ej: admin, login'
+  }
+  return placeholders[category] || 'Introduce un término...'
+}
+
+/*
+**************************************************************************
+*************************** GOOGLE DORKS *********************************
 **************************************************************************
 */
 </script>
@@ -1799,5 +2399,361 @@ body.light-theme .ambient-glow {
     width: 100%;
     justify-content: flex-end;
   }
+}
+
+/*
+**************************************************************************
+************************** GOOGLE DORKS SECTION **************************
+**************************************************************************
+*/
+
+.dorks-section {
+  animation: fadeInUp 0.8s ease-out;
+}
+
+/* Vista de categorías */
+.dorks-categories-view {
+  width: 100%;
+}
+
+.dorks-categories-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1.5rem;
+  margin-top: 2rem;
+}
+
+.dork-category-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 2rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.dork-category-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(0, 255, 153, 0.1), transparent);
+  transition: left 0.5s ease;
+}
+
+.dork-category-card:hover::before {
+  left: 100%;
+}
+
+.dork-category-card:hover {
+  border-color: #00ff99;
+  transform: translateY(-5px);
+  box-shadow: 0 0 25px rgba(0, 255, 153, 0.3);
+}
+
+.category-icon-large {
+  font-size: 4rem;
+  margin-bottom: 1rem;
+  filter: drop-shadow(0 0 20px rgba(0, 255, 153, 0.5));
+}
+
+.category-title {
+  color: var(--text-primary);
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin-bottom: 0.8rem;
+}
+
+.category-desc {
+  color: var(--text-secondary);
+  font-size: 1rem;
+  line-height: 1.5;
+  margin-bottom: 1rem;
+}
+
+.category-count {
+  display: inline-block;
+  padding: 0.4rem 1rem;
+  background: rgba(0, 255, 153, 0.1);
+  color: #00ff99;
+  border: 1px solid rgba(0, 255, 153, 0.3);
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+/* Vista de lista de dorks */
+.dorks-list-view {
+  width: 100%;
+}
+
+.dorks-header {
+  margin-bottom: 2rem;
+}
+
+.back-btn-dorks {
+  padding: 0.7rem 1.2rem;
+  background: transparent;
+  color: #00ff99;
+  border: 1px solid rgba(0, 255, 153, 0.3);
+  border-radius: 6px;
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.back-btn-dorks:hover {
+  background: rgba(0, 255, 153, 0.1);
+  border-color: #00ff99;
+  box-shadow: 0 0 15px rgba(0, 255, 153, 0.2);
+}
+
+.dorks-input-section {
+  margin-bottom: 2rem;
+}
+
+.dorks-input {
+  width: 100%;
+  padding: 1rem 1.5rem;
+  background: rgba(0, 0, 0, 0.5);
+  border: 2px solid rgba(0, 255, 153, 0.3);
+  border-radius: 8px;
+  color: white;
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 1rem;
+  transition: all 0.3s ease;
+  margin-bottom: 0.5rem;
+}
+
+.dorks-input:focus {
+  outline: none;
+  border-color: #00ff99;
+  box-shadow: 0 0 20px rgba(0, 255, 153, 0.3);
+}
+
+.dorks-input::placeholder {
+  color: #666;
+}
+
+.input-hint {
+  color: #888;
+  font-size: 0.85rem;
+  font-style: italic;
+}
+
+.dorks-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1.2rem;
+}
+
+.dork-item {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 1.5rem;
+  transition: all 0.3s ease;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1.5rem;
+}
+
+.dork-item:hover {
+  border-color: #00ff99;
+  box-shadow: 0 0 20px rgba(0, 255, 153, 0.2);
+  transform: translateX(5px);
+}
+
+.dork-content {
+  flex: 1;
+}
+
+.dork-title {
+  color: var(--text-primary);
+  font-size: 1.2rem;
+  font-weight: 600;
+  margin-bottom: 0.8rem;
+}
+
+.dork-query {
+  background: rgba(0, 0, 0, 0.6);
+  border-left: 3px solid #00ff99;
+  padding: 0.8rem 1rem;
+  margin-bottom: 0.8rem;
+  border-radius: 4px;
+  overflow-x: auto;
+}
+
+.dork-query code {
+  color: #00ff99;
+  font-family: 'Courier New', monospace;
+  font-size: 0.9rem;
+  word-break: break-all;
+}
+
+.dork-description {
+  color: var(--text-secondary);
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+.dork-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  min-width: 120px;
+}
+
+.dork-btn {
+  padding: 0.7rem 1.2rem;
+  background: rgba(0, 255, 153, 0.1);
+  border: 1px solid rgba(0, 255, 153, 0.3);
+  border-radius: 6px;
+  color: #00ff99;
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 0.95rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  white-space: nowrap;
+}
+
+.dork-btn:hover {
+  background: rgba(0, 255, 153, 0.2);
+  border-color: #00ff99;
+  box-shadow: 0 0 10px rgba(0, 255, 153, 0.3);
+}
+
+.copy-btn:active {
+  transform: scale(0.95);
+}
+
+/* Notification Toast */
+.notification-toast {
+  display: flex;
+  align-items: center;
+  position: fixed;
+  bottom: 2rem;
+  right: 2rem;
+  background: rgba(0, 255, 153, 0.95);
+  color: #000;
+  padding: 1rem 1.5rem;
+  border-radius: 8px;
+  box-shadow: 0 4px 20px rgba(0, 255, 153, 0.4);
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 1rem;
+  font-weight: 600;
+  z-index: 10000;
+  animation: slideInRight 0.3s ease-out;
+}
+
+.notification-toast.error {
+  background: rgba(255, 68, 68, 0.95);
+  box-shadow: 0 4px 20px rgba(255, 68, 68, 0.4);
+}
+
+.notification-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  margin-right: 0.5rem;
+  font-weight: bold;
+  font-size: 1.2rem;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 50%;
+}
+
+@keyframes slideInRight {
+  from {
+    transform: translateX(400px);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+/* Light theme */
+body.light-theme .dorks-input {
+  background: rgba(0, 0, 0, 0.05);
+  color: #1a1a1a;
+}
+
+body.light-theme .dork-query {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .dorks-categories-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .dork-item {
+    flex-direction: column;
+  }
+
+  .dork-actions {
+    width: 100%;
+    flex-direction: row;
+  }
+
+  .dork-btn {
+    flex: 1;
+  }
+}
+
+/* Iconos en categorías */
+.category-icon-large {
+  height: 5rem;
+  width: 5rem;
+  margin-bottom: 1rem;
+  filter: drop-shadow(0 0 20px rgba(0, 255, 153, 0.5));
+}
+
+/* Icono en hint */
+.hint-icon {
+  height: 1rem;
+  width: 1rem;
+  vertical-align: middle;
+  margin-right: 0.3rem;
+  filter: drop-shadow(0 0 5px rgba(0, 255, 153, 0.5));
+}
+
+.input-hint {
+  display: flex;
+  align-items: center;
+  color: #888;
+  font-size: 0.85rem;
+  font-style: italic;
+}
+
+/* Iconos en botones */
+.btn-icon {
+  height: 1.2rem;
+  width: 1.2rem;
+  filter: drop-shadow(0 0 5px rgba(0, 255, 153, 0.5));
+}
+
+.dork-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
 }
 </style>
