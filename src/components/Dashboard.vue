@@ -703,8 +703,11 @@ const performSearch = async () => {
     
     switch(selectedType.value) {
       case 'username':
-        results = await api.searchGitHubUser(searchQuery.value)
-        searchResults.value = formatGitHubResults(results)
+        const [githubData, sherlockData] = await Promise.all([
+          api.searchGitHubUser(searchQuery.value),
+          api.searchSherlockUsername(searchQuery.value)
+        ])
+        searchResults.value = formatUsernameResults(githubData, sherlockData)
         break
         
       case 'ip':
@@ -782,6 +785,46 @@ const formatGitHubResults = (githubData) => {
         }
       }
     ]
+  }
+}
+
+// Función para combinar GitHub + Sherlock en una sola respuesta de "username"
+const formatUsernameResults = (githubData, sherlockData) => {
+  // Partimos del formato actual de GitHub
+  const base = formatGitHubResults(githubData)
+
+  const socialMedia = base.socialMedia ? [...base.socialMedia] : []
+
+  // Sherlock: asumimos respuesta { username, found: [{ site, url }], ... }
+  const sherlockSites = Array.isArray(sherlockData?.found) ? sherlockData.found : []
+
+  if (sherlockSites.length === 0) {
+    // No se encontró nada con Sherlock
+    socialMedia.push({
+      platform: 'Sherlock',
+      icon: '🕵️',
+      url: null,
+      found: false
+    })
+  } else {
+    sherlockSites.forEach(site => {
+      socialMedia.push({
+        platform: site.site || 'Cuenta encontrada',
+        icon: '🕵️',
+        url: site.url,
+        found: true
+      })
+    })
+  }
+
+  return {
+    ...base,
+    socialMedia,
+    sherlock: {
+      username: sherlockData?.username || searchQuery.value,
+      total_sites: sherlockSites.length,
+      sites: sherlockSites
+    }
   }
 }
 
