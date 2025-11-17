@@ -50,20 +50,6 @@ export default {
     }
   },
 
-  /**
-   * Ejecuta Sherlock para un username
-   * @param {string} username - Nombre de usuario a buscar
-   * @returns {Promise} Resultados de Sherlock
-   */
-  async searchSherlockUsername(username) {
-    try {
-      const response = await apiClient.get(`/search/sherlock/${username}`)
-      return response.data
-    } catch (error) {
-      throw error
-    }
-  },
-
   // ==================== IP ====================
   
   /**
