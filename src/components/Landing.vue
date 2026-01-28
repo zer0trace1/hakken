@@ -17,6 +17,13 @@
         <span class="btn-text">Entrar</span>
         <span class="btn-icon">→</span>
       </button>
+      <div>
+        <button v-if="!userEmail" @click="login">Iniciar sesión</button>
+        <div v-else>
+          <p>Logueado como: {{ userEmail }}</p>
+          <button @click="logout">Cerrar sesión</button>
+        </div>
+      </div>
     </div>
 
     <!-- Efecto de rejilla opcional en el fondo -->
@@ -33,8 +40,11 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { onMounted } from 'vue'
+import { signIn, signOut, getUser } from "@/auth/oidc";
 
 const router = useRouter()
+
+const userEmail = ref(null);
 
 const handleEnter = () => {
   router.push('/dashboard')
@@ -50,7 +60,24 @@ onMounted(() => {
       logoElement.src = new URL('@/assets/hakken-logo-no-bg-negro.png', import.meta.url).href
     }
   }
+
+  // luego user
+  try {
+    const user = await getUser();
+    userEmail.value = user?.profile?.email || null;
+  } catch {
+    userEmail.value = null;
+  }
 })
+
+async function login() {
+  await signIn("/dashboard");
+}
+
+async function logout() {
+  await signOut();
+}
+
 const particlesOptions = ref({
   background: {
     color: 'transparent'
