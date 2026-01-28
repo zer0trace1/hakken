@@ -40,6 +40,13 @@
             </span>
             Ajustes
           </button>
+          <div>
+            <button v-if="!userEmail" @click="login">Iniciar sesión</button>
+            <div v-else>
+              <p>Logueado como: {{ userEmail }}</p>
+              <button @click="logout">Cerrar sesión</button>
+            </div>
+          </div>
         </nav>
       </div>
     </header>
@@ -444,6 +451,7 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import api from '@/services/api'
+import { signIn, signOut, getUser } from "@/auth/oidc";
 
 /*
 **************************************************************************
@@ -458,6 +466,8 @@ const isSearching = ref(false)
 const searchError = ref(null)
 
 const router = useRouter()
+
+const userEmail = ref(null);
 
 /*
 **************************************************************************
@@ -521,6 +531,9 @@ const changeLogo = (theme) => {
 }
 
 onMounted(() => {
+  const user = await getUser();
+  userEmail.value = user?.profile?.email || null;
+  
   // Cargar configuración guardada
   const savedTheme = localStorage.getItem('hakken_theme')
   //const savedLanguage = localStorage.getItem('hakken_language')
@@ -537,6 +550,14 @@ onMounted(() => {
     searchHistory.value = JSON.parse(savedHistory)
   }
 })
+
+async function login() {
+  await signIn("/dashboard");
+}
+
+async function logout() {
+  await signOut();
+}
 
 // Watch para cambiar tema en tiempo real
 watch(theme, (newTheme) => {

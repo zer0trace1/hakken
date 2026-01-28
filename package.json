@@ -13,6 +13,7 @@
     "@tsparticles/slim": "^3.9.1",
     "@tsparticles/vue3": "^3.0.1",
     "axios": "^1.13.2",
+    "oidc-client-ts": "^3.4.1",
     "tsparticles": "^3.9.1",
     "vue": "^3.5.22",
     "vue-router": "^4.6.3"
