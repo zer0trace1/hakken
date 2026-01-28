@@ -530,26 +530,23 @@ const changeLogo = (theme) => {
   }
 }
 
-onMounted(() => {
-  const user = await getUser();
-  userEmail.value = user?.profile?.email || null;
-  
-  // Cargar configuración guardada
-  const savedTheme = localStorage.getItem('hakken_theme')
-  //const savedLanguage = localStorage.getItem('hakken_language')
-  //const savedAnimations = localStorage.getItem('hakken_animations')
-  
-  if (savedTheme) theme.value = savedTheme
-  //if (savedLanguage) language.value = savedLanguage
-  //if (savedAnimations) animations.value = savedAnimations === 'true'
-  
-  applyTheme(theme.value)
+onMounted(async () => {
+  // primero UI/localStorage
+  const savedTheme = localStorage.getItem('hakken_theme');
+  if (savedTheme) theme.value = savedTheme;
+  applyTheme(theme.value);
 
-  const savedHistory = localStorage.getItem('hakken_history')
-  if (savedHistory) {
-    searchHistory.value = JSON.parse(savedHistory)
+  const savedHistory = localStorage.getItem('hakken_history');
+  if (savedHistory) searchHistory.value = JSON.parse(savedHistory);
+
+  // luego user
+  try {
+    const user = await getUser();
+    userEmail.value = user?.profile?.email || null;
+  } catch {
+    userEmail.value = null;
   }
-})
+});
 
 async function login() {
   await signIn("/dashboard");
