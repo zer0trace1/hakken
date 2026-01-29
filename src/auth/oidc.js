@@ -4,7 +4,7 @@ import { UserManager, WebStorageStateStore } from "oidc-client-ts";
 const userPoolIssuer = "https://cognito-idp.us-east-1.amazonaws.com/us-east-1_mXG9FY7uH";
 const cognitoDomain = "https://us-east-1mxg9fy7uh.auth.us-east-1.amazoncognito.com";
 
-const client_id = "42nrq7l9p43gqihe8nanubg3";
+const client_id = "42nrq7rl9p43gqihe8nanubg3";
 
 // OJO: si entras a la web por www o pages.dev, lo ideal es usar window.location.origin
 const redirect_uri = "https://hakken.cloud/auth/callback";
