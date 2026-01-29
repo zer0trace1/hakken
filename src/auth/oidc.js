@@ -1,40 +1,38 @@
 // src/auth/oidc.js
 import { UserManager, WebStorageStateStore } from "oidc-client-ts";
 
-const REGION = "us-east-1";
-const USER_POOL_ID = "us-east-1_mXG9FY7uH";
-const CLIENT_ID = "42nrq7l9p43gqihe8nanubg3";
+const userPoolIssuer = "https://cognito-idp.us-east-1.amazonaws.com/us-east-1_mXG9FY7uH";
+const cognitoDomain = "https://us-east-1mxg9fy7uh.auth.us-east-1.amazoncognito.com";
 
-// Hosted UI domain (NO el cognito-idp)
-const COGNITO_DOMAIN = "https://us-east-1mxg9fy7uh.auth.us-east-1.amazoncognito.com";
+const client_id = "42nrq7l9p43gqihe8nanubg3";
 
-// Issuer (sí: cognito-idp)
-const authority = `https://cognito-idp.${REGION}.amazonaws.com/${USER_POOL_ID}`;
-
-// Recomendación: fija producción a hakken.cloud para no liarte con .pages.dev / www
-const APP_ORIGIN = "https://hakken.cloud";
-const redirect_uri = `${APP_ORIGIN}/auth/callback`;
-const post_logout_redirect_uri = `${APP_ORIGIN}/`;
-
-// Metadata “a mano” para evitar CORS al /.well-known/openid-configuration
-const metadata = {
-  issuer: authority,
-  authorization_endpoint: `${COGNITO_DOMAIN}/oauth2/authorize`,
-  token_endpoint: `${COGNITO_DOMAIN}/oauth2/token`,
-  userinfo_endpoint: `${COGNITO_DOMAIN}/oauth2/userInfo`,
-  jwks_uri: `${authority}/.well-known/jwks.json`,
-  end_session_endpoint: `${COGNITO_DOMAIN}/logout`,
-};
+// OJO: si entras a la web por www o pages.dev, lo ideal es usar window.location.origin
+const redirect_uri = "https://hakken.cloud/auth/callback";
+const post_logout_redirect_uri = "https://hakken.cloud/";
 
 export const userManager = new UserManager({
-  authority,
-  client_id: CLIENT_ID,
+  authority: userPoolIssuer,
+  client_id,
   redirect_uri,
+  post_logout_redirect_uri,
   response_type: "code",
+  response_mode: "query",
   scope: "openid email profile",
+
+  // Evita llamadas extra tipo userInfo que a veces dan guerra por CORS
+  loadUserInfo: false,
+
+  // Evita discovery por fetch (y te aseguras de usar /login)
+  metadata: {
+    issuer: userPoolIssuer,
+    authorization_endpoint: `${cognitoDomain}/login`,
+    token_endpoint: `${cognitoDomain}/oauth2/token`,
+    userinfo_endpoint: `${cognitoDomain}/oauth2/userInfo`,
+    end_session_endpoint: `${cognitoDomain}/logout`,
+    jwks_uri: `${userPoolIssuer}/.well-known/jwks.json`,
+  },
+
   userStore: new WebStorageStateStore({ store: window.localStorage }),
-  loadUserInfo: true,
-  metadata,
 });
 
 export async function signIn(returnTo = "/dashboard") {
@@ -45,6 +43,10 @@ export async function handleAuthCallback() {
   return userManager.signinRedirectCallback();
 }
 
+export async function signOut() {
+  return userManager.signoutRedirect();
+}
+
 export async function getUser() {
   return userManager.getUser();
 }
@@ -53,14 +55,4 @@ export async function getAccessToken() {
   const user = await userManager.getUser();
   if (!user || user.expired) return null;
   return user.access_token;
-}
-
-// Logout recomendado para Cognito (usa logout_uri)
-export async function signOut() {
-  await userManager.removeUser();
-  const url =
-    `${COGNITO_DOMAIN}/logout` +
-    `?client_id=${encodeURIComponent(CLIENT_ID)}` +
-    `&logout_uri=${encodeURIComponent(post_logout_redirect_uri)}`;
-  window.location.assign(url);
 }

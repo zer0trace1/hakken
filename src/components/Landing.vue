@@ -17,6 +17,10 @@
         <span class="btn-text">Entrar</span>
         <span class="btn-icon">→</span>
       </button>
+      <button class="enter-btn" @click="handleLogin">
+        <span class="btn-text">Iniciar sesión</span>
+        <span class="btn-icon">→</span>
+      </button>
     </div>
 
     <!-- Efecto de rejilla opcional en el fondo -->
@@ -33,13 +37,22 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { onMounted } from 'vue'
-import { signIn } from '@/auth/oidc' // ✅ AÑADIDO
+import { signIn, getUser } from "@/auth/oidc";
 
 const router = useRouter()
 
 const handleEnter = async () => {     // ✅ MODIFICADO
   await signIn('/dashboard')          // ✅ MODIFICADO
 }
+
+const handleLogin = async () => {
+  const user = await getUser();
+  if (user && !user.expired) {
+    router.push("/dashboard");
+    return;
+  }
+  await signIn("/dashboard");
+};
 
 // Actualizar logo según tema guardado
 onMounted(() => {
