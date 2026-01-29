@@ -13,20 +13,15 @@
       <p class="tagline">
         Un nuevo enfoque para el análisis <span class="highlight">OSINT</span>
       </p>
-      <button class="enter-btn" @click="handleEnter">
-        <span class="btn-text">Entrar</span>
-        <span class="btn-icon">→</span>
-      </button>
+
+      <!-- SOLO un botón -->
       <button class="enter-btn" @click="handleLogin">
         <span class="btn-text">Iniciar sesión</span>
         <span class="btn-icon">→</span>
       </button>
     </div>
 
-    <!-- Efecto de rejilla opcional en el fondo -->
     <div class="grid-overlay"></div>
-    
-    <!-- Efectos de glow ambiental -->
     <div class="ambient-glow glow-1"></div>
     <div class="ambient-glow glow-2"></div>
     <div class="ambient-glow glow-3"></div>
@@ -34,25 +29,20 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { onMounted } from 'vue'
-import { signIn, getUser } from "@/auth/oidc";
+import { getUser, signIn } from "@/auth/oidc"
 
 const router = useRouter()
 
-const handleEnter = async () => {     // ✅ MODIFICADO
-  await signIn('/dashboard')          // ✅ MODIFICADO
-}
-
 const handleLogin = async () => {
-  const user = await getUser();
+  const user = await getUser()
   if (user && !user.expired) {
-    router.push("/dashboard");
-    return;
+    router.push('/dashboard')
+    return
   }
-  await signIn("/dashboard");
-};
+  await signIn('/dashboard')
+}
 
 // Actualizar logo según tema guardado
 onMounted(() => {
@@ -65,88 +55,36 @@ onMounted(() => {
     }
   }
 })
+
 const particlesOptions = ref({
-  background: {
-    color: 'transparent'
-  },
-  fullScreen: { 
-    enable: false,
-    zIndex: 1
-  },
+  background: { color: 'transparent' },
+  fullScreen: { enable: false, zIndex: 1 },
   particles: {
-    number: {
-      value: 100,
-      density: {
-        enable: true,
-        area: 800
-      }
-    },
-    color: {
-      value: ['#00ff99', '#00cc7a', '#00ffcc', '#00ff66']
-    },
-    shape: {
-      type: ['circle', 'triangle']
-    },
-    opacity: {
-      value: { min: 0.1, max: 0.4 },
-      animation: {
-        enable: true,
-        speed: 0.3,
-        sync: false
-      }
-    },
-    size: {
-      value: { min: 0.5, max: 2.5 }
-    },
+    number: { value: 100, density: { enable: true, area: 800 } },
+    color: { value: ['#00ff99', '#00cc7a', '#00ffcc', '#00ff66'] },
+    shape: { type: ['circle', 'triangle'] },
+    opacity: { value: { min: 0.1, max: 0.4 }, animation: { enable: true, speed: 0.3, sync: false } },
+    size: { value: { min: 0.5, max: 2.5 } },
     links: {
       enable: true,
       distance: 120,
       color: '#00ff99',
       opacity: 0.15,
       width: 0.8,
-      triangles: {
-        enable: true,
-        opacity: 0.02
-      }
+      triangles: { enable: true, opacity: 0.02 }
     },
-    move: {
-      enable: true,
-      speed: 0.5,
-      direction: 'none',
-      random: true,
-      straight: false,
-      outModes: 'bounce'
-    }
+    move: { enable: true, speed: 0.5, direction: 'none', random: true, straight: false, outModes: 'bounce' }
   },
   interactivity: {
     detectsOn: 'canvas',
     events: {
-      onHover: {
-        enable: true,
-        mode: ['grab', 'bubble']
-      },
-      onClick: {
-        enable: true,
-        mode: 'repulse'
-      }
+      onHover: { enable: true, mode: ['grab', 'bubble'] },
+      onClick: { enable: true, mode: 'repulse' }
     },
     modes: {
-      grab: {
-        distance: 200,
-        links: {
-          opacity: 0.4
-        }
-      },
-      bubble: {
-        distance: 200,
-        size: 6,
-        duration: 0.3,
-        opacity: 0.8
-      },
-      repulse: {
-        distance: 150,
-        duration: 0.4
-      }
+      grab: { distance: 200, links: { opacity: 0.4 } },
+      bubble: { distance: 200, size: 6, duration: 0.3, opacity: 0.8 },
+      repulse: { distance: 150, duration: 0.4 }
     }
   },
   detectRetina: true

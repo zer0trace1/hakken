@@ -41,8 +41,7 @@
             Ajustes
           </button>
           <div>
-            <button v-if="!userEmail" @click="login">Iniciar sesión</button>
-            <div v-else>
+            <div v-if="userEmail">
               <p>Logueado como: {{ userEmail }}</p>
               <button @click="logout">Cerrar sesión</button>
             </div>
@@ -451,7 +450,7 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import api from '@/services/api'
-import { signIn, signOut, getUser } from "@/auth/oidc";
+import { signOut, getUser } from "@/auth/oidc";
 
 /*
 **************************************************************************
@@ -547,10 +546,6 @@ onMounted(async () => {
     userEmail.value = null;
   }
 });
-
-async function login() {
-  await signIn("/dashboard");
-}
 
 async function logout() {
   await signOut();
