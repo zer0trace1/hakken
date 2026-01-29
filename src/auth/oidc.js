@@ -44,7 +44,16 @@ export async function handleAuthCallback() {
 }
 
 export async function signOut() {
-  return userManager.signoutRedirect();
+  // 1) limpia la sesión local (tokens en localStorage)
+  await userManager.removeUser();
+
+  // 2) redirige al logout real de Cognito Hosted UI
+  const cognitoDomain = "https://us-east-1mxg9fy7uh.auth.us-east-1.amazoncognito.com";
+  const logoutUri = encodeURIComponent(post_logout_redirect_uri); // https://hakken.cloud/
+
+  window.location.assign(
+    `${cognitoDomain}/logout?client_id=${client_id}&logout_uri=${logoutUri}`
+  );
 }
 
 export async function getUser() {
