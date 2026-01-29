@@ -15,8 +15,8 @@
       </p>
 
       <!-- SOLO un botón -->
-      <button class="enter-btn" @click="handleLogin">
-        <span class="btn-text">Iniciar sesión</span>
+      <button class="enter-btn" @click="handleEnter">
+        <span class="btn-text">{{ isLoggedIn ? 'Entrar' : 'Iniciar sesión' }}</span>
         <span class="btn-icon">→</span>
       </button>
     </div>
@@ -29,23 +29,30 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { getUser, signIn } from "@/auth/oidc"
+import { onMounted, onActivated } from 'vue'
+import { getUser, signIn } from '@/auth/oidc'
 
 const router = useRouter()
+const isLoggedIn = ref(false)
 
-const handleLogin = async () => {
+async function refreshAuth() {
   const user = await getUser()
-  if (user && !user.expired) {
+  isLoggedIn.value = !!user && !user.expired
+}
+
+const handleEnter = async () => {
+  if (isLoggedIn.value) {
     router.push('/dashboard')
-    return
+  } else {
+    await signIn('/dashboard')
   }
-  await signIn('/dashboard')
 }
 
 // Actualizar logo según tema guardado
-onMounted(() => {
+onMounted(async () => {
+  await refreshAuth()
   const savedTheme = localStorage.getItem('hakken_theme')
   if (savedTheme === 'light') {
     document.body.classList.add('light-theme')
@@ -54,6 +61,10 @@ onMounted(() => {
       logoElement.src = new URL('@/assets/hakken-logo-no-bg-negro.png', import.meta.url).href
     }
   }
+})
+
+onActivated(async () => {
+  await refreshAuth()
 })
 
 const particlesOptions = ref({

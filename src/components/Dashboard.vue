@@ -41,9 +41,13 @@
             Ajustes
           </button>
           <div>
-            <div v-if="userEmail">
-              <p>Logueado como: {{ userEmail }}</p>
-              <button @click="logout">Cerrar sesión</button>
+            <div v-if="userEmail" class="auth-box">
+              <p class="auth-text">
+                <span class="auth-label">Logueado como:</span>
+                <span class="auth-email">{{ userEmail }}</span>
+              </p>
+
+              <button class="auth-logout" @click="logout">Cerrar sesión</button>
             </div>
           </div>
         </nav>
@@ -2768,5 +2772,69 @@ body.light-theme .dork-query {
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
+}
+
+.auth-box{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  padding:8px 12px;
+  border-radius:10px;
+  background: rgba(0,0,0,.45);
+  border: 1px solid rgba(0,255,153,.25);
+  box-shadow: 0 0 18px rgba(0,255,153,.12), inset 0 0 16px rgba(0,255,153,.04);
+  backdrop-filter: blur(6px);
+}
+
+.auth-text{
+  margin:0;
+  display:flex;
+  align-items:baseline;
+  gap:8px;
+  line-height:1;
+}
+
+.auth-label{
+  color: rgba(255,255,255,.75);
+  font-weight:500;
+  letter-spacing:.5px;
+}
+
+.auth-email{
+  color:#00ff99;
+  font-weight:700;
+  letter-spacing:.6px;
+  text-shadow: 0 0 10px rgba(0,255,153,.35), 0 0 22px rgba(0,255,153,.18);
+  max-width: 280px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.auth-logout{
+  padding:8px 14px;
+  border-radius:8px;
+  border:1px solid rgba(0,255,153,.9);
+  background: rgba(0,0,0,.35);
+  color:#00ff99;
+  font-weight:700;
+  letter-spacing:.6px;
+  cursor:pointer;
+  transition: transform .15s ease, box-shadow .2s ease, background-color .2s ease, color .2s ease;
+  box-shadow: 0 0 14px rgba(0,255,153,.22), inset 0 0 18px rgba(0,255,153,.05);
+}
+
+.auth-logout:hover{
+  background: rgba(0,255,153,.95);
+  color:#000;
+  box-shadow: 0 0 22px rgba(0,255,153,.55), 0 0 48px rgba(0,255,153,.25);
+  transform: translateY(-1px);
+}
+
+.auth-logout:active{ transform: translateY(0); }
+
+.auth-logout:focus-visible{
+  outline:none;
+  box-shadow: 0 0 0 3px rgba(0,255,153,.25), 0 0 26px rgba(0,255,153,.35);
 }
 </style>
