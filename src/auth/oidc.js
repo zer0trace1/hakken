@@ -4,7 +4,7 @@ import { UserManager, WebStorageStateStore } from "oidc-client-ts";
 // === Cognito settings (una sola fuente de verdad) ===
 export const REGION = "us-east-1";
 export const USER_POOL_ID = "us-east-1_mXG9FY7uH";
-export const CLIENT_ID = "42nrq7l9p43gqihe8nanubg3";
+export const CLIENT_ID = "42nrq7rl9p43gqihe8nanubg3";
 
 export const COGNITO_DOMAIN =
   "https://us-east-1mxg9fy7uh.auth.us-east-1.amazoncognito.com";
