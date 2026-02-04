@@ -1,148 +1,155 @@
-import axios from 'axios'
+import axios from "axios";
+import { getAccessToken, userManager } from "@/auth/oidc"; // <-- añade esto
 
-const API_BASE_URL = 'https://api.hakken.cloud/api/v1';
+const API_BASE_URL = "https://api.hakken.cloud/api/v1";
 
 const apiClient = axios.create({
   baseURL: API_BASE_URL,
   timeout: 30000,
-  headers: { 'Content-Type': 'application/json' },
+  headers: { "Content-Type": "application/json" },
 });
 
+// ====== Interceptor: inyectar access_token en cada request ======
+apiClient.interceptors.request.use(
+  async (config) => {
+    const token = await getAccessToken();
+    if (token) {
+      config.headers = config.headers || {};
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
 
-// Interceptor para manejar errores globalmente
+// ====== Interceptor: manejo global + intento de refresh (opcional) ======
+let isRefreshing = false;
+let refreshPromise = null;
+
 apiClient.interceptors.response.use(
-  response => response,
-  error => {
-    console.error('API Error:', error)
-    return Promise.reject(error)
+  (response) => response,
+  async (error) => {
+    const status = error?.response?.status;
+    const originalRequest = error?.config;
+
+    // Si no hay config, o no es 401, o ya reintentamos -> log y fuera
+    if (!originalRequest || status !== 401 || originalRequest._retry) {
+      console.error("API Error:", error);
+      return Promise.reject(error);
+    }
+
+    // Marcamos reintento para evitar bucles
+    originalRequest._retry = true;
+
+    try {
+      // Intento de renovar tokens (solo si tienes silent renew configurado)
+      if (!isRefreshing) {
+        isRefreshing = true;
+        refreshPromise = userManager.signinSilent(); // requiere silent_redirect_uri + sesión cognito
+      }
+
+      await refreshPromise;
+
+      // Tras renovar, volvemos a poner token y repetimos
+      const newToken = await getAccessToken();
+      if (newToken) {
+        originalRequest.headers = originalRequest.headers || {};
+        originalRequest.headers.Authorization = `Bearer ${newToken}`;
+      }
+
+      return apiClient(originalRequest);
+    } catch (refreshErr) {
+      // Si no se puede renovar, devolvemos el 401 original
+      console.error("Auth refresh failed:", refreshErr);
+      return Promise.reject(error);
+    } finally {
+      isRefreshing = false;
+      refreshPromise = null;
+    }
   }
-)
+);
 
 // Exportar todas las funciones de búsqueda
 export default {
   // ==================== USERNAME ====================
-  
-  /**
-   * Busca un usuario en GitHub
-   * @param {string} username - Nombre de usuario a buscar
-   * @returns {Promise} Datos del usuario de GitHub
-   */
   async searchGitHubUser(username) {
     try {
-      const response = await apiClient.get(`/search/github/user/${username}`)
-      return response.data
+      const response = await apiClient.get(`/search/github/user/${username}`);
+      return response.data;
     } catch (error) {
-      throw error
+      throw error;
     }
   },
 
-  /**
-   * Busca un usuario en Reddit (cuando esté implementado)
-   * @param {string} username - Nombre de usuario a buscar
-   * @returns {Promise} Datos del usuario de Reddit
-   */
   async searchRedditUser(username) {
     try {
-      const response = await apiClient.get(`/search/reddit/user/${username}`)
-      return response.data
+      const response = await apiClient.get(`/search/reddit/user/${username}`);
+      return response.data;
     } catch (error) {
-      throw error
+      throw error;
     }
   },
 
   // ==================== IP ====================
-  
-  /**
-   * Busca información de geolocalización de una IP
-   * @param {string} ip - Dirección IP a buscar (ej: 8.8.8.8)
-   * @returns {Promise} Datos de geolocalización de la IP
-   */
   async searchIP(ip) {
     try {
-      const response = await apiClient.get(`/search/ip/${ip}`)
-      return response.data
+      const response = await apiClient.get(`/search/ip/${ip}`);
+      return response.data;
     } catch (error) {
-      throw error
+      throw error;
     }
   },
 
   // ==================== DOMINIO ====================
-  
-  /**
-   * Busca información DNS de un dominio
-   * @param {string} domain - Dominio a buscar (ej: google.com)
-   * @returns {Promise} Datos DNS del dominio
-   */
   async searchDomain(domain) {
     try {
-      const response = await apiClient.get(`/search/domain/${domain}`)
-      return response.data
+      const response = await apiClient.get(`/search/domain/${domain}`);
+      return response.data;
     } catch (error) {
-      throw error
+      throw error;
     }
   },
 
   // ==================== EMAIL (Para futuro) ====================
-  
-  /**
-   * Busca información de un email
-   * @param {string} email - Email a buscar
-   * @returns {Promise} Datos del email
-   */
   async searchEmail(email) {
     try {
-      const response = await apiClient.get(`/search/email/${email}`)
-      return response.data
+      const response = await apiClient.get(`/search/email/${email}`);
+      return response.data;
     } catch (error) {
-      throw error
+      throw error;
     }
   },
 
   // ==================== TELÉFONO (Para futuro) ====================
-  
-  /**
-   * Busca información de un teléfono
-   * @param {string} phone - Teléfono a buscar
-   * @returns {Promise} Datos del teléfono
-   */
   async searchPhone(phone) {
     try {
-      const response = await apiClient.get(`/search/phone/${phone}`)
-      return response.data
+      const response = await apiClient.get(`/search/phone/${phone}`);
+      return response.data;
     } catch (error) {
-      throw error
+      throw error;
     }
   },
 
   // ==================== UTILIDADES ====================
-  
-  /**
-   * Verifica el estado del backend
-   * @returns {Promise} Estado del servicio
-   */
   async healthCheck() {
     try {
-      const response = await apiClient.get('/health', {
-        baseURL: API_BASE_URL.replace('/api/v1', '')
-      })
-      return response.data
+      const response = await apiClient.get("/health", {
+        baseURL: API_BASE_URL.replace("/api/v1", ""),
+      });
+      return response.data;
     } catch (error) {
-      throw error
+      throw error;
     }
   },
 
-  /**
-   * Obtiene información general de la API
-   * @returns {Promise} Info de la API
-   */
   async getApiInfo() {
     try {
-      const response = await apiClient.get('/', {
-        baseURL: API_BASE_URL.replace('/api/v1', '')
-      })
-      return response.data
+      const response = await apiClient.get("/", {
+        baseURL: API_BASE_URL.replace("/api/v1", ""),
+      });
+      return response.data;
     } catch (error) {
-      throw error
+      throw error;
     }
-  }
-}
+  },
+};
