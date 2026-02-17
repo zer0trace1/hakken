@@ -128,8 +128,8 @@
             <select v-model="historyFilter" class="filter-select">
               <option value="all">Todas las búsquedas</option>
               <option value="username">Nombre de usuario</option>
-              <option value="username">Email</option>
-              <option value="username">Teléfono</option>
+              <option value="email">Email</option>
+              <option value="phone">Teléfono</option>
               <option value="ip">Dirección IP</option>
               <option value="domain">Dominio</option>
             </select>
@@ -140,6 +140,14 @@
               </span>
               Limpiar Historial
             </button>
+          </div>
+
+          <div v-if="historyLoading" class="empty-history">
+            <p>Cargando historial...</p>
+          </div>
+
+          <div v-else-if="historyError" class="empty-history">
+            <p>{{ historyError }}</p>
           </div>
 
           <!-- History List -->
@@ -534,22 +542,34 @@ const changeLogo = (theme) => {
 }
 
 onMounted(async () => {
-  // primero UI/localStorage
+  // UI/theme
   const savedTheme = localStorage.getItem('hakken_theme');
   if (savedTheme) theme.value = savedTheme;
   applyTheme(theme.value);
 
-  const savedHistory = localStorage.getItem('hakken_history');
-  if (savedHistory) searchHistory.value = JSON.parse(savedHistory);
-
-  // luego user
+  // user
   try {
     const user = await getUser();
     userEmail.value = user?.profile?.email || null;
   } catch {
     userEmail.value = null;
   }
+
+  // si quieres precargar historial al entrar:
+  // await fetchHistory()
 });
+
+watch(currentView, async (newView) => {
+  if (newView === 'history') {
+    await fetchHistory()
+  }
+})
+
+watch(historyFilter, async () => {
+  if (currentView.value === 'history') {
+    await fetchHistory()
+  }
+})
 
 async function logout() {
   await signOut();
@@ -591,58 +611,79 @@ watch(animations, (newValue) => {
 const historyFilter = ref('all')
 const searchHistory = ref([])
 
-// Computed para filtrar historial
+const historyLoading = ref(false)
+const historyError = ref(null)
+
+const HISTORY_LIMIT = 50
+const HISTORY_OFFSET = 0 // por ahora fijo, luego si quieres paginación
+
 const filteredHistory = computed(() => {
-  if (historyFilter.value === 'all') {
-    return searchHistory.value
-  }
+  // Ya viene filtrado del backend si llamamos con type,
+  // pero lo dejamos por si en el futuro quieres filtrar en cliente.
+  if (historyFilter.value === 'all') return searchHistory.value
   return searchHistory.value.filter(item => item.type === historyFilter.value)
 })
 
-// Funciones del historial
-const addToHistory = (query, type, results) => {
-  const historyItem = {
-    id: Date.now(),
-    query: query,
-    type: type,
-    timestamp: new Date().toISOString(),
-    results: results
+const fetchHistory = async () => {
+  historyLoading.value = true
+  historyError.value = null
+
+  try {
+    const typeParam = historyFilter.value === 'all' ? null : historyFilter.value
+    const data = await api.getHistory({ type: typeParam, limit: HISTORY_LIMIT, offset: HISTORY_OFFSET })
+    searchHistory.value = data?.items || []
+  } catch (err) {
+    console.error('Error cargando historial:', err)
+    historyError.value = err.response?.data?.detail || 'Error al cargar el historial'
+    searchHistory.value = []
+  } finally {
+    historyLoading.value = false
   }
-  
-  // Añadir al inicio del array
-  searchHistory.value.unshift(historyItem)
-  
-  // Limitar a 50 búsquedas máximo
-  if (searchHistory.value.length > 50) {
-    searchHistory.value = searchHistory.value.slice(0, 50)
-  }
-  
-  // Guardar en localStorage
-  localStorage.setItem('hakken_history', JSON.stringify(searchHistory.value))
 }
 
-const viewHistoryItem = (item) => {
+// Ahora el historial NO guarda resultados en BD (solo metadata),
+// así que al clicar/repetir, relanzamos la búsqueda
+const viewHistoryItem = async (item) => {
   selectedType.value = item.type
   searchQuery.value = item.query
-  searchResults.value = item.results
+  searchResults.value = null
+  searchError.value = null
+  await performSearch()
 }
 
 const repeatSearch = async (item) => {
   selectedType.value = item.type
   searchQuery.value = item.query
   searchResults.value = null
+  searchError.value = null
   await performSearch()
 }
 
-const deleteHistoryItem = (id) => {
-  searchHistory.value = searchHistory.value.filter(item => item.id !== id)
-  localStorage.setItem('hakken_history', JSON.stringify(searchHistory.value))
+const deleteHistoryItem = async (rid) => {
+  try {
+    await api.deleteHistoryItem(rid)
+    await fetchHistory()
+  } catch (err) {
+    console.error('Error borrando item:', err)
+    alert(err.response?.data?.detail || 'No se pudo borrar el item')
+  }
 }
 
-const clearHistory = () => {
-  if (confirm('¿Estás seguro de que quieres eliminar todo el historial?')) {
-    searchHistory.value = []
-    localStorage.removeItem('hakken_history')
+const clearHistory = async () => {
+  const confirmMsg =
+    historyFilter.value === 'all'
+      ? '¿Estás seguro de que quieres eliminar TODO el historial?'
+      : `¿Eliminar el historial de tipo "${historyFilter.value}"?`
+
+  if (!confirm(confirmMsg)) return
+
+  try {
+    const typeParam = historyFilter.value === 'all' ? null : historyFilter.value
+    await api.clearHistory(typeParam)
+    await fetchHistory()
+  } catch (err) {
+    console.error('Error limpiando historial:', err)
+    alert(err.response?.data?.detail || 'No se pudo limpiar el historial')
   }
 }
 
@@ -744,8 +785,10 @@ const performSearch = async () => {
         searchResults.value = generateMockResults(selectedType.value, searchQuery.value)
     }
 
-    if (searchResults.value) {
-      addToHistory(searchQuery.value, selectedType.value, searchResults.value)
+    if (currentView.value === 'history') {
+      // el insert es background en backend, espera un pelín
+      await new Promise(r => setTimeout(r, 250))
+      await fetchHistory()
     }
     
   } catch (error) {
@@ -2784,6 +2827,7 @@ body.light-theme .dork-query {
   border: 1px solid rgba(0,255,153,.25);
   box-shadow: 0 0 18px rgba(0,255,153,.12), inset 0 0 16px rgba(0,255,153,.04);
   backdrop-filter: blur(6px);
+  height: 63px;
 }
 
 .auth-text{

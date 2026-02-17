@@ -152,4 +152,38 @@ export default {
       throw error;
     }
   },
+
+  // ==================== HISTORY ====================
+  async getHistory({ type = null, limit = 50, offset = 0 } = {}) {
+    try {
+      const params = { limit, offset };
+      if (type) params.type = type;
+      const response = await apiClient.get(`/history`, { params });
+      return response.data; // { items: [...] }
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  async clearHistory(type = null) {
+    try {
+      const params = {};
+      if (type) params.type = type;
+      const response = await apiClient.delete(`/history`, { params });
+      return response.data; // { deleted: n }
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  async deleteHistoryItem(rid) {
+    try {
+      // rid tipo "query_log:xxxx" -> encode para URL
+      const safeRid = encodeURIComponent(rid);
+      const response = await apiClient.delete(`/history/${safeRid}`);
+      return response.data; // { ok: true }
+    } catch (error) {
+      throw error;
+    }
+  },
 };
