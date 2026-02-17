@@ -559,42 +559,9 @@ onMounted(async () => {
   // await fetchHistory()
 });
 
-watch(currentView, async (newView) => {
-  if (newView === 'history') {
-    await fetchHistory()
-  }
-})
-
-watch(historyFilter, async () => {
-  if (currentView.value === 'history') {
-    await fetchHistory()
-  }
-})
-
 async function logout() {
   await signOut();
 }
-
-// Watch para cambiar tema en tiempo real
-watch(theme, (newTheme) => {
-  applyTheme(newTheme)
-  localStorage.setItem('hakken_theme', newTheme)
-})
-
-/*watch(language, (newLang) => {
-  localStorage.setItem('hakken_language', newLang)
-  // Aquí aplicarías el cambio de idioma cuando lo implementes
-})
-
-watch(animations, (newValue) => {
-  localStorage.setItem('hakken_animations', newValue)
-  // Aplicar o desactivar animaciones
-  if (newValue) {
-    document.body.classList.add('animations-enabled')
-  } else {
-    document.body.classList.remove('animations-enabled')
-  }
-})*/
 
 /*
 **************************************************************************
@@ -608,26 +575,23 @@ watch(animations, (newValue) => {
 **************************************************************************
 */
 
+// --- HISTORY (pon esto ANTES de cualquier watch que lo use) ---
 const historyFilter = ref('all')
 const searchHistory = ref([])
-
 const historyLoading = ref(false)
 const historyError = ref(null)
 
 const HISTORY_LIMIT = 50
-const HISTORY_OFFSET = 0 // por ahora fijo, luego si quieres paginación
+const HISTORY_OFFSET = 0
 
 const filteredHistory = computed(() => {
-  // Ya viene filtrado del backend si llamamos con type,
-  // pero lo dejamos por si en el futuro quieres filtrar en cliente.
   if (historyFilter.value === 'all') return searchHistory.value
   return searchHistory.value.filter(item => item.type === historyFilter.value)
 })
 
-const fetchHistory = async () => {
+async function fetchHistory() {
   historyLoading.value = true
   historyError.value = null
-
   try {
     const typeParam = historyFilter.value === 'all' ? null : historyFilter.value
     const data = await api.getHistory({ type: typeParam, limit: HISTORY_LIMIT, offset: HISTORY_OFFSET })
@@ -641,50 +605,15 @@ const fetchHistory = async () => {
   }
 }
 
-// Ahora el historial NO guarda resultados en BD (solo metadata),
-// así que al clicar/repetir, relanzamos la búsqueda
-const viewHistoryItem = async (item) => {
-  selectedType.value = item.type
-  searchQuery.value = item.query
-  searchResults.value = null
-  searchError.value = null
-  await performSearch()
-}
-
-const repeatSearch = async (item) => {
-  selectedType.value = item.type
-  searchQuery.value = item.query
-  searchResults.value = null
-  searchError.value = null
-  await performSearch()
-}
-
 const deleteHistoryItem = async (rid) => {
-  try {
-    await api.deleteHistoryItem(rid)
-    await fetchHistory()
-  } catch (err) {
-    console.error('Error borrando item:', err)
-    alert(err.response?.data?.detail || 'No se pudo borrar el item')
-  }
+  await api.deleteHistoryItem(rid)
+  await fetchHistory()
 }
 
 const clearHistory = async () => {
-  const confirmMsg =
-    historyFilter.value === 'all'
-      ? '¿Estás seguro de que quieres eliminar TODO el historial?'
-      : `¿Eliminar el historial de tipo "${historyFilter.value}"?`
-
-  if (!confirm(confirmMsg)) return
-
-  try {
-    const typeParam = historyFilter.value === 'all' ? null : historyFilter.value
-    await api.clearHistory(typeParam)
-    await fetchHistory()
-  } catch (err) {
-    console.error('Error limpiando historial:', err)
-    alert(err.response?.data?.detail || 'No se pudo limpiar el historial')
-  }
+  const typeParam = historyFilter.value === 'all' ? null : historyFilter.value
+  await api.clearHistory(typeParam)
+  await fetchHistory()
 }
 
 /*
@@ -693,6 +622,34 @@ const clearHistory = async () => {
 **************************************************************************
 */
 
+/*
+**************************************************************************
+****************************** WATCHERS ***********************************
+**************************************************************************
+*/
+
+watch(theme, (newTheme) => {
+  applyTheme(newTheme)
+  localStorage.setItem('hakken_theme', newTheme)
+})
+
+watch(() => currentView.value, async (newView) => {
+  if (newView === 'history') {
+    await fetchHistory()
+  }
+})
+
+watch(() => historyFilter.value, async () => {
+  if (currentView.value === 'history') {
+    await fetchHistory()
+  }
+})
+
+/*
+**************************************************************************
+****************************** WATCHERS ***********************************
+**************************************************************************
+*/
 
 /*
 **************************************************************************
