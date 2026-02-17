@@ -699,7 +699,10 @@ const formatDate = (timestamp) => {
   })
 }
 
-const performSearch = async () => {
+const performSearch = async (opts = {}) => {
+  
+  const { skipUiHistory = false } = opts;
+
   if (!searchQuery.value.trim()) return
   
   isSearching.value = true
