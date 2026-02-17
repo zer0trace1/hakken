@@ -168,10 +168,10 @@
                 </div>
               </div>
               <div class="history-actions">
-                <button class="icon-btn" @click="repeatSearch(item)" title="Repetir búsqueda">
+                <button class="icon-btn" @click.stop="repeatSearch(item)" title="Repetir búsqueda">
                   <img src="@/assets/hakken-logo-repeat.png" alt="hakken-logo-papelera" class="card-icon-history-section">
                 </button>
-                <button class="icon-btn delete-btn" @click="deleteHistoryItem(item.id)" title="Eliminar">
+                <button class="icon-btn delete-btn" @click.stop="deleteHistoryItem(item.id)" title="Eliminar">
                   ✕
                 </button>
               </div>
@@ -233,29 +233,6 @@
                 </button>
               </div>
             </div>
-
-            <!-- Idioma -->
-            <!--<div class="setting-item">
-              <div class="setting-header">
-                <label class="setting-label">Idioma</label>
-                <span class="setting-description">Selecciona el idioma de la interfaz</span>
-              </div>
-              <select v-model="language" class="setting-select">
-                <option value="es">Español</option>
-                <option value="en">English</option>
-              </select>
-            </div>
-
-            <div class="setting-item">
-              <div class="setting-header">
-                <label class="setting-label">Animaciones</label>
-                <span class="setting-description">Activa o desactiva las animaciones visuales</span>
-              </div>
-              <label class="toggle-switch">
-                <input type="checkbox" v-model="animations" />
-                <span class="toggle-slider"></span>
-              </label>
-            </div>-->
           </div>
         </div>
       </section>
@@ -605,6 +582,21 @@ async function fetchHistory() {
   }
 }
 
+const viewHistoryItem = async (item) => {
+  selectedType.value = item.type;
+  searchQuery.value = item.query;
+  searchResults.value = null;
+  searchError.value = null;
+
+  // abre el modal (selectedType ya lo abre) y re-lanza búsqueda
+  await performSearch({ skipUiHistory: true });
+};
+
+const repeatSearch = async (item) => {
+  // en la práctica igual que viewHistoryItem
+  await viewHistoryItem(item);
+};
+
 const deleteHistoryItem = async (rid) => {
   await api.deleteHistoryItem(rid)
   await fetchHistory()
@@ -742,7 +734,7 @@ const performSearch = async () => {
         searchResults.value = generateMockResults(selectedType.value, searchQuery.value)
     }
 
-    if (currentView.value === 'history') {
+    if (!skipUiHistory && currentView.value === 'history') {
       // el insert es background en backend, espera un pelín
       await new Promise(r => setTimeout(r, 250))
       await fetchHistory()
