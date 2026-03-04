@@ -1915,10 +1915,13 @@ const getCategoryPlaceholder = (category) => {
   border-radius: 8px;
 }
 
+/* Evita que el tooltip se recorte */
 .username-results,
 .username-result,
-.results-container {
-  overflow: visible;
+.results-container,
+.results-box,
+.modal-content {
+  overflow: visible !important;
 }
 
 .username-indicator {
