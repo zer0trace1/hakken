@@ -1916,7 +1916,8 @@ const getCategoryPlaceholder = (category) => {
 }
 
 .username-results,
-.username-result {
+.username-result,
+.results-container {
   overflow: visible;
 }
 
