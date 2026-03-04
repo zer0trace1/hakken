@@ -418,7 +418,13 @@
                 <template v-if="selectedType === 'username'">
                   <div v-if="searchResults.results && searchResults.results.length" class="username-results">
                     <div v-for="item in searchResults.results" :key="item.platform + ':' + item.url" class="username-result">
-                      <span class="username-indicator">{{ item.indicator }}</span>
+                      <span
+                        class="username-indicator tooltip"
+                        :data-tooltip="getIndicatorTooltip(item)"
+                        aria-label="Indicador de confianza"
+                      >
+                        {{ item.indicator }}
+                      </span>
                       <span class="username-platform">{{ item.platform }}:</span>
                       <a class="username-link" :href="item.url" target="_blank" rel="noopener noreferrer">{{ item.url }}</a>
                     </div>
@@ -881,6 +887,18 @@ const formatDomainResults = (domainData) => {
       }))
     }
   }
+}
+
+const getIndicatorTooltip = (item) => {
+  // Prioriza status si lo tienes, y si no, cae al indicador
+  const status = item?.status
+  const ind = item?.indicator
+
+  if (status === 'found' || ind === '✅') return 'Confirmado: evidencia sólida de que el username existe en esta plataforma.'
+  if (ind === '⚠️') return 'Posible coincidencia: la URL responde, pero la evidencia es débil (podría ser genérica).'
+  if (ind === '❓') return 'No concluyente: bloqueo/limitación (login wall, Cloudflare, 403/429 o timeout).'
+  if (status === 'not_found' || ind === '❌') return 'No encontrado: evidencias claras de que el username no existe aquí.'
+  return 'Resultado sin clasificar.'
 }
 
 /*
@@ -1915,6 +1933,62 @@ const getCategoryPlaceholder = (category) => {
 
 .username-link:hover {
   color: #00ff99;
+}
+
+/* Tooltip base */
+.tooltip {
+  position: relative;
+  cursor: help;
+}
+
+/* Caja del tooltip */
+.tooltip::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  left: 28px;
+  top: 50%;
+  transform: translateY(-50%);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.15s ease, transform 0.15s ease;
+  z-index: 9999;
+
+  background: rgba(0, 0, 0, 0.92);
+  border: 1px solid rgba(0, 255, 153, 0.7);
+  box-shadow: 0 0 14px rgba(0, 255, 153, 0.18);
+  color: #eafff6;
+
+  padding: 8px 10px;
+  border-radius: 10px;
+  font-size: 12px;
+  line-height: 1.2;
+  white-space: nowrap;
+  max-width: 320px;
+}
+
+/* Flechita */
+.tooltip::before {
+  content: "";
+  position: absolute;
+  left: 22px;
+  top: 50%;
+  transform: translateY(-50%);
+  opacity: 0;
+  transition: opacity 0.15s ease;
+  z-index: 9999;
+
+  border-width: 6px;
+  border-style: solid;
+  border-color: transparent rgba(0, 255, 153, 0.35) transparent transparent;
+}
+
+/* Hover */
+.tooltip:hover::after {
+  opacity: 1;
+  transform: translate(6px, -50%);
+}
+.tooltip:hover::before {
+  opacity: 1;
 }
 
 .empty-results {
