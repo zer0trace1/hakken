@@ -1943,16 +1943,18 @@ const getCategoryPlaceholder = (category) => {
 /* Tooltip base */
 .tooltip {
   position: relative;
+  display: inline-flex;
+  align-items: center;
   cursor: help;
 }
 
-/* Caja del tooltip */
+/* Caja del tooltip (encima del icono, centrada) */
 .tooltip::after {
   content: attr(data-tooltip);
   position: absolute;
-  left: 28px;
-  top: 50%;
-  transform: translateY(-50%);
+  bottom: calc(100% + 10px);
+  left: 50%;
+  transform: translateX(-50%);
   opacity: 0;
   pointer-events: none;
   transition: opacity 0.15s ease, transform 0.15s ease;
@@ -1966,8 +1968,11 @@ const getCategoryPlaceholder = (category) => {
   padding: 8px 10px;
   border-radius: 10px;
   font-size: 12px;
-  line-height: 1.2;
-  white-space: nowrap;
+  line-height: 1.25;
+
+  /* ✅ para que NO sea una línea infinita */
+  white-space: normal;
+  width: max-content;
   max-width: 320px;
 }
 
@@ -1975,22 +1980,22 @@ const getCategoryPlaceholder = (category) => {
 .tooltip::before {
   content: "";
   position: absolute;
-  left: 22px;
-  top: 50%;
-  transform: translateY(-50%);
+  bottom: calc(100% + 4px);
+  left: 50%;
+  transform: translateX(-50%);
   opacity: 0;
   transition: opacity 0.15s ease;
   z-index: 9999;
 
   border-width: 6px;
   border-style: solid;
-  border-color: transparent rgba(0, 255, 153, 0.35) transparent transparent;
+  border-color: rgba(0, 255, 153, 0.35) transparent transparent transparent;
 }
 
 /* Hover */
 .tooltip:hover::after {
   opacity: 1;
-  transform: translate(6px, -50%);
+  transform: translateX(-50%) translateY(-2px);
 }
 .tooltip:hover::before {
   opacity: 1;
