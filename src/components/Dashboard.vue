@@ -415,7 +415,20 @@
             <div v-if="searchResults" class="results-area">
               <h3 class="results-title">Resultados de búsqueda</h3>
               <div class="results-content">
-                <pre>{{ searchResults }}</pre>
+                <template v-if="selectedType === 'username'">
+                  <div v-if="searchResults.results && searchResults.results.length" class="username-results">
+                    <div v-for="item in searchResults.results" :key="item.platform + ':' + item.url" class="username-result">
+                      <span class="username-indicator">{{ item.indicator }}</span>
+                      <span class="username-platform">{{ item.platform }}:</span>
+                      <a class="username-link" :href="item.url" target="_blank" rel="noopener noreferrer">{{ item.url }}</a>
+                    </div>
+                  </div>
+                  <div v-else class="empty-results">No se encontraron perfiles públicos para este username.</div>
+                </template>
+
+                <template v-else>
+                  <pre>{{ searchResults }}</pre>
+                </template>
               </div>
             </div>
           </div>
@@ -713,8 +726,8 @@ const performSearch = async (opts = {}) => {
     
     switch(selectedType.value) {
       case 'username':
-        results = await api.searchGitHubUser(searchQuery.value)
-        searchResults.value = formatGitHubResults(results)
+        results = await api.searchUsername(searchQuery.value)
+        searchResults.value = formatUsernameResults(results)
         break
         
       case 'ip':
@@ -794,6 +807,39 @@ const formatGitHubResults = (githubData) => {
         }
       }
     ]
+  }
+}
+
+// Función para formatear resultados de Username (multi-fuente)
+const formatUsernameResults = (data) => {
+  const rawList = data?.results || data?.socialMedia || []
+
+  const normalized = rawList
+    .map((r) => {
+      const platform = r.platform || r.name || 'Desconocido'
+      const url = r.url || r.profile_url || ''
+      const status = r.status || (r.found === true ? 'found' : (r.found === false ? 'not_found' : 'unknown'))
+      const confidence = typeof r.confidence === 'number' ? r.confidence : (status === 'found' ? 0.95 : status === 'unknown' ? 0.55 : 0.1)
+      const indicator = r.indicator || (status === 'found' ? '✅' : status === 'unknown' ? '⚠️' : status === 'not_found' ? '❌' : '❓')
+
+      return { platform, url, status, confidence, indicator }
+    })
+    // Por defecto ocultamos not_found para no llenar la UI
+    .filter((r) => r.status !== 'not_found' && r.url)
+
+  const rank = (s) => (s === 'found' ? 0 : s === 'unknown' ? 1 : 2)
+  normalized.sort((a, b) => {
+    const ra = rank(a.status)
+    const rb = rank(b.status)
+    if (ra !== rb) return ra - rb
+    return (b.confidence || 0) - (a.confidence || 0)
+  })
+
+  return {
+    query: data?.query || searchQuery.value,
+    type: 'username',
+    timestamp: data?.timestamp || new Date().toISOString(),
+    results: normalized
   }
 }
 
@@ -1831,6 +1877,52 @@ const getCategoryPlaceholder = (category) => {
 .results-content pre {
   white-space: pre-wrap;
   word-wrap: break-word;
+}
+
+/* Username results (listado) */
+.username-results {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.username-result {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  align-items: center;
+  padding: 0.6rem 0.8rem;
+  background: rgba(0, 255, 153, 0.04);
+  border: 1px solid rgba(0, 255, 153, 0.15);
+  border-radius: 8px;
+}
+
+.username-indicator {
+  font-size: 1.1rem;
+}
+
+.username-platform {
+  color: #00ff99;
+  font-family: "Rajdhani", sans-serif;
+  font-weight: 700;
+}
+
+.username-link {
+  color: #b0b0b0;
+  text-decoration: underline;
+  overflow-wrap: anywhere;
+}
+
+.username-link:hover {
+  color: #00ff99;
+}
+
+.empty-results {
+  padding: 0.75rem;
+  border: 1px dashed rgba(0, 255, 153, 0.25);
+  border-radius: 8px;
+  color: #b0b0b0;
+  font-family: "Rajdhani", sans-serif;
 }
 
 /* Background Effects */

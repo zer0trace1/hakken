@@ -72,6 +72,16 @@ apiClient.interceptors.response.use(
 // Exportar todas las funciones de búsqueda
 export default {
   // ==================== USERNAME ====================
+  async searchUsername(username) {
+    try {
+      const safe = encodeURIComponent(username);
+      const response = await apiClient.get(`/search/username/${safe}`);
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  },
+
   async searchGitHubUser(username) {
     try {
       const response = await apiClient.get(`/search/github/user/${username}`);
