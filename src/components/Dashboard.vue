@@ -1915,6 +1915,11 @@ const getCategoryPlaceholder = (category) => {
   border-radius: 8px;
 }
 
+.username-results,
+.username-result {
+  overflow: visible;
+}
+
 .username-indicator {
   font-size: 1.1rem;
 }
