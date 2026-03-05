@@ -434,7 +434,7 @@
                       <span class="legend-text">No encontrado</span>
                     </div>
                   </div>
-                  <div v-if="searchResults.results && searchResults.results.length" class="username-results" :class="`status-${item.status}`">
+                  <div v-if="searchResults.results && searchResults.results.length" class="username-results" :class="`status-${(item && item.status) ? item.status : 'unknown'}`">
                     <div v-for="item in searchResults.results" :key="item.platform + ':' + item.url" class="username-result">
                       <span
                         class="username-indicator"
