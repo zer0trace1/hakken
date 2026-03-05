@@ -416,6 +416,20 @@
               <h3 class="results-title">Resultados de búsqueda</h3>
               <div class="results-content">
                 <template v-if="selectedType === 'username'">
+                  <div class="username-legend">
+                    <div class="legend-item">
+                      <span class="legend-icon">✅</span>
+                      <span class="legend-text">Confirmado</span>
+                    </div>
+                    <div class="legend-item">
+                      <span class="legend-icon">⚠️</span>
+                      <span class="legend-text">Posible coincidencia</span>
+                    </div>
+                    <div class="legend-item">
+                      <span class="legend-icon">❓</span>
+                      <span class="legend-text">No concluyente (abre el enlace)</span>
+                    </div>
+                  </div>
                   <div v-if="searchResults.results && searchResults.results.length" class="username-results">
                     <div v-for="item in searchResults.results" :key="item.platform + ':' + item.url" class="username-result">
                       <span
@@ -896,7 +910,7 @@ const getIndicatorTooltip = (item) => {
 
   if (status === 'found' || ind === '✅') return 'Confirmado: evidencia sólida de que el username existe en esta plataforma.'
   if (ind === '⚠️') return 'Posible coincidencia: la URL responde, pero la evidencia es débil (podría ser genérica).'
-  if (ind === '❓') return 'No concluyente: bloqueo/limitación (login wall, Cloudflare, 403/429 o timeout).'
+  if (ind === '❓') return 'No concluyente: la plataforma limita el acceso desde el servidor (bloqueo/anti-bot/login). Abre el enlace para comprobarlo desde tu navegador.'
   if (status === 'not_found' || ind === '❌') return 'No encontrado: evidencias claras de que el username no existe aquí.'
   return 'Resultado sin clasificar.'
 }
@@ -2003,6 +2017,39 @@ const getCategoryPlaceholder = (category) => {
 }
 .tooltip:hover::before {
   opacity: 1;
+}
+
+.username-legend {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  align-items: center;
+  margin: 10px 0 14px 0;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(0, 255, 153, 0.25);
+  box-shadow: 0 0 12px rgba(0, 255, 153, 0.10);
+}
+
+.legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(0, 255, 153, 0.18);
+}
+
+.legend-icon {
+  font-size: 14px;
+  line-height: 1;
+}
+
+.legend-text {
+  font-size: 12px;
+  opacity: 0.95;
 }
 
 .empty-results {
