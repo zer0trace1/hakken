@@ -433,8 +433,12 @@
                   <div v-if="searchResults.results && searchResults.results.length" class="username-results">
                     <div v-for="item in searchResults.results" :key="item.platform + ':' + item.url" class="username-result">
                       <span
-                        class="username-indicator tooltip"
-                        :data-tooltip="getIndicatorTooltip(item)"
+                        class="username-indicator"
+                        tabindex="0"
+                        @mouseenter="(e) => showTooltip(e, item)"
+                        @mouseleave="hideTooltip"
+                        @focus="(e) => showTooltip(e, item)"
+                        @blur="hideTooltip"
                         aria-label="Indicador de confianza"
                       >
                         {{ item.indicator }}
@@ -444,6 +448,15 @@
                     </div>
                   </div>
                   <div v-else class="empty-results">No se encontraron perfiles públicos para este username.</div>
+
+                  <!-- Floating tooltip (fixed) -->
+                  <div
+                    v-if="tooltip.show"
+                    class="floating-tooltip"
+                    :style="{ top: tooltip.y + 'px', left: tooltip.x + 'px' }"
+                  >
+                    {{ tooltip.text }}
+                  </div>
                 </template>
 
                 <template v-else>
@@ -469,7 +482,7 @@
 ****************************** GLOBAL IMPORTS ****************************
 **************************************************************************
 */
-import { ref } from 'vue'
+import { ref, reactive, onMounted, onBeforeUnmount } from 'vue'
 import { useRouter } from 'vue-router'
 import api from '@/services/api'
 import { signOut, getUser } from "@/auth/oidc";
@@ -496,7 +509,6 @@ const userEmail = ref(null);
 **************************************************************************
 */
 
-import { onMounted } from 'vue'
 import { computed } from "vue";
 import { watch } from 'vue'
 
@@ -567,7 +579,17 @@ onMounted(async () => {
 
   // si quieres precargar historial al entrar:
   // await fetchHistory()
+
+
+  // Tooltip: hide on scroll/resize to avoid stale position
+  window.addEventListener('scroll', _hideTooltipOnWindowEvent, true)
+  window.addEventListener('resize', _hideTooltipOnWindowEvent)
 });
+
+onBeforeUnmount(() => {
+  window.removeEventListener('scroll', _hideTooltipOnWindowEvent, true)
+  window.removeEventListener('resize', _hideTooltipOnWindowEvent)
+})
 
 async function logout() {
   await signOut();
@@ -914,6 +936,46 @@ const getIndicatorTooltip = (item) => {
   if (status === 'not_found' || ind === '❌') return 'No encontrado: evidencias claras de que el username no existe aquí.'
   return 'Resultado sin clasificar.'
 }
+
+// Floating tooltip state (avoids overflow clipping by using position: fixed)
+const tooltip = reactive({ show: false, x: 0, y: 0, text: '' })
+
+const showTooltip = (evt, item) => {
+  tooltip.text = getIndicatorTooltip(item)
+
+  const rect = evt?.currentTarget?.getBoundingClientRect?.()
+  if (!rect) {
+    tooltip.show = false
+    return
+  }
+
+  const pad = 12
+  const maxW = 320
+
+  // default: to the right of the indicator
+  let x = rect.right + pad
+  let y = rect.top - 6
+
+  // clamp horizontally
+  if (x + maxW + 12 > window.innerWidth) {
+    x = rect.left - pad - maxW
+  }
+  x = Math.max(12, Math.min(x, window.innerWidth - maxW - 12))
+
+  // clamp vertically
+  if (y < 12) y = rect.bottom + pad
+  y = Math.max(12, Math.min(y, window.innerHeight - 80))
+
+  tooltip.x = x
+  tooltip.y = y
+  tooltip.show = true
+}
+
+const hideTooltip = () => {
+  tooltip.show = false
+}
+
+const _hideTooltipOnWindowEvent = () => hideTooltip()
 
 /*
 **************************************************************************
@@ -1701,22 +1763,6 @@ const getCategoryPlaceholder = (category) => {
   }
 }
 
-/*.modal-content {
-  background: rgba(15, 15, 15, 0.95);
-  border: 2px solid #00ff99;
-  border-radius: 12px;
-  padding: 2.5rem;
-  max-width: 800px;
-  width: 100%;
-  max-height: 90vh;
-  overflow-y: auto;
-  position: relative;
-  box-shadow: 
-    0 0 40px rgba(0, 255, 153, 0.4),
-    inset 0 0 30px rgba(0, 255, 153, 0.05);
-  animation: slideUp 0.3s ease-out;
-}*/
-
 .modal-content {
   background: var(--bg-secondary);
   border: 2px solid #00ff99;
@@ -1725,8 +1771,10 @@ const getCategoryPlaceholder = (category) => {
   max-width: 1000px;
   width: 100%;
   max-height: 85vh;
-  overflow-y: auto;
+  overflow: hidden;
   position: relative;
+  display: flex;
+  flex-direction: column;
   box-shadow: 
     0 0 40px rgba(0, 255, 153, 0.4),
     inset 0 0 30px rgba(0, 255, 153, 0.05);
@@ -1772,6 +1820,13 @@ const getCategoryPlaceholder = (category) => {
 
 .modal-header {
   margin-bottom: 2rem;
+}
+
+.modal-body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
 }
 
 .modal-title {
@@ -1891,6 +1946,10 @@ const getCategoryPlaceholder = (category) => {
   background: rgba(0, 0, 0, 0.5);
   border: 1px solid rgba(0, 255, 153, 0.2);
   border-radius: 8px;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
 }
 
 .results-title {
@@ -1904,11 +1963,16 @@ const getCategoryPlaceholder = (category) => {
   color: #b0b0b0;
   font-family: 'Courier New', monospace;
   font-size: 0.95rem;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
 }
 
 .results-content pre {
   white-space: pre-wrap;
   word-wrap: break-word;
+  max-height: 100%;
+  overflow-y: auto;
 }
 
 /* Username results (listado) */
@@ -1916,6 +1980,11 @@ const getCategoryPlaceholder = (category) => {
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-right: 6px;
 }
 
 .username-result {
@@ -1929,14 +1998,6 @@ const getCategoryPlaceholder = (category) => {
   border-radius: 8px;
 }
 
-/* Evita que el tooltip se recorte */
-.username-results,
-.username-result,
-.results-container,
-.results-box,
-.modal-content {
-  overflow: visible !important;
-}
 
 .username-indicator {
   font-size: 1.1rem;
@@ -1958,66 +2019,22 @@ const getCategoryPlaceholder = (category) => {
   color: #00ff99;
 }
 
-/* Tooltip base */
-.tooltip {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-  cursor: help;
-}
-
-/* Caja del tooltip (encima del icono, centrada) */
-.tooltip::after {
-  content: attr(data-tooltip);
-  position: absolute;
-  bottom: calc(100% + 10px);
-  left: 50%;
-  transform: translateX(-50%);
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.15s ease, transform 0.15s ease;
-  z-index: 9999;
-
+/* Floating tooltip (fixed, avoids overflow clipping) */
+.floating-tooltip {
+  position: fixed;
+  z-index: 999999;
+  max-width: 320px;
   background: rgba(0, 0, 0, 0.92);
   border: 1px solid rgba(0, 255, 153, 0.7);
   box-shadow: 0 0 14px rgba(0, 255, 153, 0.18);
   color: #eafff6;
-
   padding: 8px 10px;
   border-radius: 10px;
   font-size: 12px;
   line-height: 1.25;
-
-  /* ✅ para que NO sea una línea infinita */
-  white-space: normal;
-  width: max-content;
-  max-width: 320px;
+  pointer-events: none;
 }
 
-/* Flechita */
-.tooltip::before {
-  content: "";
-  position: absolute;
-  bottom: calc(100% + 4px);
-  left: 50%;
-  transform: translateX(-50%);
-  opacity: 0;
-  transition: opacity 0.15s ease;
-  z-index: 9999;
-
-  border-width: 6px;
-  border-style: solid;
-  border-color: rgba(0, 255, 153, 0.35) transparent transparent transparent;
-}
-
-/* Hover */
-.tooltip:hover::after {
-  opacity: 1;
-  transform: translateX(-50%) translateY(-2px);
-}
-.tooltip:hover::before {
-  opacity: 1;
-}
 
 .username-legend {
   display: flex;
