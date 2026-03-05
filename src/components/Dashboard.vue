@@ -429,8 +429,12 @@
                       <span class="legend-icon">❓</span>
                       <span class="legend-text">No concluyente (abre el enlace)</span>
                     </div>
+                    <div class="legend-item">
+                      <span class="legend-icon">❌</span>
+                      <span class="legend-text">No encontrado</span>
+                    </div>
                   </div>
-                  <div v-if="searchResults.results && searchResults.results.length" class="username-results">
+                  <div v-if="searchResults.results && searchResults.results.length" class="username-results" :class="`status-${item.status}`">
                     <div v-for="item in searchResults.results" :key="item.platform + ':' + item.url" class="username-result">
                       <span
                         class="username-indicator"
@@ -867,7 +871,7 @@ const formatUsernameResults = (data) => {
       return { platform, url, status, confidence, indicator }
     })
     // Por defecto ocultamos not_found para no llenar la UI
-    .filter((r) => r.status !== 'not_found' && r.url)
+    //.filter((r) => r.status !== 'not_found' && r.url)
 
   const rank = (s) => (s === 'found' ? 0 : s === 'unknown' ? 1 : 2)
   normalized.sort((a, b) => {
@@ -933,6 +937,7 @@ const getIndicatorTooltip = (item) => {
   if (status === 'found' || ind === '✅') return 'Confirmado: evidencia sólida de que el username existe en esta plataforma.'
   if (ind === '⚠️') return 'Posible coincidencia: la URL responde, pero la evidencia es débil (podría ser genérica).'
   if (ind === '❓') return 'No concluyente: la plataforma limita el acceso desde el servidor (bloqueo/anti-bot/login). Abre el enlace para comprobarlo desde tu navegador.'
+  if (ind === '❌') return 'No encontrado: evidencias claras de que el username no existe en esta plataforma.'
   if (status === 'not_found' || ind === '❌') return 'No encontrado: evidencias claras de que el username no existe aquí.'
   return 'Resultado sin clasificar.'
 }
@@ -2005,6 +2010,7 @@ const getCategoryPlaceholder = (category) => {
   border-radius: 8px;
 }
 
+.status-not_found { opacity: 0.55; }
 
 .username-indicator {
   font-size: 1.1rem;
