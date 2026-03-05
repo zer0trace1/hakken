@@ -1963,16 +1963,23 @@ const getCategoryPlaceholder = (category) => {
   color: #b0b0b0;
   font-family: 'Courier New', monospace;
   font-size: 0.95rem;
+
   flex: 1;
   min-height: 0;
+
+  display: flex;
+  flex-direction: column;
+
   overflow: hidden;
 }
 
 .results-content pre {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+
   white-space: pre-wrap;
   word-wrap: break-word;
-  max-height: 100%;
-  overflow-y: auto;
 }
 
 /* Username results (listado) */
