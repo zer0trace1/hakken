@@ -741,7 +741,7 @@ const getPlaceholder = (type) => {
   const placeholders = {
     username: 'Ej: john_doe, @usuario',
     email: 'Ej: usuario@ejemplo.com',
-    phone: 'Ej: +34 600 000 000',
+    phone: 'Ej: +34 600 000 000 o 600000000',
     ip: 'Ej: 192.168.1.1',
     domain: 'Ej: ejemplo.com'
   }
