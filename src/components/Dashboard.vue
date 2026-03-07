@@ -1016,6 +1016,37 @@ const formatLineType = (t) => {
   return map[t] || (t || '—')
 }
 
+const buildPhoneChecks = (raw, normalized) => {
+  const digits = String(raw || '').replace(/\D/g, '')
+  const e164 = normalized?.e164 || ''
+  const e164NoPlus = e164.replace('+', '')
+  const nationalDigits = (normalized?.national || '').replace(/\D/g, '') || digits
+
+  const q1 = digits || e164NoPlus
+  const q2 = `"${q1}" (spam OR denunciado OR estafa OR fraude OR "cuidado con")`
+
+  const checks = [
+    { label: 'Google (búsqueda)', url: `https://www.google.com/search?q=${encodeURIComponent(q1)}` },
+    { label: 'Google (spam/denuncias)', url: `https://www.google.com/search?q=${encodeURIComponent(q2)}` },
+    { label: 'DuckDuckGo', url: `https://duckduckgo.com/?q=${encodeURIComponent(q1)}` },
+
+    { label: 'ListaSpam', url: `https://www.listaspam.com/busca.php?Telefono=${encodeURIComponent(nationalDigits)}` },
+    { label: 'Tellows', url: `https://www.tellows.es/num/${encodeURIComponent(nationalDigits)}` },
+    { label: 'CleverDialer', url: `https://www.cleverdialer.es/numero/${encodeURIComponent(nationalDigits)}` },
+  ]
+
+  if (e164NoPlus) {
+    checks.push({ label: 'Truecaller', url: `https://www.truecaller.com/es-la/who-called-me/${encodeURIComponent(e164NoPlus)}` })
+    checks.push({ label: 'CallFilter', url: `https://callfilter.app/${encodeURIComponent(e164NoPlus)}` })
+  }
+
+  return checks
+}
+
+const openExternal = (url) => {
+  window.open(url, '_blank', 'noopener,noreferrer')
+}
+
 // Floating tooltip state (avoids overflow clipping by using position: fixed)
 const tooltip = reactive({ show: false, x: 0, y: 0, text: '' })
 
