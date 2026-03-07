@@ -1002,6 +1002,20 @@ const getIndicatorTooltip = (item) => {
   return 'Resultado sin clasificar.'
 }
 
+const formatLineType = (t) => {
+  const map = {
+    MOBILE: 'Móvil',
+    FIXED: 'Fijo',
+    FIXED_OR_MOBILE: 'Fijo o móvil',
+    VOIP: 'VoIP',
+    TOLL_FREE: 'Gratuito (800/900)',
+    PREMIUM_RATE: 'Tarificación especial',
+    SHARED_COST: 'Coste compartido',
+    UNKNOWN: 'Desconocido'
+  }
+  return map[t] || (t || '—')
+}
+
 // Floating tooltip state (avoids overflow clipping by using position: fixed)
 const tooltip = reactive({ show: false, x: 0, y: 0, text: '' })
 
