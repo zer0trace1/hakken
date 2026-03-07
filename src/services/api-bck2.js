@@ -130,8 +130,8 @@ export default {
     }
   },
 
-  // ==================== TELÉFONO (Para futuro) ====================
-  async searchPhone(phone, defaultRegion = 'ES') {
+  // ==================== TELÉFONO ====================
+  async searchPhone(phone, { defaultRegion = 'ES' } = {}) {
     try {
       const safe = encodeURIComponent(phone);
       const response = await apiClient.get(`/search/phone/${safe}`, {
