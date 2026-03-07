@@ -429,12 +429,20 @@
                       <span class="legend-icon">❓</span>
                       <span class="legend-text">No concluyente (abre el enlace)</span>
                     </div>
+                    <div class="legend-item">
+                      <span class="legend-icon">❌</span>
+                      <span class="legend-text">No encontrado</span>
+                    </div>
                   </div>
-                  <div v-if="searchResults.results && searchResults.results.length" class="username-results">
-                    <div v-for="item in (searchResults.results || [])" :key="item.platform + ':' + item.url" class="username-result" :class="`status-${(item && item.status) ? item.status : 'unknown'}`">
+                  <div v-if="searchResults.results && searchResults.results.length" class="username-results" :class="`status-${(item && item.status) ? item.status : 'unknown'}`">
+                    <div v-for="item in searchResults.results" :key="item.platform + ':' + item.url" class="username-result">
                       <span
-                        class="username-indicator tooltip"
-                        :data-tooltip="getIndicatorTooltip(item)"
+                        class="username-indicator"
+                        tabindex="0"
+                        @mouseenter="(e) => showTooltip(e, item)"
+                        @mouseleave="hideTooltip"
+                        @focus="(e) => showTooltip(e, item)"
+                        @blur="hideTooltip"
                         aria-label="Indicador de confianza"
                       >
                         {{ item.indicator }}
@@ -444,88 +452,18 @@
                     </div>
                   </div>
                   <div v-else class="empty-results">No se encontraron perfiles públicos para este username.</div>
-                </template>
 
-                
-                <template v-else-if="selectedType === 'phone'">
-                  <div class="phone-results">
-                    <div class="phone-badges">
-                      <span class="phone-badge" :class="`risk-${phoneTechRisk?.label || 'NEUTRO'}`">
-                        {{ phoneTechRisk?.label || 'NEUTRO' }}
-                      </span>
-                      <span class="phone-badge subtle">
-                        {{ searchResults?.normalized?.e164 || searchResults?.normalized?.national || searchQuery }}
-                      </span>
-                    </div>
-
-                    <div class="phone-meta-grid">
-                      <div class="meta-item">
-                        <div class="meta-k">Región</div>
-                        <div class="meta-v">{{ searchResults?.normalized?.region || '—' }}</div>
-                      </div>
-                      <div class="meta-item">
-                        <div class="meta-k">Tipo</div>
-                        <div class="meta-v">{{ searchResults?.metadata?.line_type || '—' }}</div>
-                      </div>
-                      <div class="meta-item">
-                        <div class="meta-k">Operador</div>
-                        <div class="meta-v">{{ searchResults?.metadata?.carrier || '—' }}</div>
-                      </div>
-                      <div class="meta-item">
-                        <div class="meta-k">Ubicación</div>
-                        <div class="meta-v">{{ searchResults?.metadata?.location || '—' }}</div>
-                      </div>
-                      <div class="meta-item">
-                        <div class="meta-k">Válido</div>
-                        <div class="meta-v">{{ (searchResults?.metadata?.is_valid === true) ? 'Sí' : (searchResults?.metadata?.is_valid === false ? 'No' : '—') }}</div>
-                      </div>
-                      <div class="meta-item">
-                        <div class="meta-k">Posible</div>
-                        <div class="meta-v">{{ (searchResults?.metadata?.is_possible === true) ? 'Sí' : (searchResults?.metadata?.is_possible === false ? 'No' : '—') }}</div>
-                      </div>
-                    </div>
-
-                    <div class="phone-reasons" v-if="phoneTechRisk?.reasons?.length">
-                      <div class="meta-k" style="margin-bottom: 0.35rem;">Riesgo técnico (conservador)</div>
-                      <ul>
-                        <li v-for="(r, idx) in phoneTechRisk.reasons" :key="idx">{{ r }}</li>
-                      </ul>
-                    </div>
-
-                    <div class="phone-checks">
-                      <div class="meta-k" style="margin-bottom: 0.35rem;">Comprobación en navegador</div>
-                      <div class="hint">
-                        Para reputación (spam/denuncias), abre estas fuentes desde tu navegador: reduce bloqueos respecto al backend.
-                      </div>
-                      <div class="checks-grid">
-                        <button
-                          v-for="c in phoneChecks"
-                          :key="c.url"
-                          class="check-btn"
-                          type="button"
-                          @click="openExternal(c.url)"
-                        >
-                          {{ c.label }}
-                        </button>
-                      </div>
-                    </div>
-
-                    <details v-if="searchResults?.evidence?.length" class="phone-evidence">
-                      <summary>Evidencias recuperadas por el servidor (opcional)</summary>
-                      <div class="evidence-list">
-                        <div v-for="(ev, i) in searchResults.evidence" :key="(ev.url || '') + ':' + i" class="evidence-item">
-                          <div class="evidence-title">
-                            <a :href="ev.url" target="_blank" rel="noopener noreferrer">{{ ev.title || ev.url }}</a>
-                            <span v-if="ev.relevant === true" class="evidence-tag">relevante</span>
-                          </div>
-                          <div v-if="ev.snippet" class="evidence-snippet">{{ ev.snippet }}</div>
-                        </div>
-                      </div>
-                    </details>
+                  <!-- Floating tooltip (fixed) -->
+                  <div
+                    v-if="tooltip.show"
+                    class="floating-tooltip"
+                    :style="{ top: tooltip.y + 'px', left: tooltip.x + 'px' }"
+                  >
+                    {{ tooltip.text }}
                   </div>
                 </template>
 
-<template v-else>
+                <template v-else>
                   <pre>{{ searchResults }}</pre>
                 </template>
               </div>
@@ -548,7 +486,7 @@
 ****************************** GLOBAL IMPORTS ****************************
 **************************************************************************
 */
-import { ref } from 'vue'
+import { ref, reactive, onMounted, onBeforeUnmount } from 'vue'
 import { useRouter } from 'vue-router'
 import api from '@/services/api'
 import { signOut, getUser } from "@/auth/oidc";
@@ -575,89 +513,7 @@ const userEmail = ref(null);
 **************************************************************************
 */
 
-import { onMounted } from 'vue'
 import { computed } from "vue";
-
-// ==================== PHONE: Comprobación en navegador (sin scraping) ====================
-const openExternal = (url) => {
-  try {
-    window.open(url, "_blank", "noopener,noreferrer")
-  } catch (e) {
-    console.error("No se pudo abrir el enlace:", e)
-  }
-}
-
-const buildPhoneChecks = (raw, normalized) => {
-  const rawStr = (raw || "").toString()
-  const digits = rawStr.replace(/\D/g, "")
-
-  const e164 = (normalized && normalized.e164) ? normalized.e164 : ""
-  const e164NoPlus = e164 ? e164.replace("+", "") : ""
-
-  const national = (normalized && normalized.national) ? normalized.national : ""
-  const nationalDigits = national ? national.replace(/\D/g, "") : digits
-
-  const qBase = digits || e164NoPlus || nationalDigits
-  const qSpam = `"${qBase}" (spam OR denunciado OR estafa OR fraude OR "cuidado con" OR "llamadas no deseadas")`
-
-  const checks = [
-    { label: "Google (búsqueda)", url: `https://www.google.com/search?q=${encodeURIComponent(qBase)}` },
-    { label: "Google (spam/denuncias)", url: `https://www.google.com/search?q=${encodeURIComponent(qSpam)}` },
-    { label: "DuckDuckGo", url: `https://duckduckgo.com/?q=${encodeURIComponent(qBase)}` },
-
-    // Directorios/reportes (verificación manual)
-    { label: "ListaSpam", url: `https://www.listaspam.com/busca.php?Telefono=${encodeURIComponent(nationalDigits)}` },
-    { label: "Tellows", url: `https://www.tellows.es/num/${encodeURIComponent(nationalDigits)}` },
-    { label: "CleverDialer", url: `https://www.cleverdialer.es/numero/${encodeURIComponent(nationalDigits)}` },
-  ]
-
-  if (e164NoPlus) {
-    checks.push({ label: "Truecaller", url: `https://www.truecaller.com/es-la/who-called-me/${encodeURIComponent(e164NoPlus)}` })
-    checks.push({ label: "CallFilter", url: `https://callfilter.app/${encodeURIComponent(e164NoPlus)}` })
-  }
-
-  return checks
-}
-
-const phoneChecks = computed(() => {
-  if (selectedType.value !== 'phone') return []
-  const data = searchResults.value || null
-  const q = (data && data.query) ? data.query : searchQuery.value
-  return buildPhoneChecks(q, data ? data.normalized : null)
-})
-
-// Riesgo técnico conservador (sin reputación web)
-const phoneTechRisk = computed(() => {
-  if (selectedType.value !== 'phone') return null
-  const data = searchResults.value || null
-  const meta = data?.metadata || {}
-
-  const reasons = []
-  const isPossible = meta.is_possible === true
-  const isValid = meta.is_valid === true
-  const lineType = meta.line_type || "UNKNOWN"
-
-  if (!isPossible) {
-    return { label: "ILEGÍTIMO", score: 100, reasons: ["Número no posible según plan de numeración (formato/longitud)."] }
-  }
-
-  if (isValid) reasons.push("Número válido para la región detectada.")
-  else reasons.push("Número posible, pero no validado como asignado (rango no asignado/ambigüedad).")
-
-  if (["PREMIUM_RATE", "SHARED_COST"].includes(lineType)) {
-    reasons.push(`Tipo ${lineType}: posible tarificación especial.`)
-    return { label: "ILEGÍTIMO", score: 85, reasons }
-  }
-
-  if (lineType === "VOIP") {
-    reasons.push("Tipo VOIP: mayor uso en automatización/fraude (no concluyente por sí solo).")
-    return { label: "SOSPECHOSO", score: 60, reasons }
-  }
-
-  reasons.push(`Tipo ${lineType}: riesgo técnico bajo.`)
-  return { label: "NEUTRO", score: 15, reasons }
-})
-
 import { watch } from 'vue'
 
 const currentView = ref('search')
@@ -727,7 +583,17 @@ onMounted(async () => {
 
   // si quieres precargar historial al entrar:
   // await fetchHistory()
+
+
+  // Tooltip: hide on scroll/resize to avoid stale position
+  window.addEventListener('scroll', _hideTooltipOnWindowEvent, true)
+  window.addEventListener('resize', _hideTooltipOnWindowEvent)
 });
+
+onBeforeUnmount(() => {
+  window.removeEventListener('scroll', _hideTooltipOnWindowEvent, true)
+  window.removeEventListener('resize', _hideTooltipOnWindowEvent)
+})
 
 async function logout() {
   await signOut();
@@ -875,7 +741,7 @@ const getPlaceholder = (type) => {
   const placeholders = {
     username: 'Ej: john_doe, @usuario',
     email: 'Ej: usuario@ejemplo.com',
-    phone: 'Ej: +34 600 000 000',
+    phone: 'Ej: +34 600 000 000 o 600000000',
     ip: 'Ej: 192.168.1.1',
     domain: 'Ej: ejemplo.com'
   }
@@ -920,12 +786,8 @@ const performSearch = async (opts = {}) => {
         searchResults.value = formatDomainResults(results)
         break
         
-      case 'phone':
-        results = await api.searchPhone(searchQuery.value, { defaultRegion: 'ES' })
-        searchResults.value = results
-        break
-
       case 'email':
+      case 'phone':
         // Por implementar
         searchResults.value = generateMockResults(selectedType.value, searchQuery.value)
         break
@@ -1009,7 +871,7 @@ const formatUsernameResults = (data) => {
       return { platform, url, status, confidence, indicator }
     })
     // Por defecto ocultamos not_found para no llenar la UI
-    .filter((r) => r.status !== 'not_found' && r.url)
+    //.filter((r) => r.status !== 'not_found' && r.url)
 
   const rank = (s) => (s === 'found' ? 0 : s === 'unknown' ? 1 : 2)
   normalized.sort((a, b) => {
@@ -1075,9 +937,50 @@ const getIndicatorTooltip = (item) => {
   if (status === 'found' || ind === '✅') return 'Confirmado: evidencia sólida de que el username existe en esta plataforma.'
   if (ind === '⚠️') return 'Posible coincidencia: la URL responde, pero la evidencia es débil (podría ser genérica).'
   if (ind === '❓') return 'No concluyente: la plataforma limita el acceso desde el servidor (bloqueo/anti-bot/login). Abre el enlace para comprobarlo desde tu navegador.'
+  if (ind === '❌') return 'No encontrado: evidencias claras de que el username no existe en esta plataforma.'
   if (status === 'not_found' || ind === '❌') return 'No encontrado: evidencias claras de que el username no existe aquí.'
   return 'Resultado sin clasificar.'
 }
+
+// Floating tooltip state (avoids overflow clipping by using position: fixed)
+const tooltip = reactive({ show: false, x: 0, y: 0, text: '' })
+
+const showTooltip = (evt, item) => {
+  tooltip.text = getIndicatorTooltip(item)
+
+  const rect = evt?.currentTarget?.getBoundingClientRect?.()
+  if (!rect) {
+    tooltip.show = false
+    return
+  }
+
+  const pad = 12
+  const maxW = 320
+
+  // default: to the right of the indicator
+  let x = rect.right + pad
+  let y = rect.top - 6
+
+  // clamp horizontally
+  if (x + maxW + 12 > window.innerWidth) {
+    x = rect.left - pad - maxW
+  }
+  x = Math.max(12, Math.min(x, window.innerWidth - maxW - 12))
+
+  // clamp vertically
+  if (y < 12) y = rect.bottom + pad
+  y = Math.max(12, Math.min(y, window.innerHeight - 80))
+
+  tooltip.x = x
+  tooltip.y = y
+  tooltip.show = true
+}
+
+const hideTooltip = () => {
+  tooltip.show = false
+}
+
+const _hideTooltipOnWindowEvent = () => hideTooltip()
 
 /*
 **************************************************************************
@@ -1873,8 +1776,10 @@ const getCategoryPlaceholder = (category) => {
   max-width: 1000px;
   width: 100%;
   max-height: 85vh;
-  overflow-y: auto;
+  overflow: hidden;
   position: relative;
+  display: flex;
+  flex-direction: column;
   box-shadow: 
     0 0 40px rgba(0, 255, 153, 0.4),
     inset 0 0 30px rgba(0, 255, 153, 0.05);
@@ -1920,6 +1825,13 @@ const getCategoryPlaceholder = (category) => {
 
 .modal-header {
   margin-bottom: 2rem;
+}
+
+.modal-body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
 }
 
 .modal-title {
@@ -2039,6 +1951,10 @@ const getCategoryPlaceholder = (category) => {
   background: rgba(0, 0, 0, 0.5);
   border: 1px solid rgba(0, 255, 153, 0.2);
   border-radius: 8px;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
 }
 
 .results-title {
@@ -2052,9 +1968,21 @@ const getCategoryPlaceholder = (category) => {
   color: #b0b0b0;
   font-family: 'Courier New', monospace;
   font-size: 0.95rem;
+
+  flex: 1;
+  min-height: 0;
+
+  display: flex;
+  flex-direction: column;
+
+  overflow: hidden;
 }
 
 .results-content pre {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+
   white-space: pre-wrap;
   word-wrap: break-word;
 }
@@ -2064,6 +1992,11 @@ const getCategoryPlaceholder = (category) => {
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-right: 6px;
 }
 
 .username-result {
@@ -2077,14 +2010,7 @@ const getCategoryPlaceholder = (category) => {
   border-radius: 8px;
 }
 
-/* Evita que el tooltip se recorte */
-.username-results,
-.username-result,
-.results-container,
-.results-box,
-.modal-content {
-  overflow: visible !important;
-}
+.status-not_found { opacity: 0.55; }
 
 .username-indicator {
   font-size: 1.1rem;
@@ -2106,66 +2032,22 @@ const getCategoryPlaceholder = (category) => {
   color: #00ff99;
 }
 
-/* Tooltip base */
-.tooltip {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-  cursor: help;
-}
-
-/* Caja del tooltip (encima del icono, centrada) */
-.tooltip::after {
-  content: attr(data-tooltip);
-  position: absolute;
-  bottom: calc(100% + 10px);
-  left: 50%;
-  transform: translateX(-50%);
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.15s ease, transform 0.15s ease;
-  z-index: 9999;
-
+/* Floating tooltip (fixed, avoids overflow clipping) */
+.floating-tooltip {
+  position: fixed;
+  z-index: 999999;
+  max-width: 320px;
   background: rgba(0, 0, 0, 0.92);
   border: 1px solid rgba(0, 255, 153, 0.7);
   box-shadow: 0 0 14px rgba(0, 255, 153, 0.18);
   color: #eafff6;
-
   padding: 8px 10px;
   border-radius: 10px;
   font-size: 12px;
   line-height: 1.25;
-
-  /* ✅ para que NO sea una línea infinita */
-  white-space: normal;
-  width: max-content;
-  max-width: 320px;
+  pointer-events: none;
 }
 
-/* Flechita */
-.tooltip::before {
-  content: "";
-  position: absolute;
-  bottom: calc(100% + 4px);
-  left: 50%;
-  transform: translateX(-50%);
-  opacity: 0;
-  transition: opacity 0.15s ease;
-  z-index: 9999;
-
-  border-width: 6px;
-  border-style: solid;
-  border-color: rgba(0, 255, 153, 0.35) transparent transparent transparent;
-}
-
-/* Hover */
-.tooltip:hover::after {
-  opacity: 1;
-  transform: translateX(-50%) translateY(-2px);
-}
-.tooltip:hover::before {
-  opacity: 1;
-}
 
 .username-legend {
   display: flex;
@@ -3208,63 +3090,4 @@ body.light-theme .dork-query {
   outline:none;
   box-shadow: 0 0 0 3px rgba(0,255,153,.25), 0 0 26px rgba(0,255,153,.35);
 }
-
-/* ==================== PHONE (client checks) ==================== */
-.phone-results { display: flex; flex-direction: column; gap: 0.9rem; }
-.phone-badges { display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center; }
-.phone-badge {
-  border: 1px solid rgba(0, 255, 153, 0.35);
-  background: rgba(0, 255, 153, 0.06);
-  padding: 0.3rem 0.6rem;
-  border-radius: 10px;
-  font-weight: 700;
-  color: var(--accent-primary, #00ff99);
-}
-.phone-badge.subtle { opacity: 0.85; font-weight: 600; }
-.phone-badge.risk-ILEGÍTIMO { border-color: rgba(255, 0, 70, 0.45); color: rgba(255, 0, 70, 1); background: rgba(255, 0, 70, 0.08); }
-.phone-badge.risk-SOSPECHOSO { border-color: rgba(255, 200, 0, 0.45); color: rgba(255, 200, 0, 1); background: rgba(255, 200, 0, 0.08); }
-.phone-badge.risk-NEUTRO { border-color: rgba(0, 255, 153, 0.35); }
-
-.phone-meta-grid {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 0.6rem;
-}
-@media (max-width: 720px) {
-  .phone-meta-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-}
-.meta-item {
-  border: 1px solid rgba(0, 255, 153, 0.18);
-  background: rgba(0, 0, 0, 0.18);
-  border-radius: 12px;
-  padding: 0.6rem 0.7rem;
-}
-.meta-k { font-size: 0.85rem; opacity: 0.85; margin-bottom: 0.15rem; }
-.meta-v { font-weight: 700; word-break: break-word; }
-
-.phone-reasons ul { margin: 0; padding-left: 1.1rem; }
-.phone-reasons li { margin: 0.15rem 0; opacity: 0.9; }
-
-.phone-checks .hint { opacity: 0.8; margin-bottom: 0.6rem; line-height: 1.25; }
-.checks-grid { display: flex; flex-wrap: wrap; gap: 0.5rem; }
-.check-btn {
-  border: 1px solid rgba(0, 255, 153, 0.35);
-  background: rgba(0, 255, 153, 0.08);
-  color: #00ff99;
-  padding: 0.45rem 0.75rem;
-  border-radius: 10px;
-  cursor: pointer;
-  font-weight: 650;
-}
-.check-btn:hover { background: rgba(0, 255, 153, 0.14); }
-
-.phone-evidence { margin-top: 0.35rem; }
-.phone-evidence summary { cursor: pointer; opacity: 0.9; }
-.evidence-list { margin-top: 0.6rem; display: flex; flex-direction: column; gap: 0.6rem; }
-.evidence-item { border: 1px solid rgba(0, 255, 153, 0.18); border-radius: 12px; padding: 0.6rem 0.7rem; background: rgba(0,0,0,0.15); }
-.evidence-title { display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; }
-.evidence-title a { color: var(--accent-primary, #00ff99); text-decoration: underline; }
-.evidence-tag { font-size: 0.75rem; padding: 0.15rem 0.4rem; border-radius: 999px; border: 1px solid rgba(0,255,153,0.35); opacity: 0.9; }
-.evidence-snippet { opacity: 0.85; margin-top: 0.35rem; line-height: 1.25; }
-
 </style>
