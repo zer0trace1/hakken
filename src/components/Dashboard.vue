@@ -464,69 +464,71 @@
                 </template>
 
                 <template v-else-if="selectedType === 'phone'">
-                  <div class="phone-results">
-                    <div class="phone-meta">
-                      <div class="phone-meta-row">
-                        <span class="phone-meta-label">E.164:</span>
-                        <span class="phone-meta-value">{{ (searchResults.normalized && searchResults.normalized.e164) || 'N/A' }}</span>
+                  <div class="phone-scroll">                  
+                    <div class="phone-results">
+                      <div class="phone-meta">
+                        <div class="phone-meta-row">
+                          <span class="phone-meta-label">E.164:</span>
+                          <span class="phone-meta-value">{{ (searchResults.normalized && searchResults.normalized.e164) || 'N/A' }}</span>
+                        </div>
+                        <div class="phone-meta-row">
+                          <span class="phone-meta-label">Nacional:</span>
+                          <span class="phone-meta-value">{{ (searchResults.normalized && searchResults.normalized.national) || 'N/A' }}</span>
+                        </div>
+                        <div class="phone-meta-row">
+                          <span class="phone-meta-label">Región:</span>
+                          <span class="phone-meta-value">{{ (searchResults.normalized && searchResults.normalized.region) || 'N/A' }}</span>
+                        </div>
+                        <div class="phone-meta-row">
+                          <span class="phone-meta-label">Tipo de línea:</span>
+                          <span class="phone-meta-value">{{ (searchResults.metadata && searchResults.metadata.line_type) || 'N/A' }}</span>
+                        </div>
+                        <div class="phone-meta-row">
+                          <span class="phone-meta-label">Carrier:</span>
+                          <span class="phone-meta-value">{{ (searchResults.metadata && searchResults.metadata.carrier) || 'N/A' }}</span>
+                        </div>
+                        <div class="phone-meta-row">
+                          <span class="phone-meta-label">Ubicación:</span>
+                          <span class="phone-meta-value">{{ (searchResults.metadata && searchResults.metadata.location) || 'N/A' }}</span>
+                        </div>
+                        <div class="phone-meta-row">
+                          <span class="phone-meta-label">Timezones:</span>
+                          <span class="phone-meta-value">{{ (searchResults.metadata && searchResults.metadata.timezones && searchResults.metadata.timezones.join(', ')) || 'N/A' }}</span>
+                        </div>
+                        <div class="phone-meta-row">
+                          <span class="phone-meta-label">Validación:</span>
+                          <span class="phone-meta-value">
+                            {{ (searchResults.metadata && searchResults.metadata.is_valid) ? 'Válido' : 'No validado' }}
+                            ·
+                            {{ (searchResults.metadata && searchResults.metadata.is_possible) ? 'Posible' : 'Imposible' }}
+                          </span>
+                        </div>
                       </div>
-                      <div class="phone-meta-row">
-                        <span class="phone-meta-label">Nacional:</span>
-                        <span class="phone-meta-value">{{ (searchResults.normalized && searchResults.normalized.national) || 'N/A' }}</span>
+
+                      <div class="phone-browser-checks">
+                        <h4 class="phone-checks-title">Comprobación en navegador</h4>
+                        <p class="phone-checks-hint">
+                          Para evitar bloqueos del servidor (anti-bot), abre estas fuentes desde tu navegador y revisa la reputación del número.
+                        </p>
+
+                        <div class="phone-checks-grid">
+                          <button
+                            v-for="c in buildPhoneChecks(searchQuery, searchResults.normalized)"
+                            :key="c.url"
+                            type="button"
+                            class="phone-check-btn"
+                            @click="openExternal(c.url)"
+                          >
+                            {{ c.label }}
+                          </button>
+                        </div>
                       </div>
-                      <div class="phone-meta-row">
-                        <span class="phone-meta-label">Región:</span>
-                        <span class="phone-meta-value">{{ (searchResults.normalized && searchResults.normalized.region) || 'N/A' }}</span>
-                      </div>
-                      <div class="phone-meta-row">
-                        <span class="phone-meta-label">Tipo de línea:</span>
-                        <span class="phone-meta-value">{{ (searchResults.metadata && searchResults.metadata.line_type) || 'N/A' }}</span>
-                      </div>
-                      <div class="phone-meta-row">
-                        <span class="phone-meta-label">Carrier:</span>
-                        <span class="phone-meta-value">{{ (searchResults.metadata && searchResults.metadata.carrier) || 'N/A' }}</span>
-                      </div>
-                      <div class="phone-meta-row">
-                        <span class="phone-meta-label">Ubicación:</span>
-                        <span class="phone-meta-value">{{ (searchResults.metadata && searchResults.metadata.location) || 'N/A' }}</span>
-                      </div>
-                      <div class="phone-meta-row">
-                        <span class="phone-meta-label">Timezones:</span>
-                        <span class="phone-meta-value">{{ (searchResults.metadata && searchResults.metadata.timezones && searchResults.metadata.timezones.join(', ')) || 'N/A' }}</span>
-                      </div>
-                      <div class="phone-meta-row">
-                        <span class="phone-meta-label">Validación:</span>
-                        <span class="phone-meta-value">
-                          {{ (searchResults.metadata && searchResults.metadata.is_valid) ? 'Válido' : 'No validado' }}
-                          ·
-                          {{ (searchResults.metadata && searchResults.metadata.is_possible) ? 'Posible' : 'Imposible' }}
-                        </span>
-                      </div>
+
+                      <details class="phone-raw">
+                        <summary>Ver JSON completo</summary>
+                        <pre>{{ searchResults }}</pre>
+                      </details>
                     </div>
-
-                    <div class="phone-browser-checks">
-                      <h4 class="phone-checks-title">Comprobación en navegador</h4>
-                      <p class="phone-checks-hint">
-                        Para evitar bloqueos del servidor (anti-bot), abre estas fuentes desde tu navegador y revisa la reputación del número.
-                      </p>
-
-                      <div class="phone-checks-grid">
-                        <button
-                          v-for="c in buildPhoneChecks(searchQuery, searchResults.normalized)"
-                          :key="c.url"
-                          type="button"
-                          class="phone-check-btn"
-                          @click="openExternal(c.url)"
-                        >
-                          {{ c.label }}
-                        </button>
-                      </div>
-                    </div>
-
-                    <details class="phone-raw">
-                      <summary>Ver JSON completo</summary>
-                      <pre>{{ searchResults }}</pre>
-                    </details>
                   </div>
                 </template>
 
@@ -3280,6 +3282,22 @@ body.light-theme .dork-query {
   color: rgba(0, 255, 153, 0.85);
   font-weight: 700;
   margin-bottom: 8px;
+}
+
+/* Scroll interno SOLO para resultados de teléfono */
+.phone-scroll {
+  max-height: 46vh;      /* ajusta: 40–55vh según te guste */
+  overflow-y: auto;
+  padding-right: 6px;    /* para que no tape el scroll */
+}
+
+/* opcional: que el scroll se vea más “pro” */
+.phone-scroll::-webkit-scrollbar {
+  width: 8px;
+}
+.phone-scroll::-webkit-scrollbar-thumb {
+  background: rgba(0, 255, 153, 0.35);
+  border-radius: 8px;
 }
 
 </style>
