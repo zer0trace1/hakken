@@ -462,6 +462,65 @@
                     {{ tooltip.text }}
                   </div>
                 </template>
+                <template v-else-if="selectedType === 'phone'">
+                  <div class="phone-scroll">
+                    <div class="phone-cards">
+                      <div class="phone-card">
+                        <div class="phone-card-title">Número</div>
+                        <div class="phone-card-main">{{ (searchResults.normalized && searchResults.normalized.national) || searchResults.query }}</div>
+                        <div class="phone-card-sub">{{ (searchResults.normalized && searchResults.normalized.e164) || '' }}</div>
+                      </div>
+
+                      <div class="phone-card">
+                        <div class="phone-card-title">País / Zona</div>
+                        <div class="phone-card-main">{{ (searchResults.metadata && searchResults.metadata.location) || (searchResults.normalized && searchResults.normalized.region) || '—' }}</div>
+                        <div class="phone-card-sub">Zona horaria: {{ ((searchResults.metadata && searchResults.metadata.timezones) || []).join(', ') || '—' }}</div>
+                      </div>
+
+                      <div class="phone-card">
+                        <div class="phone-card-title">Tipo de línea</div>
+                        <div class="phone-card-main">{{ formatLineType(searchResults.metadata && searchResults.metadata.line_type) }}</div>
+                        <div class="phone-card-sub">Operador: {{ (searchResults.metadata && searchResults.metadata.carrier) || '—' }}</div>
+                      </div>
+
+                      <div class="phone-card">
+                        <div class="phone-card-title">Validación</div>
+                        <div class="phone-card-main">
+                          <span :class="(searchResults.metadata && searchResults.metadata.is_valid) ? 'pill ok' : 'pill warn'">
+                            {{ (searchResults.metadata && searchResults.metadata.is_valid) ? 'Válido' : 'No validado' }}
+                          </span>
+                          <span :class="(searchResults.metadata && searchResults.metadata.is_possible) ? 'pill ok' : 'pill bad'">
+                            {{ (searchResults.metadata && searchResults.metadata.is_possible) ? 'Posible' : 'Imposible' }}
+                          </span>
+                        </div>
+                        <div class="phone-card-sub">Verificación técnica (no reputación).</div>
+                      </div>
+                    </div>
+
+                    <div class="phone-checks">
+                      <h4 class="phone-checks-title">Comprobación en navegador</h4>
+                      <p class="phone-checks-hint">
+                        Para evitar bloqueos del servidor (anti-bot), abre estas fuentes desde tu navegador y revisa la reputación del número.
+                      </p>
+                      <div class="phone-checks-grid">
+                        <button
+                          v-for="c in buildPhoneChecks(searchResults.query, searchResults.normalized)"
+                          :key="c.url"
+                          type="button"
+                          class="phone-check-btn"
+                          @click="openExternal(c.url)"
+                        >
+                          {{ c.label }}
+                        </button>
+                      </div>
+                    </div>
+
+                    <details class="advanced">
+                      <summary>Modo avanzado (ver JSON)</summary>
+                      <pre class="advanced-json">{{ JSON.stringify(searchResults, null, 2) }}</pre>
+                    </details>
+                  </div>
+                </template>
 
                 <template v-else>
                   <pre>{{ searchResults }}</pre>
@@ -789,7 +848,8 @@ const performSearch = async (opts = {}) => {
       case 'email':
       case 'phone':
         // Por implementar
-        searchResults.value = generateMockResults(selectedType.value, searchQuery.value)
+        results = await api.searchPhone(searchQuery.value, 'ES')
+        searchResults.value = results
         break
         
       default:
@@ -3089,5 +3149,136 @@ body.light-theme .dork-query {
 .auth-logout:focus-visible{
   outline:none;
   box-shadow: 0 0 0 3px rgba(0,255,153,.25), 0 0 26px rgba(0,255,153,.35);
+}
+
+/* PHONE CASE CSS */
+.phone-scroll {
+  max-height: 46vh;
+  overflow-y: auto;
+  padding-right: 6px;
+  min-height: 0;
+}
+
+.phone-scroll::-webkit-scrollbar {
+  width: 8px;
+}
+.phone-scroll::-webkit-scrollbar-thumb {
+  background: rgba(0, 255, 153, 0.35);
+  border-radius: 8px;
+}
+
+.phone-cards{
+  display:grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap:12px;
+  margin-top:10px;
+}
+
+@media (max-width: 900px){
+  .phone-cards{ grid-template-columns: 1fr; }
+}
+
+.phone-card{
+  border:1px solid rgba(0,255,153,.25);
+  background: rgba(0,0,0,.35);
+  border-radius: 14px;
+  padding: 12px 14px;
+  box-shadow: 0 0 18px rgba(0,255,153,.08);
+}
+
+.phone-card-title{
+  color:#00ff99;
+  font-weight:700;
+  letter-spacing:.3px;
+  margin-bottom:6px;
+  opacity:.95;
+}
+
+.phone-card-main{
+  color:#e8fff6;
+  font-size: 1.05rem;
+  display:flex;
+  gap:10px;
+  align-items:center;
+  flex-wrap:wrap;
+}
+
+.phone-card-sub{
+  margin-top:6px;
+  color: rgba(232,255,246,.75);
+  font-size: .9rem;
+}
+
+.pill{
+  display:inline-block;
+  padding:4px 10px;
+  border-radius:999px;
+  font-weight:700;
+  font-size:.85rem;
+  border:1px solid rgba(0,255,153,.25);
+  background: rgba(0,255,153,.08);
+}
+
+.pill.warn{ border-color: rgba(255,190,0,.35); background: rgba(255,190,0,.10); color:#ffe7a0; }
+.pill.bad{ border-color: rgba(255,60,60,.35); background: rgba(255,60,60,.10); color:#ffb2b2; }
+
+.phone-checks{
+  margin-top: 12px;
+  border: 1px solid rgba(0,255,153,.18);
+  border-radius: 12px;
+  padding: 10px 12px;
+  background: rgba(0,0,0,.20);
+}
+.phone-checks-title{
+  color:#00ff99;
+  font-weight:800;
+  margin: 0 0 6px;
+}
+.phone-checks-hint{
+  opacity: .8;
+  margin: 0 0 10px;
+}
+.phone-checks-grid{
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+}
+.phone-check-btn{
+  border: 1px solid rgba(0, 255, 153, 0.35);
+  background: rgba(0, 255, 153, 0.08);
+  color: #00ff99;
+  padding: 8px 12px;
+  border-radius: 10px;
+  cursor: pointer;
+  font-family: 'Rajdhani', sans-serif;
+  font-weight: 700;
+}
+.phone-check-btn:hover{
+  background: rgba(0, 255, 153, 0.14);
+}
+
+.advanced{
+  margin-top: 12px;
+  border: 1px solid rgba(0,255,153,.18);
+  border-radius: 12px;
+  padding: 10px 12px;
+  background: rgba(0,0,0,.18);
+}
+
+.advanced summary{
+  cursor:pointer;
+  color:#00ff99;
+  font-weight:800;
+}
+
+.advanced-json{
+  margin-top:10px;
+  max-height: 220px;
+  overflow:auto;
+  background: rgba(0,0,0,.45);
+  border:1px solid rgba(0,255,153,.15);
+  border-radius: 10px;
+  padding: 10px;
+  color: rgba(232,255,246,.85);
 }
 </style>
