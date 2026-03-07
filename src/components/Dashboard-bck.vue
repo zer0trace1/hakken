@@ -463,6 +463,75 @@
                   </div>
                 </template>
 
+                <template v-else-if="selectedType === 'phone'">
+                  <div class="phone-scroll">                  
+                    <div class="phone-results">
+                      <div class="phone-meta">
+                        <div class="phone-meta-row">
+                          <span class="phone-meta-label">E.164:</span>
+                          <span class="phone-meta-value">{{ (searchResults.normalized && searchResults.normalized.e164) || 'N/A' }}</span>
+                        </div>
+                        <div class="phone-meta-row">
+                          <span class="phone-meta-label">Nacional:</span>
+                          <span class="phone-meta-value">{{ (searchResults.normalized && searchResults.normalized.national) || 'N/A' }}</span>
+                        </div>
+                        <div class="phone-meta-row">
+                          <span class="phone-meta-label">Región:</span>
+                          <span class="phone-meta-value">{{ (searchResults.normalized && searchResults.normalized.region) || 'N/A' }}</span>
+                        </div>
+                        <div class="phone-meta-row">
+                          <span class="phone-meta-label">Tipo de línea:</span>
+                          <span class="phone-meta-value">{{ (searchResults.metadata && searchResults.metadata.line_type) || 'N/A' }}</span>
+                        </div>
+                        <div class="phone-meta-row">
+                          <span class="phone-meta-label">Carrier:</span>
+                          <span class="phone-meta-value">{{ (searchResults.metadata && searchResults.metadata.carrier) || 'N/A' }}</span>
+                        </div>
+                        <div class="phone-meta-row">
+                          <span class="phone-meta-label">Ubicación:</span>
+                          <span class="phone-meta-value">{{ (searchResults.metadata && searchResults.metadata.location) || 'N/A' }}</span>
+                        </div>
+                        <div class="phone-meta-row">
+                          <span class="phone-meta-label">Timezones:</span>
+                          <span class="phone-meta-value">{{ (searchResults.metadata && searchResults.metadata.timezones && searchResults.metadata.timezones.join(', ')) || 'N/A' }}</span>
+                        </div>
+                        <div class="phone-meta-row">
+                          <span class="phone-meta-label">Validación:</span>
+                          <span class="phone-meta-value">
+                            {{ (searchResults.metadata && searchResults.metadata.is_valid) ? 'Válido' : 'No validado' }}
+                            ·
+                            {{ (searchResults.metadata && searchResults.metadata.is_possible) ? 'Posible' : 'Imposible' }}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div class="phone-browser-checks">
+                        <h4 class="phone-checks-title">Comprobación en navegador</h4>
+                        <p class="phone-checks-hint">
+                          Para evitar bloqueos del servidor (anti-bot), abre estas fuentes desde tu navegador y revisa la reputación del número.
+                        </p>
+
+                        <div class="phone-checks-grid">
+                          <button
+                            v-for="c in buildPhoneChecks(searchQuery, searchResults.normalized)"
+                            :key="c.url"
+                            type="button"
+                            class="phone-check-btn"
+                            @click="openExternal(c.url)"
+                          >
+                            {{ c.label }}
+                          </button>
+                        </div>
+                      </div>
+
+                      <details class="phone-raw">
+                        <summary>Ver JSON completo</summary>
+                        <pre>{{ searchResults }}</pre>
+                      </details>
+                    </div>
+                  </div>
+                </template>
+
                 <template v-else>
                   <pre>{{ searchResults }}</pre>
                 </template>
@@ -747,6 +816,40 @@ const getPlaceholder = (type) => {
   }
   return placeholders[type] || 'Introduce tu búsqueda...'
 }
+// Helpers: abrir comprobación en navegador (Phone)
+const openExternal = (url) => {
+  window.open(url, '_blank', 'noopener,noreferrer')
+}
+
+const buildPhoneChecks = (raw, normalized) => {
+  const digits = String(raw || '').replace(/\D/g, '')
+  const e164 = (normalized && normalized.e164) ? String(normalized.e164) : ''
+  const e164NoPlus = e164.replace('+', '')
+  const nationalDigits = (normalized && normalized.national)
+    ? String(normalized.national).replace(/\D/g, '')
+    : digits
+
+  const q1 = digits || e164NoPlus || nationalDigits
+  const q2 = `"${q1}" (spam OR denunciado OR estafa OR fraude OR "cuidado con")`
+
+  const checks = [
+    { label: 'Google (búsqueda)', url: `https://www.google.com/search?q=${encodeURIComponent(q1)}` },
+    { label: 'Google (spam/denuncias)', url: `https://www.google.com/search?q=${encodeURIComponent(q2)}` },
+    { label: 'DuckDuckGo', url: `https://duckduckgo.com/?q=${encodeURIComponent(q1)}` },
+
+    { label: 'ListaSpam', url: `https://www.listaspam.com/busca.php?Telefono=${encodeURIComponent(nationalDigits)}` },
+    { label: 'Tellows', url: `https://www.tellows.es/num/${encodeURIComponent(nationalDigits)}` },
+    { label: 'CleverDialer', url: `https://www.cleverdialer.es/numero/${encodeURIComponent(nationalDigits)}` },
+  ]
+
+  if (e164NoPlus) {
+    checks.push({ label: 'Truecaller', url: `https://www.truecaller.com/es-la/who-called-me/${encodeURIComponent(e164NoPlus)}` })
+    checks.push({ label: 'CallFilter', url: `https://callfilter.app/${encodeURIComponent(e164NoPlus)}` })
+  }
+
+  return checks
+}
+
 
 const formatDate = (timestamp) => {
   return new Date(timestamp).toLocaleString('es-ES', {
@@ -787,9 +890,13 @@ const performSearch = async (opts = {}) => {
         break
         
       case 'email':
-      case 'phone':
         // Por implementar
         searchResults.value = generateMockResults(selectedType.value, searchQuery.value)
+        break
+
+      case 'phone':
+        results = await api.searchPhone(searchQuery.value)
+        searchResults.value = results
         break
         
       default:
@@ -3090,4 +3197,107 @@ body.light-theme .dork-query {
   outline:none;
   box-shadow: 0 0 0 3px rgba(0,255,153,.25), 0 0 26px rgba(0,255,153,.35);
 }
+
+/* Phone: browser checks (no afecta a username) */
+.phone-results {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.phone-meta {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 8px;
+  padding: 12px;
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(0, 255, 153, 0.18);
+}
+
+.phone-meta-row {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  align-items: baseline;
+}
+
+.phone-meta-label {
+  color: rgba(255, 255, 255, 0.75);
+  font-weight: 600;
+  letter-spacing: 0.4px;
+}
+
+.phone-meta-value {
+  color: #b0b0b0;
+}
+
+.phone-browser-checks {
+  padding: 12px;
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(0, 255, 153, 0.18);
+}
+
+.phone-checks-title {
+  margin: 0 0 6px 0;
+  color: #00ff99;
+  font-family: 'Rajdhani', sans-serif;
+  font-weight: 800;
+  letter-spacing: 0.6px;
+}
+
+.phone-checks-hint {
+  margin: 0 0 10px 0;
+  opacity: 0.85;
+  font-size: 0.9rem;
+}
+
+.phone-checks-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.phone-check-btn {
+  border: 1px solid rgba(0, 255, 153, 0.35);
+  background: rgba(0, 255, 153, 0.08);
+  color: #00ff99;
+  padding: 8px 12px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background-color .15s ease, transform .15s ease, box-shadow .2s ease;
+  font-family: 'Orbitron', sans-serif;
+  font-size: 0.85rem;
+}
+
+.phone-check-btn:hover {
+  background: rgba(0, 255, 153, 0.14);
+  box-shadow: 0 0 14px rgba(0, 255, 153, 0.18);
+  transform: translateY(-1px);
+}
+
+.phone-raw summary {
+  cursor: pointer;
+  color: rgba(0, 255, 153, 0.85);
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+/* Scroll interno SOLO para resultados de teléfono */
+.phone-scroll {
+  max-height: 46vh;      /* ajusta: 40–55vh según te guste */
+  overflow-y: auto;
+  padding-right: 6px;    /* para que no tape el scroll */
+}
+
+/* opcional: que el scroll se vea más “pro” */
+.phone-scroll::-webkit-scrollbar {
+  width: 8px;
+}
+.phone-scroll::-webkit-scrollbar-thumb {
+  color: rgba(0, 255, 153, 0.85);
+  border-radius: 8px;
+}
+
 </style>

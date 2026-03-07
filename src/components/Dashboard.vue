@@ -429,20 +429,12 @@
                       <span class="legend-icon">❓</span>
                       <span class="legend-text">No concluyente (abre el enlace)</span>
                     </div>
-                    <div class="legend-item">
-                      <span class="legend-icon">❌</span>
-                      <span class="legend-text">No encontrado</span>
-                    </div>
                   </div>
-                  <div v-if="searchResults.results && searchResults.results.length" class="username-results" :class="`status-${(item && item.status) ? item.status : 'unknown'}`">
+                  <div v-if="searchResults.results && searchResults.results.length" class="username-results">
                     <div v-for="item in searchResults.results" :key="item.platform + ':' + item.url" class="username-result">
                       <span
-                        class="username-indicator"
-                        tabindex="0"
-                        @mouseenter="(e) => showTooltip(e, item)"
-                        @mouseleave="hideTooltip"
-                        @focus="(e) => showTooltip(e, item)"
-                        @blur="hideTooltip"
+                        class="username-indicator tooltip"
+                        :data-tooltip="getIndicatorTooltip(item)"
                         aria-label="Indicador de confianza"
                       >
                         {{ item.indicator }}
@@ -452,89 +444,71 @@
                     </div>
                   </div>
                   <div v-else class="empty-results">No se encontraron perfiles públicos para este username.</div>
-
-                  <!-- Floating tooltip (fixed) -->
-                  <div
-                    v-if="tooltip.show"
-                    class="floating-tooltip"
-                    :style="{ top: tooltip.y + 'px', left: tooltip.x + 'px' }"
-                  >
-                    {{ tooltip.text }}
-                  </div>
                 </template>
 
                 <template v-else-if="selectedType === 'phone'">
-                  <div class="phone-scroll">                  
-                    <div class="phone-results">
-                      <div class="phone-meta">
-                        <div class="phone-meta-row">
-                          <span class="phone-meta-label">E.164:</span>
-                          <span class="phone-meta-value">{{ (searchResults.normalized && searchResults.normalized.e164) || 'N/A' }}</span>
-                        </div>
-                        <div class="phone-meta-row">
-                          <span class="phone-meta-label">Nacional:</span>
-                          <span class="phone-meta-value">{{ (searchResults.normalized && searchResults.normalized.national) || 'N/A' }}</span>
-                        </div>
-                        <div class="phone-meta-row">
-                          <span class="phone-meta-label">Región:</span>
-                          <span class="phone-meta-value">{{ (searchResults.normalized && searchResults.normalized.region) || 'N/A' }}</span>
-                        </div>
-                        <div class="phone-meta-row">
-                          <span class="phone-meta-label">Tipo de línea:</span>
-                          <span class="phone-meta-value">{{ (searchResults.metadata && searchResults.metadata.line_type) || 'N/A' }}</span>
-                        </div>
-                        <div class="phone-meta-row">
-                          <span class="phone-meta-label">Carrier:</span>
-                          <span class="phone-meta-value">{{ (searchResults.metadata && searchResults.metadata.carrier) || 'N/A' }}</span>
-                        </div>
-                        <div class="phone-meta-row">
-                          <span class="phone-meta-label">Ubicación:</span>
-                          <span class="phone-meta-value">{{ (searchResults.metadata && searchResults.metadata.location) || 'N/A' }}</span>
-                        </div>
-                        <div class="phone-meta-row">
-                          <span class="phone-meta-label">Timezones:</span>
-                          <span class="phone-meta-value">{{ (searchResults.metadata && searchResults.metadata.timezones && searchResults.metadata.timezones.join(', ')) || 'N/A' }}</span>
-                        </div>
-                        <div class="phone-meta-row">
-                          <span class="phone-meta-label">Validación:</span>
-                          <span class="phone-meta-value">
-                            {{ (searchResults.metadata && searchResults.metadata.is_valid) ? 'Válido' : 'No validado' }}
-                            ·
-                            {{ (searchResults.metadata && searchResults.metadata.is_possible) ? 'Posible' : 'Imposible' }}
-                          </span>
-                        </div>
-                      </div>
+  <div class="phone-scroll">
+    <div class="phone-cards">
+      <div class="phone-card">
+        <div class="phone-card-title">Número</div>
+        <div class="phone-card-main">{{ (searchResults.normalized && searchResults.normalized.national) || searchResults.query }}</div>
+        <div class="phone-card-sub">{{ (searchResults.normalized && searchResults.normalized.e164) || '' }}</div>
+      </div>
 
-                      <div class="phone-browser-checks">
-                        <h4 class="phone-checks-title">Comprobación en navegador</h4>
-                        <p class="phone-checks-hint">
-                          Para evitar bloqueos del servidor (anti-bot), abre estas fuentes desde tu navegador y revisa la reputación del número.
-                        </p>
+      <div class="phone-card">
+        <div class="phone-card-title">País / Zona</div>
+        <div class="phone-card-main">{{ (searchResults.metadata && searchResults.metadata.location) || (searchResults.normalized && searchResults.normalized.region) || '—' }}</div>
+        <div class="phone-card-sub">Zona horaria: {{ ((searchResults.metadata && searchResults.metadata.timezones) || []).join(', ') || '—' }}</div>
+      </div>
 
-                        <div class="phone-checks-grid">
-                          <button
-                            v-for="c in buildPhoneChecks(searchQuery, searchResults.normalized)"
-                            :key="c.url"
-                            type="button"
-                            class="phone-check-btn"
-                            @click="openExternal(c.url)"
-                          >
-                            {{ c.label }}
-                          </button>
-                        </div>
-                      </div>
+      <div class="phone-card">
+        <div class="phone-card-title">Tipo de línea</div>
+        <div class="phone-card-main">{{ formatLineType(searchResults.metadata && searchResults.metadata.line_type) }}</div>
+        <div class="phone-card-sub">Operador: {{ (searchResults.metadata && searchResults.metadata.carrier) || '—' }}</div>
+      </div>
 
-                      <details class="phone-raw">
-                        <summary>Ver JSON completo</summary>
-                        <pre>{{ searchResults }}</pre>
-                      </details>
-                    </div>
-                  </div>
-                </template>
+      <div class="phone-card">
+        <div class="phone-card-title">Validación</div>
+        <div class="phone-card-main">
+          <span :class="(searchResults.metadata && searchResults.metadata.is_valid) ? 'pill ok' : 'pill warn'">
+            {{ (searchResults.metadata && searchResults.metadata.is_valid) ? 'Válido' : 'No validado' }}
+          </span>
+          <span :class="(searchResults.metadata && searchResults.metadata.is_possible) ? 'pill ok' : 'pill bad'">
+            {{ (searchResults.metadata && searchResults.metadata.is_possible) ? 'Posible' : 'Imposible' }}
+          </span>
+        </div>
+        <div class="phone-card-sub">Verificación técnica (no reputación).</div>
+      </div>
+    </div>
 
-                <template v-else>
-                  <pre>{{ searchResults }}</pre>
-                </template>
+    <div class="phone-checks">
+      <h4 class="phone-checks-title">Comprobación en navegador</h4>
+      <p class="phone-checks-hint">
+        Para evitar bloqueos del servidor (anti-bot), abre estas fuentes desde tu navegador y revisa la reputación del número.
+      </p>
+      <div class="phone-checks-grid">
+        <button
+          v-for="c in buildPhoneChecks(searchResults.query, searchResults.normalized)"
+          :key="c.url"
+          type="button"
+          class="phone-check-btn"
+          @click="openExternal(c.url)"
+        >
+          {{ c.label }}
+        </button>
+      </div>
+    </div>
+
+    <details class="advanced">
+      <summary>Modo avanzado (ver JSON)</summary>
+      <pre class="advanced-json">{{ JSON.stringify(searchResults, null, 2) }}</pre>
+    </details>
+  </div>
+</template>
+
+<template v-else>
+  <pre>{{ searchResults }}</pre>
+</template>
               </div>
             </div>
           </div>
@@ -555,7 +529,7 @@
 ****************************** GLOBAL IMPORTS ****************************
 **************************************************************************
 */
-import { ref, reactive, onMounted, onBeforeUnmount } from 'vue'
+import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import api from '@/services/api'
 import { signOut, getUser } from "@/auth/oidc";
@@ -582,6 +556,7 @@ const userEmail = ref(null);
 **************************************************************************
 */
 
+import { onMounted } from 'vue'
 import { computed } from "vue";
 import { watch } from 'vue'
 
@@ -652,17 +627,7 @@ onMounted(async () => {
 
   // si quieres precargar historial al entrar:
   // await fetchHistory()
-
-
-  // Tooltip: hide on scroll/resize to avoid stale position
-  window.addEventListener('scroll', _hideTooltipOnWindowEvent, true)
-  window.addEventListener('resize', _hideTooltipOnWindowEvent)
 });
-
-onBeforeUnmount(() => {
-  window.removeEventListener('scroll', _hideTooltipOnWindowEvent, true)
-  window.removeEventListener('resize', _hideTooltipOnWindowEvent)
-})
 
 async function logout() {
   await signOut();
@@ -810,46 +775,12 @@ const getPlaceholder = (type) => {
   const placeholders = {
     username: 'Ej: john_doe, @usuario',
     email: 'Ej: usuario@ejemplo.com',
-    phone: 'Ej: +34 600 000 000 o 600000000',
+    phone: 'Ej: +34 600 000 000',
     ip: 'Ej: 192.168.1.1',
     domain: 'Ej: ejemplo.com'
   }
   return placeholders[type] || 'Introduce tu búsqueda...'
 }
-// Helpers: abrir comprobación en navegador (Phone)
-const openExternal = (url) => {
-  window.open(url, '_blank', 'noopener,noreferrer')
-}
-
-const buildPhoneChecks = (raw, normalized) => {
-  const digits = String(raw || '').replace(/\D/g, '')
-  const e164 = (normalized && normalized.e164) ? String(normalized.e164) : ''
-  const e164NoPlus = e164.replace('+', '')
-  const nationalDigits = (normalized && normalized.national)
-    ? String(normalized.national).replace(/\D/g, '')
-    : digits
-
-  const q1 = digits || e164NoPlus || nationalDigits
-  const q2 = `"${q1}" (spam OR denunciado OR estafa OR fraude OR "cuidado con")`
-
-  const checks = [
-    { label: 'Google (búsqueda)', url: `https://www.google.com/search?q=${encodeURIComponent(q1)}` },
-    { label: 'Google (spam/denuncias)', url: `https://www.google.com/search?q=${encodeURIComponent(q2)}` },
-    { label: 'DuckDuckGo', url: `https://duckduckgo.com/?q=${encodeURIComponent(q1)}` },
-
-    { label: 'ListaSpam', url: `https://www.listaspam.com/busca.php?Telefono=${encodeURIComponent(nationalDigits)}` },
-    { label: 'Tellows', url: `https://www.tellows.es/num/${encodeURIComponent(nationalDigits)}` },
-    { label: 'CleverDialer', url: `https://www.cleverdialer.es/numero/${encodeURIComponent(nationalDigits)}` },
-  ]
-
-  if (e164NoPlus) {
-    checks.push({ label: 'Truecaller', url: `https://www.truecaller.com/es-la/who-called-me/${encodeURIComponent(e164NoPlus)}` })
-    checks.push({ label: 'CallFilter', url: `https://callfilter.app/${encodeURIComponent(e164NoPlus)}` })
-  }
-
-  return checks
-}
-
 
 const formatDate = (timestamp) => {
   return new Date(timestamp).toLocaleString('es-ES', {
@@ -890,14 +821,15 @@ const performSearch = async (opts = {}) => {
         break
         
       case 'email':
-        // Por implementar
-        searchResults.value = generateMockResults(selectedType.value, searchQuery.value)
-        break
+  // Por implementar
+  searchResults.value = generateMockResults(selectedType.value, searchQuery.value)
+  break
 
-      case 'phone':
-        results = await api.searchPhone(searchQuery.value)
-        searchResults.value = results
-        break
+case 'phone':
+  // Teléfono (backend)
+  results = await api.searchPhone(searchQuery.value, 'ES')
+  searchResults.value = results
+  break
         
       default:
         searchResults.value = generateMockResults(selectedType.value, searchQuery.value)
@@ -978,7 +910,7 @@ const formatUsernameResults = (data) => {
       return { platform, url, status, confidence, indicator }
     })
     // Por defecto ocultamos not_found para no llenar la UI
-    //.filter((r) => r.status !== 'not_found' && r.url)
+    .filter((r) => r.status !== 'not_found' && r.url)
 
   const rank = (s) => (s === 'found' ? 0 : s === 'unknown' ? 1 : 2)
   normalized.sort((a, b) => {
@@ -1044,50 +976,55 @@ const getIndicatorTooltip = (item) => {
   if (status === 'found' || ind === '✅') return 'Confirmado: evidencia sólida de que el username existe en esta plataforma.'
   if (ind === '⚠️') return 'Posible coincidencia: la URL responde, pero la evidencia es débil (podría ser genérica).'
   if (ind === '❓') return 'No concluyente: la plataforma limita el acceso desde el servidor (bloqueo/anti-bot/login). Abre el enlace para comprobarlo desde tu navegador.'
-  if (ind === '❌') return 'No encontrado: evidencias claras de que el username no existe en esta plataforma.'
   if (status === 'not_found' || ind === '❌') return 'No encontrado: evidencias claras de que el username no existe aquí.'
   return 'Resultado sin clasificar.'
 }
 
-// Floating tooltip state (avoids overflow clipping by using position: fixed)
-const tooltip = reactive({ show: false, x: 0, y: 0, text: '' })
 
-const showTooltip = (evt, item) => {
-  tooltip.text = getIndicatorTooltip(item)
-
-  const rect = evt?.currentTarget?.getBoundingClientRect?.()
-  if (!rect) {
-    tooltip.show = false
-    return
+const formatLineType = (t) => {
+  const map = {
+    MOBILE: 'Móvil',
+    FIXED: 'Fijo',
+    FIXED_OR_MOBILE: 'Fijo o móvil',
+    VOIP: 'VoIP',
+    TOLL_FREE: 'Gratuito (800/900)',
+    PREMIUM_RATE: 'Tarificación especial',
+    SHARED_COST: 'Coste compartido',
+    UNKNOWN: 'Desconocido'
   }
-
-  const pad = 12
-  const maxW = 320
-
-  // default: to the right of the indicator
-  let x = rect.right + pad
-  let y = rect.top - 6
-
-  // clamp horizontally
-  if (x + maxW + 12 > window.innerWidth) {
-    x = rect.left - pad - maxW
-  }
-  x = Math.max(12, Math.min(x, window.innerWidth - maxW - 12))
-
-  // clamp vertically
-  if (y < 12) y = rect.bottom + pad
-  y = Math.max(12, Math.min(y, window.innerHeight - 80))
-
-  tooltip.x = x
-  tooltip.y = y
-  tooltip.show = true
+  return map[t] || (t || '—')
 }
 
-const hideTooltip = () => {
-  tooltip.show = false
+const buildPhoneChecks = (raw, normalized) => {
+  const digits = String(raw || '').replace(/\D/g, '')
+  const e164 = normalized?.e164 || ''
+  const e164NoPlus = e164.replace('+', '')
+  const nationalDigits = (normalized?.national || '').replace(/\D/g, '') || digits
+
+  const q1 = digits || e164NoPlus
+  const q2 = `"${q1}" (spam OR denunciado OR estafa OR fraude OR "cuidado con")`
+
+  const checks = [
+    { label: 'Google (búsqueda)', url: `https://www.google.com/search?q=${encodeURIComponent(q1)}` },
+    { label: 'Google (spam/denuncias)', url: `https://www.google.com/search?q=${encodeURIComponent(q2)}` },
+    { label: 'DuckDuckGo', url: `https://duckduckgo.com/?q=${encodeURIComponent(q1)}` },
+
+    { label: 'ListaSpam', url: `https://www.listaspam.com/busca.php?Telefono=${encodeURIComponent(nationalDigits)}` },
+    { label: 'Tellows', url: `https://www.tellows.es/num/${encodeURIComponent(nationalDigits)}` },
+    { label: 'CleverDialer', url: `https://www.cleverdialer.es/numero/${encodeURIComponent(nationalDigits)}` },
+  ]
+
+  if (e164NoPlus) {
+    checks.push({ label: 'Truecaller', url: `https://www.truecaller.com/es-la/who-called-me/${encodeURIComponent(e164NoPlus)}` })
+    checks.push({ label: 'CallFilter', url: `https://callfilter.app/${encodeURIComponent(e164NoPlus)}` })
+  }
+
+  return checks
 }
 
-const _hideTooltipOnWindowEvent = () => hideTooltip()
+const openExternal = (url) => {
+  window.open(url, '_blank', 'noopener,noreferrer')
+}
 
 /*
 **************************************************************************
@@ -1883,10 +1820,8 @@ const getCategoryPlaceholder = (category) => {
   max-width: 1000px;
   width: 100%;
   max-height: 85vh;
-  overflow: hidden;
+  overflow-y: auto;
   position: relative;
-  display: flex;
-  flex-direction: column;
   box-shadow: 
     0 0 40px rgba(0, 255, 153, 0.4),
     inset 0 0 30px rgba(0, 255, 153, 0.05);
@@ -1932,13 +1867,6 @@ const getCategoryPlaceholder = (category) => {
 
 .modal-header {
   margin-bottom: 2rem;
-}
-
-.modal-body {
-  flex: 1;
-  min-height: 0;
-  display: flex;
-  flex-direction: column;
 }
 
 .modal-title {
@@ -2058,10 +1986,6 @@ const getCategoryPlaceholder = (category) => {
   background: rgba(0, 0, 0, 0.5);
   border: 1px solid rgba(0, 255, 153, 0.2);
   border-radius: 8px;
-  flex: 1;
-  min-height: 0;
-  display: flex;
-  flex-direction: column;
 }
 
 .results-title {
@@ -2075,21 +1999,9 @@ const getCategoryPlaceholder = (category) => {
   color: #b0b0b0;
   font-family: 'Courier New', monospace;
   font-size: 0.95rem;
-
-  flex: 1;
-  min-height: 0;
-
-  display: flex;
-  flex-direction: column;
-
-  overflow: hidden;
 }
 
 .results-content pre {
-  flex: 1;
-  min-height: 0;
-  overflow-y: auto;
-
   white-space: pre-wrap;
   word-wrap: break-word;
 }
@@ -2099,11 +2011,6 @@ const getCategoryPlaceholder = (category) => {
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
-  flex: 1;
-  min-height: 0;
-  overflow-y: auto;
-  overflow-x: hidden;
-  padding-right: 6px;
 }
 
 .username-result {
@@ -2117,7 +2024,14 @@ const getCategoryPlaceholder = (category) => {
   border-radius: 8px;
 }
 
-.status-not_found { opacity: 0.55; }
+/* Evita que el tooltip se recorte */
+.username-results,
+.username-result,
+.results-container,
+.results-box,
+.modal-content {
+  overflow: visible !important;
+}
 
 .username-indicator {
   font-size: 1.1rem;
@@ -2139,22 +2053,66 @@ const getCategoryPlaceholder = (category) => {
   color: #00ff99;
 }
 
-/* Floating tooltip (fixed, avoids overflow clipping) */
-.floating-tooltip {
-  position: fixed;
-  z-index: 999999;
-  max-width: 320px;
+/* Tooltip base */
+.tooltip {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  cursor: help;
+}
+
+/* Caja del tooltip (encima del icono, centrada) */
+.tooltip::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: calc(100% + 10px);
+  left: 50%;
+  transform: translateX(-50%);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.15s ease, transform 0.15s ease;
+  z-index: 9999;
+
   background: rgba(0, 0, 0, 0.92);
   border: 1px solid rgba(0, 255, 153, 0.7);
   box-shadow: 0 0 14px rgba(0, 255, 153, 0.18);
   color: #eafff6;
+
   padding: 8px 10px;
   border-radius: 10px;
   font-size: 12px;
   line-height: 1.25;
-  pointer-events: none;
+
+  /* ✅ para que NO sea una línea infinita */
+  white-space: normal;
+  width: max-content;
+  max-width: 320px;
 }
 
+/* Flechita */
+.tooltip::before {
+  content: "";
+  position: absolute;
+  bottom: calc(100% + 4px);
+  left: 50%;
+  transform: translateX(-50%);
+  opacity: 0;
+  transition: opacity 0.15s ease;
+  z-index: 9999;
+
+  border-width: 6px;
+  border-style: solid;
+  border-color: rgba(0, 255, 153, 0.35) transparent transparent transparent;
+}
+
+/* Hover */
+.tooltip:hover::after {
+  opacity: 1;
+  transform: translateX(-50%) translateY(-2px);
+}
+.tooltip:hover::before {
+  opacity: 1;
+}
 
 .username-legend {
   display: flex;
@@ -3198,106 +3156,136 @@ body.light-theme .dork-query {
   box-shadow: 0 0 0 3px rgba(0,255,153,.25), 0 0 26px rgba(0,255,153,.35);
 }
 
-/* Phone: browser checks (no afecta a username) */
-.phone-results {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-}
 
-.phone-meta {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 8px;
-  padding: 12px;
-  border-radius: 10px;
-  background: rgba(0, 0, 0, 0.35);
-  border: 1px solid rgba(0, 255, 153, 0.18);
-}
-
-.phone-meta-row {
-  display: flex;
-  gap: 10px;
-  flex-wrap: wrap;
-  align-items: baseline;
-}
-
-.phone-meta-label {
-  color: rgba(255, 255, 255, 0.75);
-  font-weight: 600;
-  letter-spacing: 0.4px;
-}
-
-.phone-meta-value {
-  color: #b0b0b0;
-}
-
-.phone-browser-checks {
-  padding: 12px;
-  border-radius: 10px;
-  background: rgba(0, 0, 0, 0.35);
-  border: 1px solid rgba(0, 255, 153, 0.18);
-}
-
-.phone-checks-title {
-  margin: 0 0 6px 0;
-  color: #00ff99;
-  font-family: 'Rajdhani', sans-serif;
-  font-weight: 800;
-  letter-spacing: 0.6px;
-}
-
-.phone-checks-hint {
-  margin: 0 0 10px 0;
-  opacity: 0.85;
-  font-size: 0.9rem;
-}
-
-.phone-checks-grid {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.phone-check-btn {
-  border: 1px solid rgba(0, 255, 153, 0.35);
-  background: rgba(0, 255, 153, 0.08);
-  color: #00ff99;
-  padding: 8px 12px;
-  border-radius: 10px;
-  cursor: pointer;
-  transition: background-color .15s ease, transform .15s ease, box-shadow .2s ease;
-  font-family: 'Orbitron', sans-serif;
-  font-size: 0.85rem;
-}
-
-.phone-check-btn:hover {
-  background: rgba(0, 255, 153, 0.14);
-  box-shadow: 0 0 14px rgba(0, 255, 153, 0.18);
-  transform: translateY(-1px);
-}
-
-.phone-raw summary {
-  cursor: pointer;
-  color: rgba(0, 255, 153, 0.85);
-  font-weight: 700;
-  margin-bottom: 8px;
-}
-
-/* Scroll interno SOLO para resultados de teléfono */
+/* ===== Phone (family-friendly) ===== */
 .phone-scroll {
-  max-height: 46vh;      /* ajusta: 40–55vh según te guste */
+  max-height: 46vh;
   overflow-y: auto;
-  padding-right: 6px;    /* para que no tape el scroll */
+  padding-right: 6px;
+  min-height: 0;
 }
 
-/* opcional: que el scroll se vea más “pro” */
 .phone-scroll::-webkit-scrollbar {
   width: 8px;
 }
 .phone-scroll::-webkit-scrollbar-thumb {
   background: rgba(0, 255, 153, 0.35);
   border-radius: 8px;
+}
+
+.phone-cards{
+  display:grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap:12px;
+  margin-top:10px;
+}
+
+@media (max-width: 900px){
+  .phone-cards{ grid-template-columns: 1fr; }
+}
+
+.phone-card{
+  border:1px solid rgba(0,255,153,.25);
+  background: rgba(0,0,0,.35);
+  border-radius: 14px;
+  padding: 12px 14px;
+  box-shadow: 0 0 18px rgba(0,255,153,.08);
+}
+
+.phone-card-title{
+  color:#00ff99;
+  font-weight:700;
+  letter-spacing:.3px;
+  margin-bottom:6px;
+  opacity:.95;
+}
+
+.phone-card-main{
+  color:#e8fff6;
+  font-size: 1.05rem;
+  display:flex;
+  gap:10px;
+  align-items:center;
+  flex-wrap:wrap;
+}
+
+.phone-card-sub{
+  margin-top:6px;
+  color: rgba(232,255,246,.75);
+  font-size: .9rem;
+}
+
+.pill{
+  display:inline-block;
+  padding:4px 10px;
+  border-radius:999px;
+  font-weight:700;
+  font-size:.85rem;
+  border:1px solid rgba(0,255,153,.25);
+  background: rgba(0,255,153,.08);
+}
+
+.pill.warn{ border-color: rgba(255,190,0,.35); background: rgba(255,190,0,.10); color:#ffe7a0; }
+.pill.bad{ border-color: rgba(255,60,60,.35); background: rgba(255,60,60,.10); color:#ffb2b2; }
+
+.phone-checks{
+  margin-top: 12px;
+  border: 1px solid rgba(0,255,153,.18);
+  border-radius: 12px;
+  padding: 10px 12px;
+  background: rgba(0,0,0,.20);
+}
+.phone-checks-title{
+  color:#00ff99;
+  font-weight:800;
+  margin: 0 0 6px;
+}
+.phone-checks-hint{
+  opacity: .8;
+  margin: 0 0 10px;
+}
+.phone-checks-grid{
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+}
+.phone-check-btn{
+  border: 1px solid rgba(0, 255, 153, 0.35);
+  background: rgba(0, 255, 153, 0.08);
+  color: #00ff99;
+  padding: 8px 12px;
+  border-radius: 10px;
+  cursor: pointer;
+  font-family: 'Rajdhani', sans-serif;
+  font-weight: 700;
+}
+.phone-check-btn:hover{
+  background: rgba(0, 255, 153, 0.14);
+}
+
+.advanced{
+  margin-top: 12px;
+  border: 1px solid rgba(0,255,153,.18);
+  border-radius: 12px;
+  padding: 10px 12px;
+  background: rgba(0,0,0,.18);
+}
+
+.advanced summary{
+  cursor:pointer;
+  color:#00ff99;
+  font-weight:800;
+}
+
+.advanced-json{
+  margin-top:10px;
+  max-height: 220px;
+  overflow:auto;
+  background: rgba(0,0,0,.45);
+  border:1px solid rgba(0,255,153,.15);
+  border-radius: 10px;
+  padding: 10px;
+  color: rgba(232,255,246,.85);
 }
 
 </style>
