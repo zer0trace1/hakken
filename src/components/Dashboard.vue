@@ -1123,8 +1123,6 @@ function getPhoneEvidenceCards(raw, normalized) {
 **************************************************************************
 */
 
-import { ref } from "vue";
-
 const isSearching_progress = ref(false);
 const progress = ref(0);
 let progressTimer = null;
