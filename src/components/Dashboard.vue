@@ -831,6 +831,7 @@ const closeModal = () => {
   selectedType.value = null
   searchQuery.value = ''
   searchResults.value = null
+  usernameFilter.value = "";
 }
 
 const getTypeLabel = (type) => {
