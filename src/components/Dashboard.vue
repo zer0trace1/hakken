@@ -394,12 +394,22 @@
                 class="search-input"
                 @keyup.enter="performSearch"
               />
-              <button class="search-btn" @click="performSearch">
+              <button :disabled="isSearching_progress" class="search-btn" @click="performSearch">
                 <span v-if="!isSearching">Buscar</span>
                 <span v-else class="loading-spinner">
                   <img src="@/assets/hakken-logo-ajustes.png" alt="hakken-logo-ajustes" class="card-icon-loading">
                 </span>
               </button>
+            </div>
+
+            <div v-if="isSearching_progress" class="progress-wrap">
+              <div class="progress-top">
+                <span>Buscando…</span>
+                <span>{{ progress }}%</span>
+              </div>
+              <div class="progress-bar">
+                <div class="progress-fill" :style="{ width: progress + '%' }"></div>
+              </div>
             </div>
 
             <!-- Mensaje de error -->
@@ -854,27 +864,27 @@ const performSearch = async (opts = {}) => {
   searchError.value = null
   
   try {
+    startProgress();
     let results = null
     
     switch(selectedType.value) {
-      case 'username':
-        results = await api.searchUsername(searchQuery.value)
+      case 'username':  
+      results = await api.searchUsername(searchQuery.value)
         searchResults.value = formatUsernameResults(results)
         break
         
       case 'ip':
-        results = await api.searchIP(searchQuery.value)
+      results = await api.searchIP(searchQuery.value)
         searchResults.value = formatIPResults(results)
         break
         
       case 'domain':
-        results = await api.searchDomain(searchQuery.value)
+      results = await api.searchDomain(searchQuery.value)
         searchResults.value = formatDomainResults(results)
         break
         
       case 'email':
       case 'phone':
-        // Por implementar
         results = await api.searchPhone(searchQuery.value, 'ES')
         searchResults.value = results
         break
@@ -888,8 +898,11 @@ const performSearch = async (opts = {}) => {
       await new Promise(r => setTimeout(r, 250))
       await fetchHistory()
     }
+
+    finishProgress();
     
   } catch (error) {
+    failProgress();
     console.error('Error en la búsqueda:', error)
     searchError.value = error.response?.data?.detail || 'Error al realizar la búsqueda'
     searchResults.value = null
@@ -1101,6 +1114,60 @@ function getPhoneEvidenceCards(raw, normalized) {
 /*
 **************************************************************************
 *************************** FRONTED LOGIC ********************************
+**************************************************************************
+*/
+
+/*
+**************************************************************************
+*************************** LOOKUP PROGRESS ******************************
+**************************************************************************
+*/
+
+import { ref } from "vue";
+
+const isSearching_progress = ref(false);
+const progress = ref(0);
+let progressTimer = null;
+
+function startProgress() {
+  isSearching_progress.value = true;
+  progress.value = 0;
+
+  if (progressTimer) clearInterval(progressTimer);
+
+  progressTimer = setInterval(() => {
+    // Sube rápido al principio, luego más lento, y se queda en 90%
+    const p = progress.value;
+    const step = p < 60 ? 6 : p < 80 ? 3 : 1;
+    progress.value = Math.min(90, p + step);
+  }, 250);
+}
+
+function finishProgress() {
+  if (progressTimer) {
+    clearInterval(progressTimer);
+    progressTimer = null;
+  }
+  progress.value = 100;
+
+  // deja que se vea el 100% un momento y ocultamos
+  setTimeout(() => {
+    isSearching_progress.value = false;
+  }, 250);
+}
+
+function failProgress() {
+  if (progressTimer) {
+    clearInterval(progressTimer);
+    progressTimer = null;
+  }
+  isSearching_progress.value = false;
+  progress.value = 0;
+}
+
+/*
+**************************************************************************
+*************************** LOOKUP PROGRESS ******************************
 **************************************************************************
 */
 
@@ -3423,4 +3490,36 @@ body.light-theme .dork-query {
 .phone-evidence-btn:hover{
   background: rgba(0,255,153,.14);
 }
+
+/* PROGRESS CSS */
+.progress-wrap{
+  margin-top: 12px;
+}
+
+.progress-top{
+  display:flex;
+  justify-content: space-between;
+  align-items:center;
+  color: rgba(232,255,246,.85);
+  font-size: .9rem;
+  margin-bottom: 6px;
+}
+
+.progress-bar{
+  height: 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(0,255,153,.28);
+  background: rgba(0,0,0,.35);
+  overflow: hidden;
+}
+
+.progress-fill{
+  height: 100%;
+  width: 0%;
+  background: rgba(0,255,153,.55);
+  box-shadow: 0 0 14px rgba(0,255,153,.35);
+  transition: width 200ms ease;
+}
+
+button:disabled{ opacity:.6; cursor:not-allowed; }
 </style>
