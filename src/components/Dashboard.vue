@@ -1090,7 +1090,7 @@ function getPhoneEvidenceCards(raw, normalized) {
 
   if (e164NoPlus) {
     cards.push(
-      { title: "Truecaller", badge: "Lookup", subtitle: "Identificación del llamante (puede requerir login)", url: `https://www.truecaller.com/es-la/who-called-me/${encodeURIComponent(e164NoPlus)}` },
+      { title: "Truecaller", badge: "Lookup", subtitle: "Identificación del llamante (puede requerir login)", url: `https://www.truecaller.com/search/es/${encodeURIComponent(e164NoPlus)}` },
       { title: "CallFilter", badge: "Reseñas", subtitle: "Reseñas y reputación comunitaria (si existe ficha)", url: `https://callfilter.app/${encodeURIComponent(e164NoPlus)}` }
     );
   }
