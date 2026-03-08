@@ -515,10 +515,37 @@
                       </div>
                     </div>
 
-                    <details class="advanced">
+                    <!--<details class="advanced">
                       <summary>Modo avanzado (ver JSON)</summary>
                       <pre class="advanced-json">{{ JSON.stringify(searchResults, null, 2) }}</pre>
-                    </details>
+                    </details>-->
+                    <div class="phone-evidence">
+                      <div class="phone-evidence-header">
+                        <div class="phone-evidence-title">Fuentes para comprobar el número</div>
+                        <div class="phone-evidence-subtitle">
+                          Abre estas páginas desde tu navegador para ver denuncias, comentarios o información pública.
+                        </div>
+                      </div>
+
+                      <div class="phone-evidence-grid">
+                        <div
+                          v-for="c in getPhoneEvidenceCards(searchQuery, searchResults?.normalized)"
+                          :key="c.url"
+                          class="phone-evidence-card"
+                        >
+                          <div class="phone-evidence-card-top">
+                            <div class="phone-evidence-card-name">{{ c.title }}</div>
+                            <span class="phone-evidence-badge">{{ c.badge }}</span>
+                          </div>
+
+                          <div class="phone-evidence-card-desc">{{ c.subtitle }}</div>
+
+                          <button class="phone-evidence-btn" type="button" @click="openExternal(c.url)">
+                            Abrir
+                          </button>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </template>
 
@@ -871,51 +898,6 @@ const performSearch = async (opts = {}) => {
   }
 }
 
-// Función para formatear resultados de GitHub
-const formatGitHubResults = (githubData) => {
-  if (!githubData.exists) {
-    return {
-      query: searchQuery.value,
-      type: 'username',
-      timestamp: new Date().toISOString(),
-      socialMedia: [
-        { 
-          platform: 'GitHub', 
-          icon: '💻', 
-          url: `https://github.com/${searchQuery.value}`, 
-          found: false 
-        }
-      ]
-    }
-  }
-  
-  return {
-    query: searchQuery.value,
-    type: 'username',
-    timestamp: new Date().toISOString(),
-    socialMedia: [
-      { 
-        platform: 'GitHub', 
-        icon: '💻', 
-        url: githubData.profile_url, 
-        found: true,
-        details: {
-          nombre: githubData.name || 'N/A',
-          bio: githubData.bio || 'Sin biografía',
-          repositorios: githubData.public_repos,
-          seguidores: githubData.followers,
-          siguiendo: githubData.following,
-          empresa: githubData.company || 'N/A',
-          ubicacion: githubData.location || 'N/A',
-          blog: githubData.blog || 'N/A',
-          twitter: githubData.twitter_username || 'N/A',
-          creado: githubData.created_at ? new Date(githubData.created_at).toLocaleDateString('es-ES') : 'N/A'
-        }
-      }
-    ]
-  }
-}
-
 // Función para formatear resultados de Username (multi-fuente)
 const formatUsernameResults = (data) => {
   const rawList = data?.results || data?.socialMedia || []
@@ -1086,6 +1068,35 @@ const hideTooltip = () => {
 }
 
 const _hideTooltipOnWindowEvent = () => hideTooltip()
+
+function getPhoneEvidenceCards(raw, normalized) {
+  const digits = String(raw || "").replace(/\D/g, "");
+  const e164 = normalized?.e164 || "";
+  const e164NoPlus = e164.replace("+", "");
+  const nationalDigits = (normalized?.national || "").replace(/\D/g, "") || digits;
+
+  const q = digits || e164NoPlus;
+  const qSpam = `"${q}" (spam OR denunciado OR estafa OR fraude OR "cuidado con")`;
+
+  const cards = [
+    { title: "Google", badge: "Buscar", subtitle: "Búsqueda general del número", url: `https://www.google.com/search?q=${encodeURIComponent(q)}` },
+    { title: "Google (spam/denuncias)", badge: "Buscar", subtitle: "Busca menciones de spam, denuncias o estafas", url: `https://www.google.com/search?q=${encodeURIComponent(qSpam)}` },
+    { title: "DuckDuckGo", badge: "Buscar", subtitle: "Búsqueda alternativa (puede mostrar otras fuentes)", url: `https://duckduckgo.com/?q=${encodeURIComponent(q)}` },
+
+    { title: "ListaSpam", badge: "Reportes", subtitle: "Denuncias y reportes de usuarios (España)", url: `https://www.listaspam.com/busca.php?Telefono=${encodeURIComponent(nationalDigits)}` },
+    { title: "Tellows", badge: "Reportes", subtitle: "Valoraciones y comentarios sobre el número", url: `https://www.tellows.es/num/${encodeURIComponent(nationalDigits)}` },
+    { title: "CleverDialer", badge: "Reportes", subtitle: "Información y posibles reportes del número", url: `https://www.cleverdialer.es/numero/${encodeURIComponent(nationalDigits)}` },
+  ];
+
+  if (e164NoPlus) {
+    cards.push(
+      { title: "Truecaller", badge: "Lookup", subtitle: "Identificación del llamante (puede requerir login)", url: `https://www.truecaller.com/es-la/who-called-me/${encodeURIComponent(e164NoPlus)}` },
+      { title: "CallFilter", badge: "Reseñas", subtitle: "Reseñas y reputación comunitaria (si existe ficha)", url: `https://callfilter.app/${encodeURIComponent(e164NoPlus)}` }
+    );
+  }
+
+  return cards;
+}
 
 /*
 **************************************************************************
@@ -3325,5 +3336,91 @@ body.light-theme .dork-query {
   border-radius: 10px;
   padding: 10px;
   color: rgba(232,255,246,.85);
+}
+
+/* PHONE EVIDENCE CSS */
+.phone-evidence{
+  margin-top: 14px;
+  border: 1px solid rgba(0,255,153,.18);
+  background: rgba(0,0,0,.22);
+  border-radius: 14px;
+  padding: 14px;
+}
+
+.phone-evidence-title{
+  color:#00ff99;
+  font-weight:800;
+  letter-spacing:.2px;
+  font-size: 1.05rem;
+}
+
+.phone-evidence-subtitle{
+  margin-top: 6px;
+  opacity: .8;
+  font-size: .92rem;
+}
+
+.phone-evidence-grid{
+  margin-top: 12px;
+  display:grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+@media (max-width: 900px){
+  .phone-evidence-grid{ grid-template-columns: 1fr; }
+}
+
+.phone-evidence-card{
+  border:1px solid rgba(0,255,153,.16);
+  background: rgba(0,0,0,.35);
+  border-radius: 14px;
+  padding: 12px;
+  box-shadow: 0 0 18px rgba(0,255,153,.06);
+}
+
+.phone-evidence-card-top{
+  display:flex;
+  align-items:center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.phone-evidence-card-name{
+  color:#e8fff6;
+  font-weight:800;
+}
+
+.phone-evidence-badge{
+  border:1px solid rgba(0,255,153,.25);
+  background: rgba(0,255,153,.10);
+  color:#00ff99;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: .82rem;
+  font-weight: 800;
+}
+
+.phone-evidence-card-desc{
+  margin-top: 8px;
+  color: rgba(232,255,246,.78);
+  font-size: .92rem;
+  line-height: 1.25rem;
+}
+
+.phone-evidence-btn{
+  margin-top: 12px;
+  width: 100%;
+  border: 1px solid rgba(0,255,153,.30);
+  background: rgba(0,255,153,.08);
+  color: #00ff99;
+  padding: 10px 12px;
+  border-radius: 12px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.phone-evidence-btn:hover{
+  background: rgba(0,255,153,.14);
 }
 </style>
