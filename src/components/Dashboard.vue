@@ -444,8 +444,19 @@
                       <span class="legend-text">No encontrado</span>
                     </div>
                   </div>
+                  <div class="username-filter">
+                    <input
+                      v-model="usernameFilter"
+                      type="text"
+                      placeholder="Filtrar fuentes (ej: github, reddit, .io...)"
+                      class="username-filter-input"
+                    />
+                    <span class="username-filter-count">
+                      {{ filteredUsernameResults.length }} / {{ (searchResults?.results || []).length }}
+                    </span>
+                  </div>
                   <div v-if="searchResults.results && searchResults.results.length" class="username-results" :class="`status-${(item && item.status) ? item.status : 'unknown'}`">
-                    <div v-for="item in searchResults.results" :key="item.platform + ':' + item.url" class="username-result">
+                    <div v-for="item in filteredUsernameResults" :key="item.platform + ':' + item.url" class="username-result">
                       <span
                         class="username-indicator"
                         tabindex="0"
@@ -1619,6 +1630,33 @@ const getCategoryPlaceholder = (category) => {
 /*
 **************************************************************************
 *************************** GOOGLE DORKS *********************************
+**************************************************************************
+*/
+
+/*
+**************************************************************************
+*************************** FILTER USERNAME ******************************
+**************************************************************************
+*/
+
+const usernameFilter = ref("");
+
+const filteredUsernameResults = computed(() => {
+  const all = searchResults.value?.results || [];   // <-- ajusta si tu array se llama distinto
+  const q = usernameFilter.value.trim().toLowerCase();
+  if (!q) return all;
+
+  return all.filter((r) => {
+    const platform = (r.platform || "").toLowerCase();
+    const url = (r.url || "").toLowerCase();
+    const status = (r.status || "").toLowerCase(); // por si quieres filtrar "found/unknown/not_found"
+    return platform.includes(q) || url.includes(q) || status.includes(q);
+  });
+});
+
+/*
+**************************************************************************
+*************************** FILTER USERNAME ******************************
 **************************************************************************
 */
 </script>
@@ -3520,4 +3558,37 @@ body.light-theme .dork-query {
 }
 
 button:disabled{ opacity:.6; cursor:not-allowed; }
+
+/* filter css */
+
+.username-filter{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  margin: 10px 0 12px;
+}
+
+.username-filter-input{
+  flex: 1;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(0,255,153,.25);
+  background: rgba(0,0,0,.35);
+  color: rgba(232,255,246,.95);
+  outline: none;
+}
+
+.username-filter-input::placeholder{
+  color: rgba(232,255,246,.55);
+}
+
+.username-filter-count{
+  font-size: .9rem;
+  color: rgba(232,255,246,.75);
+  border: 1px solid rgba(0,255,153,.18);
+  background: rgba(0,0,0,.25);
+  padding: 8px 10px;
+  border-radius: 10px;
+  white-space: nowrap;
+}
 </style>
