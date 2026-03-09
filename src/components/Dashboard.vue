@@ -517,7 +517,7 @@
                         </div>
 
                         <div class="phone-card-sub" style="opacity:.75;">
-                          Nota: “VÁLIDO” = sin reportes comunitarios (no es verificación oficial).
+                          Nota: La reputación se calcula en base a reportes comunitarios (no es verificación oficial).
                         </div>
                       </div>
                     </div>
