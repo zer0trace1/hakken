@@ -885,6 +885,10 @@ const closeModal = () => {
   searchQuery.value = ''
   searchResults.value = null
   usernameFilter.value = "";
+  reportMsg.value = "";
+  reportErr.value = "";
+  reportComment.value = "";
+  reportCategory.value = "spam";
 }
 
 const getTypeLabel = (type) => {
@@ -952,6 +956,7 @@ const performSearch = async (opts = {}) => {
       case 'phone':
         results = await api.searchPhone(searchQuery.value, 'ES')
         searchResults.value = results
+
         break
         
       default:
