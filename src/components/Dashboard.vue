@@ -2254,7 +2254,6 @@ const filteredUsernameResults = computed(() => {
 
 .results-content {
   color: #b0b0b0;
-  font-family: 'Courier New', monospace;
   font-size: 0.95rem;
 
   flex: 1;
