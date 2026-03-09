@@ -598,7 +598,7 @@
                         <div v-if="reportErr" class="pr-err">{{ reportErr }}</div>
                       </div>
                       <div v-if="searchResults?.community_reports" class="community-box">
-                        <div class="community-title">Reportes de la comunidad (HAKKEN)</div>
+                        <div class="community-title">Reportes de la comunidad para ESTE número</div>
 
                         <div class="community-stats">
                           <div class="cs-pill">Total: {{ searchResults.community_reports.total || 0 }}</div>
