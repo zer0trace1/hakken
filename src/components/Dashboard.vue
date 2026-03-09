@@ -604,6 +604,88 @@
                   </div>
                 </template>
 
+                <template v-else-if="selectedType === 'domain'">
+                  <div class="domain-scroll">
+                    <!-- Resumen -->
+                    <div class="domain-cards">
+                      <div class="domain-card">
+                        <div class="domain-card-title">Dominio</div>
+                        <div class="domain-card-main">{{ searchResults.domain }}</div>
+                        <div class="domain-card-sub">
+                          <span :class="searchResults.exists ? 'pill ok' : 'pill bad'">
+                            {{ searchResults.exists ? 'Existe (DNS)' : 'No resuelve' }}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div class="domain-card">
+                        <div class="domain-card-title">Web</div>
+                        <div class="domain-card-main">
+                          <span :class="searchResults.web?.ok ? 'pill ok' : 'pill warn'">
+                            {{ searchResults.web?.ok ? (searchResults.web.status_code + ' OK') : 'No accesible' }}
+                          </span>
+                        </div>
+                        <div class="domain-card-sub">
+                          <span v-if="searchResults.web?.ok">
+                            {{ searchResults.web.final_url }}
+                          </span>
+                          <span v-else>
+                            {{ searchResults.web?.error || 'Sin respuesta HTTP' }}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div class="domain-card">
+                        <div class="domain-card-title">Email security</div>
+                        <div class="domain-card-main">
+                          <span :class="searchResults.email_security?.spf?.present ? 'pill ok' : 'pill warn'">
+                            SPF {{ searchResults.email_security?.spf?.present ? '✅' : '—' }}
+                          </span>
+                          <span :class="searchResults.email_security?.dmarc?.present ? 'pill ok' : 'pill warn'">
+                            DMARC {{ searchResults.email_security?.dmarc?.present ? '✅' : '—' }}
+                          </span>
+                        </div>
+                        <div class="domain-card-sub">
+                          <span v-if="searchResults.email_security?.dmarc?.present">
+                            Policy: {{ searchResults.email_security.dmarc.policy || '—' }}
+                          </span>
+                          <span v-else>
+                            Sin DMARC/SPF detectados (puede ser normal si no envías correo desde este dominio)
+                          </span>
+                        </div>
+                      </div>
+
+                      <div class="domain-card">
+                        <div class="domain-card-title">Timestamp</div>
+                        <div class="domain-card-main">{{ searchResults.checked_at }}</div>
+                        <div class="domain-card-sub">Última comprobación</div>
+                      </div>
+                    </div>
+
+                    <!-- DNS -->
+                    <div class="domain-section">
+                      <div class="domain-section-title">DNS</div>
+
+                      <div v-for="(values, rtype) in (searchResults.dns_by_type || {})" :key="rtype" class="dns-block">
+                        <div class="dns-type">{{ rtype }}</div>
+                        <div class="dns-values">
+                          <div v-for="v in values" :key="v" class="dns-value">{{ v }}</div>
+                        </div>
+                      </div>
+
+                      <div v-if="!Object.keys(searchResults.dns_by_type || {}).length" class="domain-muted">
+                        No se encontraron registros DNS.
+                      </div>
+                    </div>
+
+                    <!-- Modo técnico (opcional) -->
+                    <details class="advanced">
+                      <summary>Modo técnico</summary>
+                      <pre class="advanced-json">{{ JSON.stringify(searchResults, null, 2) }}</pre>
+                    </details>
+                  </div>
+                </template>
+
                 <template v-else>
                   <pre>{{ searchResults }}</pre>
                 </template>
@@ -919,18 +1001,18 @@ const performSearch = async (opts = {}) => {
     
     switch(selectedType.value) {
       case 'username':  
-      results = await api.searchUsername(searchQuery.value)
+        results = await api.searchUsername(searchQuery.value)
         searchResults.value = formatUsernameResults(results)
         break
         
       case 'ip':
-      results = await api.searchIP(searchQuery.value)
+        results = await api.searchIP(searchQuery.value)
         searchResults.value = formatIPResults(results)
         break
         
       case 'domain':
-      results = await api.searchDomain(searchQuery.value)
-        searchResults.value = formatDomainResults(results)
+        results = await api.searchDomain(searchQuery.value)
+        searchResults.value = results
         break
         
       case 'email':
@@ -1015,25 +1097,6 @@ const formatIPResults = (ipData) => {
       lon: ipData.longitude,
       zip: ipData.zip_code || 'N/A',
       as: ipData.as_info || 'N/A'
-    }
-  }
-}
-
-// Función para formatear resultados de Dominio
-const formatDomainResults = (domainData) => {
-  return {
-    query: searchQuery.value,
-    type: 'domain',
-    timestamp: new Date().toISOString(),
-    domainInfo: {
-      registered: domainData.exists,
-      created: 'N/A',
-      expires: 'N/A',
-      registrar: 'N/A',
-      dns: domainData.dns_records.map(record => ({
-        type: record.type_name,
-        value: record.value
-      }))
     }
   }
 }
@@ -3732,4 +3795,95 @@ button:disabled{ opacity:.6; cursor:not-allowed; }
 .ci-cat{ color:#00ff99; font-weight:800; text-transform: uppercase; font-size:.85rem; }
 .ci-date{ font-size:.85rem; opacity:.8; }
 .ci-comment{ margin-top:6px; opacity:.9; }
+
+/* DOMAIN CSS */
+.domain-scroll{
+  max-height: 52vh;
+  overflow-y: auto;
+  padding-right: 6px;
+}
+
+.domain-cards{
+  display:grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap:12px;
+  margin-top:10px;
+}
+
+@media (max-width: 900px){
+  .domain-cards{ grid-template-columns: 1fr; }
+}
+
+.domain-card{
+  border:1px solid rgba(0,255,153,.18);
+  background: rgba(0,0,0,.28);
+  border-radius: 14px;
+  padding: 12px 14px;
+  box-shadow: 0 0 18px rgba(0,255,153,.06);
+}
+
+.domain-card-title{
+  color:#00ff99;
+  font-weight:800;
+  margin-bottom:6px;
+}
+
+.domain-card-main{
+  color:#e8fff6;
+  font-size: 1.05rem;
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+  align-items:center;
+}
+
+.domain-card-sub{
+  margin-top:6px;
+  color: rgba(232,255,246,.75);
+  font-size: .9rem;
+}
+
+.domain-section{
+  margin-top: 14px;
+  border: 1px solid rgba(0,255,153,.18);
+  background: rgba(0,0,0,.22);
+  border-radius: 14px;
+  padding: 14px;
+}
+
+.domain-section-title{
+  color:#00ff99;
+  font-weight:800;
+  margin-bottom: 10px;
+}
+
+.dns-block{
+  border:1px solid rgba(0,255,153,.12);
+  background: rgba(0,0,0,.25);
+  border-radius: 12px;
+  padding: 10px 12px;
+  margin-bottom: 10px;
+}
+
+.dns-type{
+  font-weight:900;
+  color:#00ff99;
+  margin-bottom: 6px;
+}
+
+.dns-values{
+  display:flex;
+  flex-direction:column;
+  gap:6px;
+}
+
+.dns-value{
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-size: .92rem;
+  color: rgba(232,255,246,.9);
+}
+
+.domain-muted{
+  opacity:.75;
+}
 </style>
