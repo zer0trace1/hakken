@@ -506,15 +506,31 @@
 
                       <div class="phone-card">
                         <div class="phone-card-title">Validación</div>
+
                         <div class="phone-card-main">
-                          <span :class="(searchResults.metadata && searchResults.metadata.is_valid) ? 'pill ok' : 'pill warn'">
-                            {{ (searchResults.metadata && searchResults.metadata.is_valid) ? 'Válido' : 'No validado' }}
-                          </span>
-                          <span :class="(searchResults.metadata && searchResults.metadata.is_possible) ? 'pill ok' : 'pill bad'">
-                            {{ (searchResults.metadata && searchResults.metadata.is_possible) ? 'Posible' : 'Imposible' }}
+                          <!-- reputación comunitaria -->
+                          <span
+                            :class="phoneReputationClass(searchResults?.community_reports?.total)"
+                            :title="'Reportes de la comunidad para este número: ' + (searchResults?.community_reports?.total || 0)"
+                          >
+                            {{ phoneReputationLabel(searchResults?.community_reports?.total) }}
                           </span>
                         </div>
-                        <div class="phone-card-sub">Verificación técnica (no reputación).</div>
+
+                        <div class="phone-card-sub">
+                          Reportes (HAKKEN): {{ searchResults?.community_reports?.total || 0 }}
+                          · Spam: {{ searchResults?.community_reports?.spam || 0 }}
+                          · Fraude: {{ searchResults?.community_reports?.fraude || 0 }}
+                        </div>
+
+                        <div class="phone-card-sub">
+                          Verificación técnica: {{ searchResults?.metadata?.is_valid ? "válido" : "no validado" }}
+                          · {{ searchResults?.metadata?.is_possible ? "posible" : "imposible" }}
+                        </div>
+
+                        <div class="phone-card-sub" style="opacity:.75;">
+                          Nota: “VÁLIDO” = sin reportes comunitarios (no es verificación oficial).
+                        </div>
                       </div>
                     </div>
                     <div class="phone-evidence">
@@ -1223,6 +1239,20 @@ async function submitPhoneReport() {
   } finally {
     isReporting.value = false;
   }
+}
+
+function phoneReputationLabel(total) {
+  const n = Number(total || 0);
+  if (n >= 2) return "MALICIOSO";
+  if (n >= 1) return "SOSPECHOSO";
+  return "VÁLIDO";
+}
+
+function phoneReputationClass(total) {
+  const n = Number(total || 0);
+  if (n >= 2) return "pill bad";      // rojo
+  if (n >= 1) return "pill warn";     // amarillo/naranja
+  return "pill ok";                   // verde
 }
 
 /*
