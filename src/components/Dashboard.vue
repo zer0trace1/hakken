@@ -567,6 +567,59 @@
                         </div>
                       </div>
                     </div>
+                    <div class="phone-report-box">
+                      <div class="phone-report-title">Reportar este número</div>
+                      <div class="phone-report-sub">
+                        Esto lo reporta la comunidad de HAKKEN. No es verificación oficial.
+                      </div>
+
+                      <div class="phone-report-form">
+                        <label class="pr-label">Motivo</label>
+                        <select v-model="reportCategory" class="pr-select">
+                          <option value="spam">Spam</option>
+                          <option value="fraude">Fraude / estafa</option>
+                          <option value="telemarketing">Telemarketing</option>
+                          <option value="otro">Otro</option>
+                        </select>
+
+                        <label class="pr-label">Comentario (opcional)</label>
+                        <textarea
+                          v-model="reportComment"
+                          class="pr-textarea"
+                          placeholder="Ej: llamada insistente, suplantación, etc."
+                          maxlength="200"
+                        />
+
+                        <button class="pr-btn" type="button" :disabled="isReporting" @click="submitPhoneReport">
+                          {{ isReporting ? "Enviando..." : "Enviar reporte" }}
+                        </button>
+
+                        <div v-if="reportMsg" class="pr-ok">{{ reportMsg }}</div>
+                        <div v-if="reportErr" class="pr-err">{{ reportErr }}</div>
+                      </div>
+                      <div v-if="searchResults?.community_reports" class="community-box">
+                        <div class="community-title">Reportes de la comunidad (HAKKEN)</div>
+
+                        <div class="community-stats">
+                          <div class="cs-pill">Total: {{ searchResults.community_reports.total || 0 }}</div>
+                          <div class="cs-pill">Spam: {{ searchResults.community_reports.spam || 0 }}</div>
+                          <div class="cs-pill">Fraude: {{ searchResults.community_reports.fraude || 0 }}</div>
+                          <div class="cs-pill">Telemarketing: {{ searchResults.community_reports.telemarketing || 0 }}</div>
+                          <div class="cs-pill">Otro: {{ searchResults.community_reports.otro || 0 }}</div>
+                        </div>
+
+                        <details class="community-latest" v-if="(searchResults.community_reports.latest || []).length">
+                          <summary>Ver últimos reportes</summary>
+                          <div class="community-item" v-for="r in searchResults.community_reports.latest" :key="r.created_at + r.category">
+                            <div class="ci-top">
+                              <span class="ci-cat">{{ r.category }}</span>
+                              <span class="ci-date">{{ r.created_at }}</span>
+                            </div>
+                            <div class="ci-comment" v-if="r.comment">{{ r.comment }}</div>
+                          </div>
+                        </details>
+                      </div>
+                    </div>
                   </div>
                 </template>
 
@@ -1178,6 +1231,45 @@ function failProgress() {
 /*
 **************************************************************************
 *************************** LOOKUP PROGRESS ******************************
+**************************************************************************
+*/
+
+/*
+**************************************************************************
+*************************** REPORT PHONE NUMBERS *************************
+**************************************************************************
+*/
+
+const reportCategory = ref("spam");
+const reportComment = ref("");
+const isReporting = ref(false);
+const reportMsg = ref("");
+const reportErr = ref("");
+
+async function submitPhoneReport() {
+  try {
+    reportMsg.value = "";
+    reportErr.value = "";
+    isReporting.value = true;
+
+    const phoneToReport = searchQuery.value; // o searchResults.normalized.national si prefieres
+    const res = await api.reportPhone(phoneToReport, reportCategory.value, reportComment.value || null);
+
+    reportMsg.value = "¡Gracias! Tu reporte se ha guardado.";
+    // si el backend devuelve community_reports, actualizamos la UI al momento:
+    if (res?.community_reports && searchResults.value) {
+      searchResults.value.community_reports = res.community_reports;
+    }
+  } catch (e) {
+    reportErr.value = e?.response?.data?.detail || "No se pudo guardar el reporte.";
+  } finally {
+    isReporting.value = false;
+  }
+}
+
+/*
+**************************************************************************
+*************************** REPORT PHONE NUMEBRS *************************
 **************************************************************************
 */
 
@@ -3592,4 +3684,77 @@ button:disabled{ opacity:.6; cursor:not-allowed; }
   border-radius: 10px;
   white-space: nowrap;
 }
+
+/* REPORTS */
+.phone-report-box, .community-box{
+  margin-top: 14px;
+  border: 1px solid rgba(0,255,153,.18);
+  background: rgba(0,0,0,.22);
+  border-radius: 14px;
+  padding: 14px;
+}
+
+.phone-report-title, .community-title{
+  color:#00ff99;
+  font-weight:800;
+}
+
+.phone-report-sub{
+  margin-top:6px;
+  opacity:.8;
+  font-size:.92rem;
+}
+
+.pr-label{ display:block; margin-top:10px; opacity:.85; }
+.pr-select, .pr-textarea{
+  width:100%;
+  margin-top:6px;
+  border-radius: 10px;
+  border: 1px solid rgba(0,255,153,.18);
+  background: rgba(0,0,0,.35);
+  color: rgba(232,255,246,.95);
+  padding: 10px 12px;
+  outline:none;
+}
+.pr-textarea{ min-height: 80px; resize: vertical; }
+
+.pr-btn{
+  margin-top: 12px;
+  width: 100%;
+  border: 1px solid rgba(0,255,153,.30);
+  background: rgba(0,255,153,.08);
+  color: #00ff99;
+  padding: 10px 12px;
+  border-radius: 12px;
+  font-weight: 800;
+  cursor: pointer;
+}
+.pr-btn:disabled{ opacity:.6; cursor:not-allowed; }
+
+.pr-ok{ margin-top:10px; color:#00ff99; opacity:.9; }
+.pr-err{ margin-top:10px; color:#ff8a8a; opacity:.9; }
+
+.community-stats{ display:flex; flex-wrap:wrap; gap:8px; margin-top:10px; }
+.cs-pill{
+  border:1px solid rgba(0,255,153,.18);
+  background: rgba(0,0,0,.25);
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-size: .9rem;
+}
+
+.community-latest{ margin-top:10px; }
+.community-latest summary{ cursor:pointer; color:#00ff99; font-weight:800; }
+
+.community-item{
+  margin-top:10px;
+  padding:10px;
+  border-radius: 12px;
+  border: 1px solid rgba(0,255,153,.12);
+  background: rgba(0,0,0,.30);
+}
+.ci-top{ display:flex; justify-content:space-between; gap:10px; opacity:.85; }
+.ci-cat{ color:#00ff99; font-weight:800; text-transform: uppercase; font-size:.85rem; }
+.ci-date{ font-size:.85rem; opacity:.8; }
+.ci-comment{ margin-top:6px; opacity:.9; }
 </style>

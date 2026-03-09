@@ -143,6 +143,15 @@ export default {
     }
   },
 
+  async reportPhone(phone, category, comment = null) {
+    const response = await apiClient.post(`/phone/report`, {
+      phone,
+      category,
+      comment,
+    });
+    return response.data;
+  },
+
   // ==================== UTILIDADES ====================
   async healthCheck() {
     try {
