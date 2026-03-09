@@ -956,7 +956,10 @@ const performSearch = async (opts = {}) => {
       case 'phone':
         results = await api.searchPhone(searchQuery.value, 'ES')
         searchResults.value = results
-
+        reportMsg.value = "";
+        reportErr.value = "";
+        reportComment.value = "";
+        reportCategory.value = "spam";
         break
         
       default:
