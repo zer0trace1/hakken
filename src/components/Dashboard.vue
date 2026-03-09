@@ -511,21 +511,9 @@
                           <!-- reputación comunitaria -->
                           <span
                             :class="phoneReputationClass(searchResults?.community_reports?.total)"
-                            :title="'Reportes de la comunidad para este número: ' + (searchResults?.community_reports?.total || 0)"
                           >
                             {{ phoneReputationLabel(searchResults?.community_reports?.total) }}
                           </span>
-                        </div>
-
-                        <div class="phone-card-sub">
-                          Reportes (HAKKEN): {{ searchResults?.community_reports?.total || 0 }}
-                          · Spam: {{ searchResults?.community_reports?.spam || 0 }}
-                          · Fraude: {{ searchResults?.community_reports?.fraude || 0 }}
-                        </div>
-
-                        <div class="phone-card-sub">
-                          Verificación técnica: {{ searchResults?.metadata?.is_valid ? "válido" : "no validado" }}
-                          · {{ searchResults?.metadata?.is_possible ? "posible" : "imposible" }}
                         </div>
 
                         <div class="phone-card-sub" style="opacity:.75;">
