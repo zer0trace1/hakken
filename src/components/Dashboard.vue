@@ -4157,6 +4157,7 @@ button:disabled{ opacity:.6; cursor:not-allowed; }
   border-radius: 12px;
   overflow:hidden;
   margin-top:10px;
+  overflow-x: scroll;
 }
 .tr{
   display:grid;
