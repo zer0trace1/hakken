@@ -71,6 +71,18 @@ apiClient.interceptors.response.use(
 
 // Exportar todas las funciones de búsqueda
 export default {
+
+  // ==================== NAME ====================
+  async searchPerson(name) {
+    try {
+      const response = await apiClient.get(`/search/person/`, {name, context});
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  },
+
+
   // ==================== USERNAME ====================
   async searchUsername(username) {
     try {

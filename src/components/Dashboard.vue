@@ -66,6 +66,14 @@
         <!-- Search Cards Grid -->
         <div class="search-cards-grid">
           <!-- Username Card -->
+          <div class="search-card" @click="selectSearchType('person')">
+            <img src="@/assets/hakken-logo-usuario.png" alt="Name-logo" class="card-icon"/>
+            <h3 class="card-title">Nombre y apellidos</h3>
+            <p class="card-description">Busca información de personas a partir de sus nombres y apellidos</p>
+            <div class="card-badge">Redes Sociales</div>
+          </div>
+          
+          <!-- Username Card -->
           <div class="search-card" @click="selectSearchType('username')">
             <img src="@/assets/hakken-logo-usuario.png" alt="Username-logo" class="card-icon"/>
             <h3 class="card-title">Nombre de usuario</h3>
@@ -127,6 +135,7 @@
           <div class="history-filters">
             <select v-model="historyFilter" class="filter-select">
               <option value="all">Todas las búsquedas</option>
+              <option value="person">Nombre y apellidos</option>
               <option value="username">Nombre de usuario</option>
               <option value="email">Email</option>
               <option value="phone">Teléfono</option>
@@ -246,6 +255,14 @@
           <p class="section-subtitle">Selecciona una categoría para ver las consultas avanzadas</p>
 
           <div class="dorks-categories-grid">
+            <!-- Name Category -->
+            <!--<div class="dork-category-card" @click="selectDorkCategory('name')">
+              <img src="@/assets/hakken-logo-usuario.png" alt="Username" class="category-icon-large"/>
+              <h3 class="category-title">Nombre</h3>
+              <p class="category-desc">Dorks para buscar personas en redes sociales y plataformas</p>
+              <div class="category-count">5 dorks disponibles</div>
+            </div>-->
+            
             <!-- Username Category -->
             <div class="dork-category-card" @click="selectDorkCategory('username')">
               <img src="@/assets/hakken-logo-usuario.png" alt="Username" class="category-icon-large"/>
@@ -394,6 +411,14 @@
                 class="search-input"
                 @keyup.enter="performSearch"
               />
+              <div v-if="selectedType === 'person'" style="margin-top:10px;">
+                <input
+                  v-model="personContext"
+                  type="text"
+                  placeholder="Contexto opcional (ciudad, empresa, rol...)"
+                  class="username-filter-input"
+                />
+              </div>
               <button :disabled="isSearching_progress" class="search-btn" @click="performSearch">
                 <span v-if="!isSearching">Buscar</span>
                 <span v-else class="loading-spinner">
@@ -425,7 +450,43 @@
             <div v-if="searchResults" class="results-area">
               <h3 class="results-title">Resultados de búsqueda</h3>
               <div class="results-content">
-                <template v-if="selectedType === 'username' && searchResults">
+                
+                <!-- Name section -->
+                <template v-if="selectedType === 'person' && searchResults">
+                  <div class="domain-scroll">
+                    <div class="domain-section">
+                      <div class="domain-section-title">Búsqueda por nombre (asistida)</div>
+                      <div class="domain-muted">
+                        Posibles coincidencias. Verifica identidad manualmente abriendo las fuentes.
+                      </div>
+
+                      <div v-if="searchResults.context" class="domain-muted" style="margin-top:6px;">
+                        Contexto: <span class="mono">{{ searchResults.context }}</span>
+                      </div>
+
+                      <div class="phone-evidence-grid" style="margin-top:12px;">
+                        <div
+                          v-for="c in (searchResults.checks || [])"
+                          :key="c.url"
+                          class="phone-evidence-card"
+                        >
+                          <div class="phone-evidence-card-top">
+                            <div class="phone-evidence-card-name">{{ c.label }}</div>
+                            <span class="phone-evidence-badge">{{ c.category }}</span>
+                          </div>
+
+                          <div class="phone-evidence-card-desc">{{ c.hint }}</div>
+
+                          <button class="phone-evidence-btn" type="button" @click="openExternal(c.url)">
+                            Abrir
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </template>
+
+                <template v-else-if="selectedType === 'username' && searchResults">
                   <div class="username-legend">
                     <div class="legend-item">
                       <span class="legend-icon">✅</span>
@@ -1266,6 +1327,7 @@ const selectSearchType = (type) => {
   searchResults.value = null
   searchError.value = null
   isSearching.value = false
+  personContext.value = "";
 }
 
 const closeModal = () => {
@@ -1277,6 +1339,7 @@ const closeModal = () => {
   reportErr.value = "";
   reportComment.value = "";
   reportCategory.value = "spam";
+  personContext.value = "";
 }
 
 const getTypeLabel = (type) => {
@@ -1325,6 +1388,10 @@ const performSearch = async (opts = {}) => {
     let results = null
     
     switch(selectedType.value) {
+      case 'person':  
+        searchResults.value = await api.searchPerson(searchQuery.value, personContext.value);
+        break;
+
       case 'username':  
         results = await api.searchUsername(searchQuery.value)
         searchResults.value = formatUsernameResults(results)
@@ -1529,6 +1596,20 @@ function getPhoneEvidenceCards(raw, normalized) {
 /*
 **************************************************************************
 *************************** FRONTED LOGIC ********************************
+**************************************************************************
+*/
+
+/*
+**************************************************************************
+*************************** PERSON LOGIC *********************************
+**************************************************************************
+*/
+
+const personContext = ref("");
+
+/*
+**************************************************************************
+*************************** PERSON LOGIC *********************************
 **************************************************************************
 */
 
