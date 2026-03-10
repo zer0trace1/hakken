@@ -929,29 +929,29 @@
                         </div>
                       </div>
 
-                      <div class="ip-section" v-if="searchResults?.geo?.lat != null && searchResults?.geo?.lon != null">
-                        <div class="ip-section-title">Mapa (aproximado)</div>
-
-                        <div class="map-wrap">
-                          <iframe
-                            class="map-iframe"
-                            :src="osmEmbedUrl(searchResults.geo.lat, searchResults.geo.lon)"
-                            loading="lazy"
-                            referrerpolicy="no-referrer-when-downgrade"
-                          />
-                        </div>
-
-                        <div class="ip-muted" style="margin-top:8px;">
-                          Nota: la geolocalización por IP es aproximada (normalmente ciudad/region, no dirección exacta).
-                        </div>
-                      </div>
-
                       <div class="ip-card">
                         <div class="ip-card-title">Reverse DNS</div>
                         <div class="ip-card-main mono">{{ fmtMaybe(searchResults.rdns?.ptr) }}</div>
                         <div class="ip-card-sub">
                           {{ searchResults.rdns?.ok ? "PTR encontrado" : "Sin PTR" }}
                         </div>
+                      </div>
+                    </div>
+
+                    <div class="ip-section" v-if="searchResults?.geo?.lat != null && searchResults?.geo?.lon != null">
+                      <div class="ip-section-title">Mapa (aproximado)</div>
+
+                      <div class="map-wrap">
+                        <iframe
+                          class="map-iframe"
+                          :src="osmEmbedUrl(searchResults.geo.lat, searchResults.geo.lon)"
+                          loading="lazy"
+                          referrerpolicy="no-referrer-when-downgrade"
+                        />
+                      </div>
+
+                      <div class="ip-muted" style="margin-top:8px;">
+                        Nota: la geolocalización por IP es aproximada (normalmente ciudad/region, no dirección exacta).
                       </div>
                     </div>
 
