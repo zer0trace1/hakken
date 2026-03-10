@@ -660,6 +660,54 @@
                         <div class="domain-card-main">{{ searchResults.checked_at }}</div>
                         <div class="domain-card-sub">Última comprobación</div>
                       </div>
+
+                      <!-- TLS -->
+                      <div class="domain-card">
+                        <div class="domain-card-title">TLS (certificado)</div>
+                        <div class="domain-card-main">
+                          <span :class="domainPill(searchResults?.tls?.ok)">
+                            {{ searchResults?.tls?.ok ? "OK" : "No disponible" }}
+                          </span>
+                        </div>
+                        <div class="domain-card-sub" v-if="searchResults?.tls?.ok">
+                          <div><b>Issuer:</b> {{ fmtMaybe(searchResults.tls.issuer) }}</div>
+                          <div><b>Válido hasta:</b> {{ fmtDateLoose(searchResults.tls.not_after) }}</div>
+                          <div><b>SAN:</b> {{ (searchResults.tls.san || []).length }} entradas</div>
+                        </div>
+                        <div class="domain-card-sub" v-else>
+                          {{ fmtMaybe(searchResults?.tls?.error) }}
+                        </div>
+                      </div>
+
+                      <!-- Extras -->
+                      <div class="domain-card">
+                        <div class="domain-card-title">Extras</div>
+                        <div class="domain-card-main">
+                          <span :class="domainPill(searchResults?.extras?.robots?.ok)">robots.txt</span>
+                          <span :class="domainPill(searchResults?.extras?.sitemap?.ok)">sitemap</span>
+                          <span :class="domainPill(searchResults?.extras?.security_txt?.ok)">security.txt</span>
+                        </div>
+                        <div class="domain-card-sub">
+                          Abre detalles abajo para ver snippets.
+                        </div>
+                      </div>
+
+                      <!-- Certificate Transparency -->
+                      <div class="domain-card">
+                        <div class="domain-card-title">Subdominios (CT)</div>
+                        <div class="domain-card-main">
+                          <span :class="domainPill(searchResults?.ct_subdomains?.ok)">
+                            {{ searchResults?.ct_subdomains?.ok ? "Disponible" : "No disponible" }}
+                          </span>
+                        </div>
+                        <div class="domain-card-sub" v-if="searchResults?.ct_subdomains?.ok">
+                          <b>Count:</b> {{ searchResults.ct_subdomains.count }}
+                          <span v-if="searchResults.ct_subdomains.truncated"> · (truncado)</span>
+                        </div>
+                        <div class="domain-card-sub" v-else>
+                          {{ fmtMaybe(searchResults?.ct_subdomains?.error) }}
+                        </div>
+                      </div>
                     </div>
 
                     <!-- DNS -->
@@ -677,6 +725,133 @@
                         No se encontraron registros DNS.
                       </div>
                     </div>
+                    <div class="domain-section">
+                      <div class="domain-section-title">Resumen DNS (útil)</div>
+                      <div class="kv-grid">
+                        <div class="kv">
+                          <div class="kv-k">IPs</div>
+                          <div class="kv-v">{{ (searchResults?.dns_parsed?.ips || []).length }}</div>
+                        </div>
+                        <div class="kv">
+                          <div class="kv-k">MX</div>
+                          <div class="kv-v">{{ (searchResults?.dns_parsed?.mx || []).length }}</div>
+                        </div>
+                        <div class="kv">
+                          <div class="kv-k">CAA</div>
+                          <div class="kv-v">{{ (searchResults?.dns_parsed?.caa || []).length }}</div>
+                        </div>
+                        <div class="kv">
+                          <div class="kv-k">TXT</div>
+                          <div class="kv-v">{{ fmtMaybe(searchResults?.dns_parsed?.txt_count, 0) }}</div>
+                        </div>
+                      </div>
+
+                      <details class="advanced" v-if="(searchResults?.dns_parsed?.mx || []).length">
+                        <summary>Ver MX</summary>
+                        <div class="table">
+                          <div class="tr head">
+                            <div>Prioridad</div><div>Host</div>
+                          </div>
+                          <div class="tr" v-for="m in searchResults.dns_parsed.mx" :key="String(m.priority)+m.host">
+                            <div>{{ fmtMaybe(m.priority) }}</div><div class="mono">{{ m.host }}</div>
+                          </div>
+                        </div>
+                      </details>
+
+                      <details class="advanced" v-if="(searchResults?.dns_parsed?.caa || []).length">
+                        <summary>Ver CAA</summary>
+                        <div class="table">
+                          <div class="tr head">
+                            <div>Flag</div><div>Tag</div><div>Value</div>
+                          </div>
+                          <div class="tr" v-for="(c, idx) in searchResults.dns_parsed.caa" :key="idx">
+                            <div>{{ fmtMaybe(c.flag) }}</div><div>{{ fmtMaybe(c.tag) }}</div><div class="mono">{{ fmtMaybe(c.value, c.raw) }}</div>
+                          </div>
+                        </div>
+                      </details>
+                    </div>
+
+                    <div class="domain-section">
+                      <div class="domain-section-title">Extras (snippets)</div>
+
+                      <details class="advanced">
+                        <summary>robots.txt</summary>
+                        <div v-if="searchResults?.extras?.robots?.ok">
+                          <div class="domain-muted mono">{{ searchResults.extras.robots.url }}</div>
+                          <pre class="snippet">{{ searchResults.extras.robots.snippet }}</pre>
+                        </div>
+                        <div v-else class="domain-muted">{{ fmtMaybe(searchResults?.extras?.robots?.status_code, "No disponible") }}</div>
+                      </details>
+
+                      <details class="advanced">
+                        <summary>sitemap.xml</summary>
+                        <div v-if="searchResults?.extras?.sitemap?.ok">
+                          <div class="domain-muted mono">{{ searchResults.extras.sitemap.url }}</div>
+                          <pre class="snippet">{{ searchResults.extras.sitemap.snippet }}</pre>
+                        </div>
+                        <div v-else class="domain-muted">{{ fmtMaybe(searchResults?.extras?.sitemap?.status_code, "No disponible") }}</div>
+                      </details>
+
+                      <details class="advanced">
+                        <summary>security.txt</summary>
+                        <div v-if="searchResults?.extras?.security_txt?.ok">
+                          <div class="domain-muted mono">{{ searchResults.extras.security_txt.url }}</div>
+                          <pre class="snippet">{{ searchResults.extras.security_txt.snippet }}</pre>
+                        </div>
+                        <div v-else class="domain-muted">{{ fmtMaybe(searchResults?.extras?.security_txt?.status_code, "No disponible") }}</div>
+                      </details>
+                    </div>
+
+                    <div class="domain-section" v-if="(searchResults?.ip_info || []).length">
+                      <div class="domain-section-title">IP info (PTR / ASN)</div>
+                      <div class="table">
+                        <div class="tr head">
+                          <div>IP</div><div>PTR</div><div>ASN</div><div>ORG</div>
+                        </div>
+                        <div class="tr" v-for="row in searchResults.ip_info" :key="row.ip">
+                          <div class="mono">{{ row.ip }}</div>
+                          <div class="mono">{{ fmtMaybe(row.ptr) }}</div>
+                          <div>{{ fmtMaybe(row.asn) }}</div>
+                          <div>{{ fmtMaybe(row.org) }}</div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div class="domain-section">
+                      <div class="domain-section-title">Subdominios (Certificate Transparency)</div>
+
+                      <div v-if="!searchResults?.ct_subdomains?.ok" class="domain-muted">
+                        No disponible ahora mismo: {{ fmtMaybe(searchResults?.ct_subdomains?.error) }}
+                      </div>
+
+                      <div v-else>
+                        <div class="domain-muted">
+                          Total: {{ searchResults.ct_subdomains.count }}
+                          <span v-if="searchResults.ct_subdomains.truncated"> · (mostrando solo una parte)</span>
+                        </div>
+
+                        <div class="domain-filter">
+                          <input v-model="ctFilter" class="domain-filter-input" placeholder="Filtrar subdominios..." />
+                          <span class="domain-filter-count">{{ ctItemsFiltered.length }}</span>
+                        </div>
+
+                        <div class="subdomain-list">
+                          <div class="subdomain-item mono" v-for="s in ctItemsFiltered.slice(0, 200)" :key="s">
+                            {{ s }}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <details class="advanced" v-if="searchResults?.tls?.ok">
+                      <summary>Ver SAN (primeras 15)</summary>
+                      <div class="subdomain-list">
+                        <div class="subdomain-item mono" v-for="s in tlsSanPreview" :key="s">{{ s }}</div>
+                      </div>
+                      <div class="domain-muted" v-if="(searchResults.tls.san || []).length > 15">
+                        Hay más SAN ({{ (searchResults.tls.san || []).length }} total).
+                      </div>
+                    </details>
 
                     <!-- Modo técnico (opcional) -->
                     <details class="advanced">
@@ -1762,6 +1937,48 @@ const getCategoryPlaceholder = (category) => {
 /*
 **************************************************************************
 *************************** GOOGLE DORKS *********************************
+**************************************************************************
+*/
+
+/*
+**************************************************************************
+*************************** DOMAIN LOGIC *********************************
+**************************************************************************
+*/
+
+const ctFilter = ref("");
+
+function domainPill(ok) {
+  return ok ? "pill ok" : "pill warn";
+}
+
+function fmtMaybe(v, fallback = "—") {
+  return v === null || v === undefined || v === "" ? fallback : String(v);
+}
+
+function fmtDateLoose(s) {
+  if (!s) return "—";
+  const d = new Date(s);
+  if (!isNaN(d.getTime())) return d.toLocaleString();
+  // formatos tipo "Apr 27 08:36:37 2026 GMT" suelen parsear, pero por si acaso:
+  return String(s);
+}
+
+const ctItemsFiltered = computed(() => {
+  const items = searchResults.value?.ct_subdomains?.items || [];
+  const q = ctFilter.value.trim().toLowerCase();
+  if (!q) return items;
+  return items.filter((x) => String(x).toLowerCase().includes(q));
+});
+
+const tlsSanPreview = computed(() => {
+  const san = searchResults.value?.tls?.san || [];
+  return san.slice(0, 15);
+});
+
+/*
+**************************************************************************
+*************************** DOMAIN LOGIC *********************************
 **************************************************************************
 */
 
@@ -3886,4 +4103,99 @@ button:disabled{ opacity:.6; cursor:not-allowed; }
 .domain-muted{
   opacity:.75;
 }
+
+.kv-grid{
+  display:grid;
+  grid-template-columns: repeat(4, minmax(0,1fr));
+  gap:10px;
+  margin-top:10px;
+}
+@media (max-width: 900px){
+  .kv-grid{ grid-template-columns: repeat(2, minmax(0,1fr)); }
+}
+.kv{
+  border:1px solid rgba(0,255,153,.12);
+  background: rgba(0,0,0,.25);
+  border-radius: 12px;
+  padding: 10px 12px;
+}
+.kv-k{ color:#00ff99; font-weight:900; font-size:.85rem; }
+.kv-v{ margin-top:4px; color: rgba(232,255,246,.9); font-size:1rem; }
+
+.table{
+  width:100%;
+  border:1px solid rgba(0,255,153,.12);
+  border-radius: 12px;
+  overflow:hidden;
+  margin-top:10px;
+}
+.tr{
+  display:grid;
+  grid-template-columns: 1.2fr 2.4fr .8fr 1.2fr;
+  gap:10px;
+  padding:10px 12px;
+  border-bottom:1px solid rgba(0,255,153,.08);
+  background: rgba(0,0,0,.22);
+}
+.tr.head{
+  background: rgba(0,0,0,.35);
+  color:#00ff99;
+  font-weight:900;
+}
+.tr:last-child{ border-bottom:none; }
+.mono{
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+}
+
+.snippet{
+  margin-top:8px;
+  padding:10px 12px;
+  border-radius: 12px;
+  border:1px solid rgba(0,255,153,.12);
+  background: rgba(0,0,0,.35);
+  color: rgba(232,255,246,.9);
+  overflow:auto;
+  max-height: 180px;
+}
+
+.domain-filter{
+  display:flex;
+  gap:10px;
+  align-items:center;
+  margin-top:10px;
+}
+.domain-filter-input{
+  flex:1;
+  padding:10px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(0,255,153,.18);
+  background: rgba(0,0,0,.35);
+  color: rgba(232,255,246,.95);
+  outline:none;
+}
+.domain-filter-count{
+  border:1px solid rgba(0,255,153,.18);
+  background: rgba(0,0,0,.25);
+  padding: 8px 10px;
+  border-radius: 10px;
+  color: rgba(232,255,246,.85);
+}
+
+.subdomain-list{
+  margin-top:10px;
+  border:1px solid rgba(0,255,153,.12);
+  background: rgba(0,0,0,.22);
+  border-radius: 12px;
+  padding: 10px;
+  max-height: 220px;
+  overflow:auto;
+}
+.subdomain-item{
+  padding: 6px 8px;
+  border-radius: 10px;
+  border:1px solid rgba(0,255,153,.06);
+  background: rgba(0,0,0,.20);
+  margin-bottom:8px;
+}
+.subdomain-item:last-child{ margin-bottom:0; }
 </style>
