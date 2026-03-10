@@ -929,6 +929,23 @@
                         </div>
                       </div>
 
+                      <div class="ip-section" v-if="searchResults?.geo?.lat != null && searchResults?.geo?.lon != null">
+                        <div class="ip-section-title">Mapa (aproximado)</div>
+
+                        <div class="map-wrap">
+                          <iframe
+                            class="map-iframe"
+                            :src="osmEmbedUrl(searchResults.geo.lat, searchResults.geo.lon)"
+                            loading="lazy"
+                            referrerpolicy="no-referrer-when-downgrade"
+                          />
+                        </div>
+
+                        <div class="ip-muted" style="margin-top:8px;">
+                          Nota: la geolocalización por IP es aproximada (normalmente ciudad/region, no dirección exacta).
+                        </div>
+                      </div>
+
                       <div class="ip-card">
                         <div class="ip-card-title">Reverse DNS</div>
                         <div class="ip-card-main mono">{{ fmtMaybe(searchResults.rdns?.ptr) }}</div>
@@ -2127,6 +2144,17 @@ function ipFlagClass(v) {
 
 function ipFlagText(v) {
   return v ? "Sí" : "No";
+}
+
+function osmEmbedUrl(lat, lon) {
+  const z = 10; // zoom (8–12 suele ir bien)
+  const delta = 0.12; // tamaño del bbox
+  const left = lon - delta;
+  const right = lon + delta;
+  const top = lat + delta;
+  const bottom = lat - delta;
+
+  return `https://www.openstreetmap.org/export/embed.html?bbox=${left}%2C${bottom}%2C${right}%2C${top}&layer=mapnik&marker=${lat}%2C${lon}`;
 }
 
 /*
@@ -4459,5 +4487,19 @@ button:disabled{ opacity:.6; cursor:not-allowed; }
 
 .mono{
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+}
+
+.map-wrap{
+  border:1px solid rgba(0,255,153,.18);
+  background: rgba(0,0,0,.22);
+  border-radius: 14px;
+  overflow:hidden;
+  height: 260px;
+}
+
+.map-iframe{
+  width:100%;
+  height:100%;
+  border:0;
 }
 </style>
