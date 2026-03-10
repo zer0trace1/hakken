@@ -633,6 +633,41 @@
                             {{ searchResults.web?.error || 'Sin respuesta HTTP' }}
                           </span>
                         </div>
+                        <!-- Badges de security headers -->
+                        <div class="sec-badges" v-if="searchResults?.web?.ok">
+                          <span :class="(searchResults.web.security_headers?.['strict-transport-security'] ? 'sec-badge ok' : 'sec-badge warn')">
+                            HSTS
+                          </span>
+                          <span :class="(searchResults.web.security_headers?.['content-security-policy'] ? 'sec-badge ok' : 'sec-badge warn')">
+                            CSP
+                          </span>
+                          <span :class="(searchResults.web.security_headers?.['x-frame-options'] ? 'sec-badge ok' : 'sec-badge warn')">
+                            XFO
+                          </span>
+                          <span :class="(searchResults.web.security_headers?.['x-content-type-options'] ? 'sec-badge ok' : 'sec-badge warn')">
+                            XCTO
+                          </span>
+                          <span :class="(searchResults.web.security_headers?.['referrer-policy'] ? 'sec-badge ok' : 'sec-badge warn')">
+                            Referrer
+                          </span>
+                          <span :class="(searchResults.web.security_headers?.['permissions-policy'] ? 'sec-badge ok' : 'sec-badge warn')">
+                            Permissions
+                          </span>
+                        </div>
+
+                        <!-- Tooltip simple / detalles (opcional) -->
+                        <details class="advanced" v-if="searchResults?.web?.ok && searchResults?.web?.security_headers">
+                          <summary>Ver headers</summary>
+                          <div class="table">
+                            <div class="tr head" style="grid-template-columns: 1.2fr 2.8fr;">
+                              <div>Header</div><div>Valor</div>
+                            </div>
+                            <div class="tr" v-for="(v, k) in searchResults.web.security_headers" :key="k" style="grid-template-columns: 1.2fr 2.8fr;">
+                              <div class="mono">{{ k }}</div>
+                              <div class="mono">{{ v }}</div>
+                            </div>
+                          </div>
+                        </details>
                       </div>
 
                       <div class="domain-card">
@@ -4192,4 +4227,34 @@ button:disabled{ opacity:.6; cursor:not-allowed; }
   margin-bottom:8px;
 }
 .subdomain-item:last-child{ margin-bottom:0; }
+
+.sec-badges{
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+  margin-top:10px;
+}
+
+.sec-badge{
+  border: 1px solid rgba(0,255,153,.18);
+  background: rgba(0,0,0,.25);
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-size: .85rem;
+  font-weight: 900;
+  letter-spacing: .2px;
+  user-select:none;
+}
+
+.sec-badge.ok{
+  color:#00ff99;
+  border-color: rgba(0,255,153,.28);
+  background: rgba(0,255,153,.08);
+}
+
+.sec-badge.warn{
+  color:#ffd36a;
+  border-color: rgba(255, 211, 106, .25);
+  background: rgba(255, 211, 106, .08);
+}
 </style>
