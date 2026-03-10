@@ -82,24 +82,6 @@ export default {
     }
   },
 
-  async searchGitHubUser(username) {
-    try {
-      const response = await apiClient.get(`/search/github/user/${username}`);
-      return response.data;
-    } catch (error) {
-      throw error;
-    }
-  },
-
-  async searchRedditUser(username) {
-    try {
-      const response = await apiClient.get(`/search/reddit/user/${username}`);
-      return response.data;
-    } catch (error) {
-      throw error;
-    }
-  },
-
   // ==================== IP ====================
   async searchIP(ip) {
     try {
@@ -130,7 +112,7 @@ export default {
     }
   },
 
-  // ==================== TELÉFONO (Para futuro) ====================
+  // ==================== TELÉFONO ====================
   async searchPhone(phone, defaultRegion = 'ES') {
     try {
       const safe = encodeURIComponent(phone);
