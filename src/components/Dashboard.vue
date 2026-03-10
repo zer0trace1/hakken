@@ -1352,6 +1352,7 @@ const closeModal = () => {
 
 const getTypeLabel = (type) => {
   const labels = {
+    person: 'Nombre y apellidos',
     username: 'Nombre de usuario',
     email: 'Email',
     phone: 'Teléfono',
@@ -1363,6 +1364,7 @@ const getTypeLabel = (type) => {
 
 const getPlaceholder = (type) => {
   const placeholders = {
+    person: 'Ej. John Doe',
     username: 'Ej: john_doe, @usuario',
     email: 'Ej: usuario@ejemplo.com',
     phone: 'Ej: +34 600 000 000 o 600000000',
