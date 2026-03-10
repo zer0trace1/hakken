@@ -73,9 +73,9 @@ apiClient.interceptors.response.use(
 export default {
 
   // ==================== NAME ====================
-  async searchPerson(name) {
+  async searchPerson(name, context = "") {
     try {
-      const response = await apiClient.get(`/search/person/`, {name, context});
+      const response = await apiClient.post(`/search/person/`, {name, context});
       return response.data;
     } catch (error) {
       throw error;

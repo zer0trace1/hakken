@@ -412,11 +412,17 @@
                 @keyup.enter="performSearch"
               />
               <div v-if="selectedType === 'person'" style="margin-top:10px;">
+                <button type="button" class="ip-link-btn" @click="showPersonContext = !showPersonContext">
+                  + Añadir contexto: ciudad, trabajo, etc.
+                </button>
+
                 <input
+                  v-if="showPersonContext"
                   v-model="personContext"
                   type="text"
-                  placeholder="Contexto opcional (ciudad, empresa, rol...)"
+                  placeholder="Ej: Valencia, ciberseguridad, UPV, Orange..."
                   class="username-filter-input"
+                  style="margin-top:10px;"
                 />
               </div>
               <button :disabled="isSearching_progress" class="search-btn" @click="performSearch">
@@ -1327,6 +1333,7 @@ const selectSearchType = (type) => {
   searchResults.value = null
   searchError.value = null
   isSearching.value = false
+  showPersonContext.value = false;
   personContext.value = "";
 }
 
@@ -1339,6 +1346,7 @@ const closeModal = () => {
   reportErr.value = "";
   reportComment.value = "";
   reportCategory.value = "spam";
+  showPersonContext.value = false;
   personContext.value = "";
 }
 
@@ -1389,7 +1397,7 @@ const performSearch = async (opts = {}) => {
     
     switch(selectedType.value) {
       case 'person':  
-        searchResults.value = await api.searchPerson(searchQuery.value, personContext.value);
+        searchResults.value = await api.searchPerson(searchQuery.value, showPersonContext.value ? personContext.value : "");
         break;
 
       case 'username':  
@@ -1605,6 +1613,7 @@ function getPhoneEvidenceCards(raw, normalized) {
 **************************************************************************
 */
 
+const showPersonContext = ref(false);
 const personContext = ref("");
 
 /*
