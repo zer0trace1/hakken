@@ -425,7 +425,7 @@
             <div v-if="searchResults" class="results-area">
               <h3 class="results-title">Resultados de búsqueda</h3>
               <div class="results-content">
-                <template v-if="selectedType === 'username'">
+                <template v-if="selectedType === 'username' && searchResults">
                   <div class="username-legend">
                     <div class="legend-item">
                       <span class="legend-icon">✅</span>
@@ -483,7 +483,7 @@
                     {{ tooltip.text }}
                   </div>
                 </template>
-                <template v-else-if="selectedType === 'phone'">
+                <template v-else-if="selectedType === 'phone' && searchResults">
                   <div class="phone-scroll">
                     <div class="phone-cards">
                       <div class="phone-card">
@@ -604,7 +604,7 @@
                   </div>
                 </template>
 
-                <template v-else-if="selectedType === 'domain'">
+                <template v-else-if="selectedType === 'domain' && searchResults">
                   <div class="domain-scroll">
                     <!-- Resumen -->
                     <div class="domain-cards">
@@ -886,6 +886,104 @@
                       <div class="domain-muted" v-if="(searchResults.tls.san || []).length > 15">
                         Hay más SAN ({{ (searchResults.tls.san || []).length }} total).
                       </div>
+                    </details>
+                  </div>
+                </template>
+
+                <template v-else-if="selectedType === 'ip' && searchResults">
+                  <div class="ip-scroll">
+                    <!-- Cards resumen -->
+                    <div class="ip-cards">
+                      <div class="ip-card">
+                        <div class="ip-card-title">IP</div>
+                        <div class="ip-card-main mono">{{ searchResults.ip }}</div>
+                        <div class="ip-card-sub">
+                          <span class="pill ok">IPv{{ searchResults.normalized?.version }}</span>
+                          <span :class="searchResults.normalized?.is_global ? 'pill ok' : 'pill warn'">
+                            {{ searchResults.normalized?.scope }}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div class="ip-card">
+                        <div class="ip-card-title">ASN / Org</div>
+                        <div class="ip-card-main">{{ fmtMaybe(searchResults.geo?.asn_number) }}</div>
+                        <div class="ip-card-sub">
+                          {{ fmtMaybe(searchResults.geo?.asn_name) }} · {{ fmtMaybe(searchResults.geo?.org) }}
+                        </div>
+                      </div>
+
+                      <div class="ip-card">
+                        <div class="ip-card-title">Ubicación</div>
+                        <div class="ip-card-main">
+                          {{ fmtMaybe(searchResults.geo?.city) }}, {{ fmtMaybe(searchResults.geo?.regionName || searchResults.region) }}
+                        </div>
+                        <div class="ip-card-sub">
+                          {{ fmtMaybe(searchResults.geo?.country) }} · {{ fmtMaybe(searchResults.geo?.timezone) }}
+                        </div>
+                      </div>
+
+                      <div class="ip-card">
+                        <div class="ip-card-title">Reverse DNS</div>
+                        <div class="ip-card-main mono">{{ fmtMaybe(searchResults.rdns?.ptr) }}</div>
+                        <div class="ip-card-sub">
+                          {{ searchResults.rdns?.ok ? "PTR encontrado" : "Sin PTR" }}
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Badges señales -->
+                    <div class="ip-section">
+                      <div class="ip-section-title">Señales</div>
+                      <div class="sec-badges">
+                        <span :class="ipFlagClass(searchResults.geo?.proxy)">Proxy: {{ ipFlagText(searchResults.geo?.proxy) }}</span>
+                        <span :class="ipFlagClass(searchResults.geo?.hosting)">Hosting: {{ ipFlagText(searchResults.geo?.hosting) }}</span>
+                        <span :class="ipFlagClass(searchResults.geo?.mobile)">Mobile: {{ ipFlagText(searchResults.geo?.mobile) }}</span>
+                      </div>
+                      <div class="ip-muted" style="margin-top:8px;">
+                        Fuente: ip-api (indicadores aproximados).
+                      </div>
+                    </div>
+
+                    <!-- RDAP -->
+                    <div class="ip-section" v-if="searchResults.rdap">
+                      <div class="ip-section-title">RDAP (propiedad / rango)</div>
+                      <div class="table">
+                        <div class="tr head" style="grid-template-columns: 1.2fr 2.8fr;">
+                          <div>Campo</div><div>Valor</div>
+                        </div>
+                        <div class="tr" style="grid-template-columns: 1.2fr 2.8fr;">
+                          <div>CIDR</div><div class="mono">{{ fmtMaybe(searchResults.rdap?.cidr) }}</div>
+                        </div>
+                        <div class="tr" style="grid-template-columns: 1.2fr 2.8fr;">
+                          <div>ASN</div><div>{{ fmtMaybe(searchResults.rdap?.asn) }} · {{ fmtMaybe(searchResults.rdap?.asn_description) }}</div>
+                        </div>
+                        <div class="tr" style="grid-template-columns: 1.2fr 2.8fr;">
+                          <div>Owner</div><div>{{ fmtMaybe(searchResults.rdap?.name) }}</div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Links (assisted) -->
+                    <div class="ip-section">
+                      <div class="ip-section-title">Comprobación en navegador</div>
+                      <div class="ip-links-grid">
+                        <button
+                          v-for="l in (searchResults.links || [])"
+                          :key="l.url"
+                          type="button"
+                          class="ip-link-btn"
+                          @click="openExternal(l.url)"
+                        >
+                          {{ l.label }}
+                        </button>
+                      </div>
+                    </div>
+
+                    <!-- Modo técnico opcional -->
+                    <details class="advanced">
+                      <summary>Modo técnico</summary>
+                      <pre class="advanced-json">{{ JSON.stringify(searchResults, null, 2) }}</pre>
                     </details>
                   </div>
                 </template>
@@ -1210,8 +1308,8 @@ const performSearch = async (opts = {}) => {
         break
         
       case 'ip':
-        results = await api.searchIP(searchQuery.value)
-        searchResults.value = formatIPResults(results)
+        results = await api.searchIp(searchQuery.value)
+        searchResults.value = results
         break
         
       case 'domain':
@@ -2008,6 +2106,26 @@ const tlsSanPreview = computed(() => {
 /*
 **************************************************************************
 *************************** DOMAIN LOGIC *********************************
+**************************************************************************
+*/
+
+/*
+**************************************************************************
+*************************** IP LOGIC *********************************
+**************************************************************************
+*/
+
+function ipFlagClass(v) {
+  return v ? "pill warn" : "pill ok";
+}
+
+function ipFlagText(v) {
+  return v ? "Sí" : "No";
+}
+
+/*
+**************************************************************************
+*************************** IP LOGIC *********************************
 **************************************************************************
 */
 
@@ -4257,5 +4375,83 @@ button:disabled{ opacity:.6; cursor:not-allowed; }
   color:#ffd36a;
   border-color: rgba(255, 211, 106, .25);
   background: rgba(255, 211, 106, .08);
+}
+
+/* IP CSS */
+.ip-scroll{
+  max-height: 52vh;
+  overflow-y: auto;
+  padding-right: 6px;
+}
+
+.ip-cards{
+  display:grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap:12px;
+  margin-top:10px;
+}
+@media (max-width: 900px){
+  .ip-cards{ grid-template-columns: 1fr; }
+}
+
+.ip-card{
+  border:1px solid rgba(0,255,153,.18);
+  background: rgba(0,0,0,.28);
+  border-radius: 14px;
+  padding: 12px 14px;
+  box-shadow: 0 0 18px rgba(0,255,153,.06);
+}
+.ip-card-title{
+  color:#00ff99;
+  font-weight:800;
+  margin-bottom:6px;
+}
+.ip-card-main{
+  color:#e8fff6;
+  font-size: 1.05rem;
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+  align-items:center;
+}
+.ip-card-sub{
+  margin-top:6px;
+  color: rgba(232,255,246,.75);
+  font-size: .9rem;
+}
+
+.ip-section{
+  margin-top: 14px;
+  border: 1px solid rgba(0,255,153,.18);
+  background: rgba(0,0,0,.22);
+  border-radius: 14px;
+  padding: 14px;
+}
+.ip-section-title{
+  color:#00ff99;
+  font-weight:800;
+  margin-bottom: 10px;
+}
+.ip-muted{ opacity:.75; }
+
+.ip-links-grid{
+  display:flex;
+  flex-wrap:wrap;
+  gap:10px;
+  margin-top: 10px;
+}
+.ip-link-btn{
+  border: 1px solid rgba(0,255,153,.30);
+  background: rgba(0,255,153,.08);
+  color: #00ff99;
+  padding: 10px 12px;
+  border-radius: 12px;
+  font-weight: 800;
+  cursor: pointer;
+}
+.ip-link-btn:hover{ background: rgba(0,255,153,.14); }
+
+.mono{
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
 }
 </style>
