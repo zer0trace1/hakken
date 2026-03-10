@@ -85,6 +85,7 @@ export default {
   // ==================== IP ====================
   async searchIP(ip) {
     try {
+      const safe = encodeURIComponent(ip);
       const response = await apiClient.get(`/search/ip/${ip}`);
       return response.data;
     } catch (error) {
@@ -95,6 +96,7 @@ export default {
   // ==================== DOMINIO ====================
   async searchDomain(domain) {
     try {
+      const safe = encodeURIComponent(domain);
       const response = await apiClient.get(`/search/domain/${domain}`);
       return response.data;
     } catch (error) {
@@ -105,6 +107,7 @@ export default {
   // ==================== EMAIL (Para futuro) ====================
   async searchEmail(email) {
     try {
+      const safe = encodeURIComponent(email);
       const response = await apiClient.get(`/search/email/${email}`);
       return response.data;
     } catch (error) {
