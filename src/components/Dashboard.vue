@@ -887,6 +887,12 @@
                         Hay más SAN ({{ (searchResults.tls.san || []).length }} total).
                       </div>
                     </details>
+
+                    <!-- Modo técnico opcional -->
+                    <details class="advanced">
+                      <summary>Modo técnico</summary>
+                      <pre class="advanced-json">{{ JSON.stringify(searchResults, null, 2) }}</pre>
+                    </details>
                   </div>
                 </template>
 
