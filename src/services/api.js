@@ -1,5 +1,5 @@
 import axios from "axios";
-import { getAccessToken, userManager } from "@/auth/oidc"; // <-- añade esto
+import { getAccessToken, userManager } from "@/auth/oidc";
 
 const API_BASE_URL = "https://api.hakken.cloud/api/v1";
 

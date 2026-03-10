@@ -1308,7 +1308,7 @@ const performSearch = async (opts = {}) => {
         break
         
       case 'ip':
-        results = await api.searchIp(searchQuery.value)
+        results = await api.searchIP(searchQuery.value)
         searchResults.value = results
         break
         
