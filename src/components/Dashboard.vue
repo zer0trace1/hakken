@@ -67,7 +67,7 @@
         <div class="search-cards-grid">
           <!-- Username Card -->
           <div class="search-card" @click="selectSearchType('person')">
-            <img src="@/assets/hakken-logo-usuario.png" alt="Name-logo" class="card-icon"/>
+            <img src="@/assets/hakken-logo-persona.png" alt="Name-logo" class="card-icon"/>
             <h3 class="card-title">Nombre y apellidos</h3>
             <p class="card-description">Busca información de personas a partir de sus nombres y apellidos</p>
             <div class="card-badge">Identidades</div>
