@@ -4197,6 +4197,9 @@ button:disabled{ opacity:.6; cursor:not-allowed; }
   background: rgba(0,0,0,.35);
   color: rgba(232,255,246,.95);
   outline: none;
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 1.1rem;
+  transition: all 0.3s ease;
 }
 
 .username-filter-input::placeholder{
