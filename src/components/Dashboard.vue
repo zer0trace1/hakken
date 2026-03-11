@@ -1418,6 +1418,7 @@ const performSearch = async (opts = {}) => {
         break
         
       case 'email':
+        break
       case 'phone':
         results = await api.searchPhone(searchQuery.value, 'ES')
         searchResults.value = results
