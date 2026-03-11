@@ -558,110 +558,149 @@
 
                 <template v-else-if="selectedType === 'email' && searchResults">
                   <div class="email-scroll">
-                    <div class="email-cards">
-                      <div class="email-card">
-                        <div class="email-card-title">Email</div>
-                        <div class="email-card-main">{{ searchResults.email?.normalized || searchResults.query }}</div>
-                        <div class="email-card-sub">Dominio: {{ searchResults.email?.domain || '—' }}</div>
-                      </div>
 
-                      <div class="email-card">
-                        <div class="email-card-title">Plataformas registradas</div>
-                        <div class="email-card-main">{{ searchResults.platforms?.count || 0 }}</div>
-                        <div class="email-card-sub">Fuente: {{ searchResults.platforms?.source || '—' }}</div>
-                      </div>
+                    <!-- DATOS -->
+                    <div class="email-group">
+                      <div class="email-group-title">DATOS</div>
 
-                      <div class="email-card">
-                        <div class="email-card-title">Brechas detectadas</div>
-                        <div class="email-card-main">{{ searchResults.breaches?.count || 0 }}</div>
-                        <div class="email-card-sub">Expuesto: {{ searchResults.breaches?.exposed ? 'Sí' : 'No' }}</div>
-                      </div>
+                      <div class="email-data-grid">
+                        <div class="email-card email-card-full">
+                          <div class="email-card-title">Email</div>
+                          <div class="email-card-main">
+                            {{ searchResults.email?.normalized || searchResults.query }}
+                          </div>
+                          <div class="email-card-sub">
+                            Dominio: {{ searchResults.email?.domain || '—' }}
+                          </div>
+                        </div>
 
-                      <div class="email-card">
-                        <div class="email-card-title">Caché</div>
-                        <div class="email-card-main">{{ searchResults.cache?.hit ? 'HIT' : 'MISS' }}</div>
-                        <div class="email-card-sub">
-                          Expira: {{ searchResults.cache?.expires_at ? formatDate(searchResults.cache.expires_at) : '—' }}
+                        <div class="email-stats-grid">
+                          <div class="email-card">
+                            <div class="email-card-title">Plataformas registradas</div>
+                            <div class="email-card-main">{{ searchResults.platforms?.count || 0 }}</div>
+                            <div class="email-card-sub">
+                              Fuente: {{ searchResults.platforms?.source || '—' }}
+                            </div>
+                          </div>
+
+                          <div class="email-card">
+                            <div class="email-card-title">Brechas detectadas</div>
+                            <div class="email-card-main">{{ searchResults.breaches?.count || 0 }}</div>
+                            <div class="email-card-sub">
+                              Expuesto: {{ searchResults.breaches?.exposed ? 'Sí' : 'No' }}
+                            </div>
+                          </div>
+
+                          <div class="email-card">
+                            <div class="email-card-title">Caché</div>
+                            <div class="email-card-main">{{ searchResults.cache?.hit ? 'HIT' : 'MISS' }}</div>
+                            <div class="email-card-sub">
+                              Expira:
+                              {{
+                                searchResults.cache?.expires_at
+                                  ? formatDate(searchResults.cache.expires_at)
+                                  : '—'
+                              }}
+                            </div>
+                          </div>
                         </div>
                       </div>
                     </div>
 
-                    <div class="email-section">
-                      <div class="email-section-title">Plataformas detectadas</div>
+                    <!-- PLATAFORMAS DETECTADAS -->
+                    <div class="email-group">
+                      <div class="email-group-title">PLATAFORMAS DETECTADAS</div>
 
-                      <div v-if="(searchResults.platforms?.items || []).length" class="email-list">
-                        <div
-                          v-for="item in searchResults.platforms.items"
-                          :key="item.domain + ':' + item.name"
-                          class="email-item"
-                        >
-                          <div class="email-item-top">
-                            <span class="email-item-name">{{ item.name }}</span>
-                            <span class="email-pill ok">Registrado</span>
-                          </div>
-
-                          <div class="email-item-sub">{{ item.domain }}</div>
-
+                      <div class="email-section">
+                        <div v-if="(searchResults.platforms?.items || []).length" class="email-list">
                           <div
-                            v-if="item.email_recovery || item.phone_number || item.others"
-                            class="email-item-meta"
+                            v-for="item in searchResults.platforms.items"
+                            :key="item.domain + ':' + item.name"
+                            class="email-item"
                           >
-                            <span v-if="item.email_recovery">Recovery: {{ item.email_recovery }}</span>
-                            <span v-if="item.phone_number"> · Tel: {{ item.phone_number }}</span>
-                            <span v-if="item.others"> · {{ item.others }}</span>
+                            <div class="email-item-top">
+                              <span class="email-item-name">{{ item.name }}</span>
+                              <span class="email-pill ok">Registrado</span>
+                            </div>
+
+                            <div class="email-item-sub">{{ item.domain }}</div>
+
+                            <div
+                              v-if="item.email_recovery || item.phone_number || item.others"
+                              class="email-item-meta"
+                            >
+                              <span v-if="item.email_recovery">Recovery: {{ item.email_recovery }}</span>
+                              <span v-if="item.phone_number"> · Tel: {{ item.phone_number }}</span>
+                              <span v-if="item.others"> · {{ item.others }}</span>
+                            </div>
                           </div>
                         </div>
-                      </div>
 
-                      <div v-else class="empty-results">
-                        No se detectaron plataformas para este email.
-                      </div>
-                    </div>
-
-                    <div class="email-section">
-                      <div class="email-section-title">Exposición en brechas</div>
-
-                      <div v-if="(searchResults.breaches?.items || []).length" class="email-list">
-                        <div
-                          v-for="item in searchResults.breaches.items"
-                          :key="item.source + ':' + (item.breach_date || 'na')"
-                          class="email-item"
-                        >
-                          <div class="email-item-top">
-                            <span class="email-item-name">{{ item.source }}</span>
-                            <span class="email-pill warn">Brecha</span>
-                          </div>
-
-                          <div class="email-item-sub">Fecha: {{ item.breach_date || 'Desconocida' }}</div>
-                          <div class="email-item-meta">
-                            Campos: {{ (item.fields || []).length ? item.fields.join(', ') : 'No especificados' }}
-                          </div>
-                        </div>
-                      </div>
-
-                      <div v-else class="empty-results">
-                        No se han encontrado exposiciones para este email.
-                      </div>
-                    </div>
-
-                    <div v-if="(searchResults.errors || []).length" class="email-section">
-                      <div class="email-section-title">Incidencias de proveedores</div>
-
-                      <div class="email-list">
-                        <div
-                          v-for="err in searchResults.errors"
-                          :key="err.provider + ':' + err.message"
-                          class="email-item"
-                        >
-                          <div class="email-item-top">
-                            <span class="email-item-name">{{ err.provider }}</span>
-                            <span class="email-pill bad">Error</span>
-                          </div>
-
-                          <div class="email-item-meta">{{ err.message }}</div>
+                        <div v-else class="empty-results">
+                          No se detectaron plataformas para este email.
                         </div>
                       </div>
                     </div>
+
+                    <!-- EXPOSICIÓN EN BRECHAS -->
+                    <div class="email-group">
+                      <div class="email-group-title">EXPOSICIÓN EN BRECHAS</div>
+
+                      <div class="email-section">
+                        <div v-if="(searchResults.breaches?.items || []).length" class="email-list">
+                          <div
+                            v-for="item in searchResults.breaches.items"
+                            :key="item.source + ':' + (item.breach_date || 'na')"
+                            class="email-item"
+                          >
+                            <div class="email-item-top">
+                              <span class="email-item-name">{{ item.source }}</span>
+                              <span class="email-pill warn">Brecha</span>
+                            </div>
+
+                            <div class="email-item-sub">
+                              Fecha: {{ item.breach_date || 'Desconocida' }}
+                            </div>
+
+                            <div class="email-item-meta">
+                              Campos:
+                              {{
+                                (item.fields || []).length
+                                  ? item.fields.join(', ')
+                                  : 'No especificados'
+                              }}
+                            </div>
+                          </div>
+                        </div>
+
+                        <div v-else class="empty-results">
+                          No se han encontrado exposiciones para este email.
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Incidencias opcionales -->
+                    <div v-if="(searchResults.errors || []).length" class="email-group">
+                      <div class="email-group-title">INCIDENCIAS</div>
+
+                      <div class="email-section">
+                        <div class="email-list">
+                          <div
+                            v-for="err in searchResults.errors"
+                            :key="err.provider + ':' + err.message"
+                            class="email-item"
+                          >
+                            <div class="email-item-top">
+                              <span class="email-item-name">{{ err.provider }}</span>
+                              <span class="email-pill bad">Error</span>
+                            </div>
+
+                            <div class="email-item-meta">{{ err.message }}</div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
                   </div>
                 </template>
 
@@ -4727,15 +4766,40 @@ button:disabled{ opacity:.6; cursor:not-allowed; }
 .email-scroll {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: 1.25rem;
   max-height: 70vh;
   overflow-y: auto;
   padding-right: .35rem;
 }
 
-.email-cards {
+.email-group {
+  display: flex;
+  flex-direction: column;
+  gap: .75rem;
+}
+
+.email-group-title {
+  font-size: 1rem;
+  font-weight: 800;
+  letter-spacing: .06em;
+  color: var(--accent-color, #00f5a0);
+  text-transform: uppercase;
+  text-shadow: 0 0 10px rgba(0, 245, 160, 0.25);
+}
+
+.email-data-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.email-card-full {
+  width: 100%;
+}
+
+.email-stats-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 1rem;
 }
 
@@ -4749,10 +4813,10 @@ button:disabled{ opacity:.6; cursor:not-allowed; }
 
 .email-card {
   padding: 1rem;
+  min-width: 0;
 }
 
-.email-card-title,
-.email-section-title {
+.email-card-title {
   font-size: .9rem;
   color: var(--text-secondary);
   margin-bottom: .45rem;
@@ -4823,5 +4887,11 @@ button:disabled{ opacity:.6; cursor:not-allowed; }
 .email-pill.bad {
   background: rgba(255, 80, 80, .14);
   color: #ff9e9e;
+}
+
+@media (max-width: 900px) {
+  .email-stats-grid {
+    grid-template-columns: 1fr;
+  }
 }
 </style>
