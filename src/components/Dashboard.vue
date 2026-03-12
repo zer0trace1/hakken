@@ -112,13 +112,47 @@
             <p class="card-description">Analiza información de dominios y DNS</p>
             <div class="card-badge">Dominio/DNS</div>
           </div>
+        </div>
+        <!-- Herramientas avanzadas -->
+        <div class="advanced-tools-section">
+          <div class="advanced-tools-header">
+            <h2 class="advanced-tools-title">Herramientas avanzadas</h2>
+            <p class="advanced-tools-subtitle">
+              Módulos complementarios para exploración manual guiada y pivoteo OSINT.
+            </p>
+          </div>
 
-          <!-- Google Dorks Card -->
-          <div class="search-card special-card" @click="openGoogleDorks">
-            <img src="@/assets/hakken-logo-dorks.png" alt="Dorks-logo" class="card-icon"/>
-            <h3 class="card-title">Google Dorks</h3>
-            <p class="card-description">Accede a consultas avanzadas de Google para OSINT</p>
-            <div class="card-badge special">Búsquedas Avanzadas</div>
+          <div class="advanced-tool-panel" @click="openGoogleDorks">
+            <div class="advanced-tool-left">
+              <div class="advanced-tool-icon-wrap">
+                <img
+                  src="@/assets/hakken-logo-dorks.png"
+                  alt="Google Dorks"
+                  class="advanced-tool-icon"
+                />
+              </div>
+
+              <div class="advanced-tool-content">
+                <div class="advanced-tool-kicker">Google operators · búsqueda manual</div>
+                <h3 class="advanced-tool-name">Google Dorks OSINT</h3>
+                <p class="advanced-tool-description">
+                  Consultas avanzadas para localizar perfiles, documentos, activos públicos,
+                  referencias indexadas y posibles exposiciones mediante operadores de Google.
+                </p>
+
+                <div class="advanced-tool-tags">
+                  <span class="advanced-tool-tag">Manual</span>
+                  <span class="advanced-tool-tag">Avanzado</span>
+                  <span class="advanced-tool-tag">Complementario</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="advanced-tool-right">
+              <button class="advanced-tool-btn" @click.stop="openGoogleDorks">
+                Abrir módulo →
+              </button>
+            </div>
           </div>
         </div>
       </section>
@@ -5534,5 +5568,219 @@ button:disabled{ opacity:.6; cursor:not-allowed; }
 
 .email-powered-link:hover {
   text-decoration: underline;
+}
+/*
+**************************************************************************
+*********************** ADVANCED TOOLS / GOOGLE DORKS *********************
+**************************************************************************
+*/
+
+.advanced-tools-section {
+  margin-top: 2.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.advanced-tools-header {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.advanced-tools-title {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.advanced-tools-subtitle {
+  color: var(--text-secondary);
+  font-size: 0.96rem;
+  line-height: 1.55;
+  margin: 0;
+}
+
+.advanced-tool-panel {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 1.25rem;
+  align-items: center;
+  padding: 1.35rem 1.5rem;
+  border-radius: 20px;
+  border: 1px solid rgba(0, 255, 153, 0.18);
+  background:
+    radial-gradient(circle at top right, rgba(0, 255, 153, 0.08), transparent 28%),
+    linear-gradient(180deg, rgba(255,255,255,0.035), rgba(255,255,255,0.02));
+  box-shadow: 0 0 24px rgba(0, 255, 153, 0.06);
+  transition: all 0.25s ease;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+}
+
+.advanced-tool-panel::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(0, 255, 153, 0.05),
+    transparent
+  );
+  transform: translateX(-100%);
+  transition: transform 0.6s ease;
+  pointer-events: none;
+}
+
+.advanced-tool-panel:hover::before {
+  transform: translateX(100%);
+}
+
+.advanced-tool-panel:hover {
+  border-color: rgba(0, 255, 153, 0.35);
+  box-shadow: 0 0 28px rgba(0, 255, 153, 0.12);
+  transform: translateY(-2px);
+}
+
+.advanced-tool-left {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  min-width: 0;
+}
+
+.advanced-tool-icon-wrap {
+  width: 78px;
+  height: 78px;
+  min-width: 78px;
+  border-radius: 18px;
+  border: 1px solid rgba(0, 255, 153, 0.18);
+  background: rgba(0, 255, 153, 0.04);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.advanced-tool-icon {
+  width: 42px;
+  height: 42px;
+  object-fit: contain;
+  filter: drop-shadow(0 0 16px rgba(0, 255, 153, 0.22));
+}
+
+.advanced-tool-content {
+  min-width: 0;
+}
+
+.advanced-tool-kicker {
+  color: #00ff99;
+  font-size: 0.82rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 0.35rem;
+}
+
+.advanced-tool-name {
+  color: var(--text-primary);
+  font-size: 1.35rem;
+  font-weight: 700;
+  margin: 0 0 0.45rem 0;
+}
+
+.advanced-tool-description {
+  color: var(--text-secondary);
+  font-size: 0.97rem;
+  line-height: 1.6;
+  margin: 0 0 0.8rem 0;
+  max-width: 840px;
+}
+
+.advanced-tool-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+}
+
+.advanced-tool-tag {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.3rem 0.75rem;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #00ff99;
+  background: rgba(0, 255, 153, 0.08);
+  border: 1px solid rgba(0, 255, 153, 0.2);
+}
+
+.advanced-tool-right {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.advanced-tool-btn {
+  border: 1px solid rgba(0, 255, 153, 0.3);
+  background: rgba(0, 255, 153, 0.1);
+  color: #00ff99;
+  border-radius: 12px;
+  padding: 0.9rem 1.1rem;
+  min-width: 170px;
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.22s ease;
+}
+
+.advanced-tool-btn:hover {
+  background: rgba(0, 255, 153, 0.16);
+  border-color: #00ff99;
+  box-shadow: 0 0 18px rgba(0, 255, 153, 0.16);
+}
+
+.advanced-tool-btn:active {
+  transform: scale(0.98);
+}
+
+@media (max-width: 900px) {
+  .advanced-tool-panel {
+    grid-template-columns: 1fr;
+    align-items: stretch;
+  }
+
+  .advanced-tool-right {
+    justify-content: flex-start;
+  }
+
+  .advanced-tool-btn {
+    width: 100%;
+  }
+}
+
+@media (max-width: 640px) {
+  .advanced-tool-left {
+    align-items: flex-start;
+  }
+
+  .advanced-tool-icon-wrap {
+    width: 64px;
+    height: 64px;
+    min-width: 64px;
+  }
+
+  .advanced-tool-icon {
+    width: 34px;
+    height: 34px;
+  }
+
+  .advanced-tool-name {
+    font-size: 1.15rem;
+  }
 }
 </style>
