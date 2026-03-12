@@ -250,13 +250,46 @@
       <section v-else-if="currentView === 'dorks'" class="dorks-section">
         <!-- Pantalla introductoria -->
         <div v-if="showDorksIntro" class="dorks-intro-view">
-          <h1 class="section-title">
-            <span class="highlight">Google Dorks</span> OSINT
-          </h1>
-          <p class="section-subtitle">
-            Consultas avanzadas que permiten afinar búsquedas en Google para encontrar perfiles,
-            documentos, menciones, directorios, paneles y otros activos útiles en investigaciones OSINT.
-          </p>
+          <div class="dorks-hero-panel">
+            <div class="dorks-hero-top">
+              <div class="dorks-badges">
+                <span class="dorks-badge">OSINT</span>
+                <span class="dorks-badge">Búsqueda manual</span>
+                <span class="dorks-badge">Google operators</span>
+              </div>
+            </div>
+
+            <div class="dorks-hero-content">
+              <div class="dorks-hero-left">
+                <h1 class="section-title dorks-hero-title">
+                  <span class="highlight">Google Dorks</span> OSINT
+                </h1>
+
+                <p class="section-subtitle dorks-hero-subtitle">
+                  Consultas avanzadas que permiten afinar búsquedas en Google para encontrar
+                  perfiles, documentos, menciones, directorios, paneles y otros activos útiles
+                  en investigaciones OSINT.
+                </p>
+
+                <div class="dorks-hero-actions">
+                  <button class="back-btn-dorks intro-cta-btn" @click="openDorksCategories">
+                    Ver categorías →
+                  </button>
+                </div>
+              </div>
+
+              <div class="dorks-hero-right">
+                <div class="dorks-mini-panel">
+                  <div class="mini-panel-label">Módulo complementario</div>
+                  <div class="mini-panel-title">Búsqueda avanzada guiada</div>
+                  <div class="mini-panel-text">
+                    Ideal para pivotar, validar hallazgos y ampliar contexto cuando los módulos
+                    automáticos no son suficientes.
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
 
           <div class="dorks-intro-grid">
             <div class="dorks-intro-card">
@@ -278,8 +311,8 @@
             <div class="dorks-intro-card">
               <h3>Uso recomendado</h3>
               <p>
-                Úsalos como complemento a los módulos automáticos de HAKKEN para pivotar, validar
-                hallazgos y ampliar el contexto manualmente.
+                Úsalos como complemento a los módulos automáticos de HAKKEN para pivotar,
+                validar hallazgos y ampliar el contexto manualmente.
               </p>
             </div>
 
@@ -292,8 +325,11 @@
             </div>
           </div>
 
-          <div class="dorks-operators-box">
-            <h3 class="operators-title">Operadores principales</h3>
+          <div class="dorks-operators-box premium-box">
+            <div class="box-header">
+              <h3 class="operators-title">Operadores principales</h3>
+              <span class="box-tag">Guía rápida</span>
+            </div>
 
             <div class="dorks-operators-grid">
               <div
@@ -307,10 +343,37 @@
             </div>
           </div>
 
-          <div class="dorks-intro-actions">
-            <button class="back-btn-dorks intro-cta-btn" @click="openDorksCategories">
-              Ver categorías →
-            </button>
+          <div class="dorks-examples-box premium-box">
+            <div class="box-header">
+              <h3 class="operators-title">Ejemplos rápidos</h3>
+              <span class="box-tag">Listos para usar</span>
+            </div>
+
+            <div class="dorks-examples-grid">
+              <div
+                v-for="example in quickDorkExamples"
+                :key="example.id"
+                class="quick-example-card"
+              >
+                <div class="quick-example-top">
+                  <div class="quick-example-title">{{ example.title }}</div>
+                  <span class="quick-example-cat">{{ example.category }}</span>
+                </div>
+
+                <div class="quick-example-query">
+                  <code>{{ example.query }}</code>
+                </div>
+
+                <p class="quick-example-desc">{{ example.desc }}</p>
+
+                <button
+                  class="quick-example-btn"
+                  @click="openQuickDorkExample(example.category, example.term)"
+                >
+                  Probar este ejemplo
+                </button>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -1963,6 +2026,47 @@ const dorkOperators = [
   { op: 'OR', desc: 'Permite combinar varias alternativas en una misma consulta.' },
   { op: 'intext:', desc: 'Busca palabras dentro del contenido de la página.' }
 ]
+
+const quickDorkExamples = [
+  {
+    id: 1,
+    title: 'Perfil de LinkedIn',
+    category: 'person',
+    term: 'nombre apellido',
+    query: 'site:linkedin.com/in "nombre apellido"',
+    desc: 'Localiza perfiles personales en LinkedIn.'
+  },
+  {
+    id: 2,
+    title: 'Correo expuesto',
+    category: 'email',
+    term: 'correo@dominio.com',
+    query: '"correo@dominio.com"',
+    desc: 'Busca menciones exactas de un email en páginas indexadas.'
+  },
+  {
+    id: 3,
+    title: 'Username reutilizado',
+    category: 'username',
+    term: 'username',
+    query: '"username" site:github.com OR site:twitter.com OR site:reddit.com',
+    desc: 'Comprueba si un alias se reutiliza en varias plataformas.'
+  },
+  {
+    id: 4,
+    title: 'Archivos PDF de un dominio',
+    category: 'domain',
+    term: 'empresa.com',
+    query: 'site:empresa.com filetype:pdf',
+    desc: 'Encuentra documentos PDF públicos vinculados a un dominio.'
+  }
+]
+
+const openQuickDorkExample = (category, term = '') => {
+  showDorksIntro.value = false
+  selectedDorkCategory.value = category
+  dorkSearchTerm.value = term
+}
 
 // Base de datos de Google Dorks (ACTUALIZADA con tus ejemplos de Email)
 const googleDorks = ref([
@@ -3754,26 +3858,330 @@ body.light-theme .ambient-glow {
   animation: fadeInUp 0.8s ease-out;
 }
 
-/* Vista de categorías */
+/* =========================
+   CONTENEDORES GENERALES
+========================= */
+
+.dorks-categories-view,
+.dorks-list-view,
+.dorks-intro-view {
+  width: 100%;
+}
+
+.dorks-intro-view {
+  display: flex;
+  flex-direction: column;
+  gap: 1.35rem;
+}
+
+/* =========================
+   HERO / INTRO PREMIUM
+========================= */
+
+.dorks-hero-panel,
+.premium-box,
+.dorks-intro-card,
+.operator-card,
+.quick-example-card,
+.dork-category-card,
+.dork-item {
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.035),
+    rgba(255, 255, 255, 0.02)
+  );
+  border: 1px solid var(--border-color);
+  box-shadow: 0 0 22px rgba(0, 245, 160, 0.05);
+}
+
+.dorks-hero-panel {
+  position: relative;
+  overflow: hidden;
+  padding: 1.5rem;
+  border-radius: 22px;
+  border-color: rgba(0, 245, 160, 0.2);
+}
+
+.dorks-hero-panel::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at top right, rgba(0, 245, 160, 0.12), transparent 28%),
+    linear-gradient(90deg, rgba(0, 245, 160, 0.035), transparent 35%);
+  pointer-events: none;
+}
+
+.dorks-hero-content {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1.45fr 0.9fr;
+  gap: 1.25rem;
+  align-items: stretch;
+}
+
+.dorks-hero-title {
+  margin-bottom: 0.6rem;
+}
+
+.dorks-hero-subtitle {
+  max-width: 950px;
+  line-height: 1.65;
+}
+
+.dorks-hero-actions {
+  margin-top: 1.2rem;
+}
+
+.dorks-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+  margin-bottom: 1rem;
+}
+
+.dorks-badge,
+.box-tag,
+.quick-example-cat,
+.category-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.28rem 0.7rem;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.dorks-badge,
+.box-tag,
+.quick-example-cat,
+.category-count {
+  background: rgba(0, 255, 153, 0.1);
+  color: #00ff99;
+  border: 1px solid rgba(0, 255, 153, 0.22);
+}
+
+.dorks-mini-panel {
+  height: 100%;
+  padding: 1.2rem;
+  border-radius: 18px;
+  border: 1px solid rgba(0, 255, 153, 0.18);
+  background: rgba(0, 255, 153, 0.045);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.mini-panel-label {
+  color: #00ff99;
+  font-size: 0.82rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 0.45rem;
+}
+
+.mini-panel-title {
+  color: var(--text-primary);
+  font-size: 1.15rem;
+  font-weight: 800;
+  margin-bottom: 0.55rem;
+}
+
+.mini-panel-text {
+  color: var(--text-secondary);
+  line-height: 1.55;
+}
+
+/* =========================
+   CARDS INTRO
+========================= */
+
+.dorks-intro-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.dorks-intro-card {
+  padding: 1.15rem;
+  border-radius: 18px;
+  transition: all 0.25s ease;
+}
+
+.dorks-intro-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(0, 255, 153, 0.42);
+  box-shadow: 0 0 24px rgba(0, 255, 153, 0.11);
+}
+
+.dorks-intro-card h3,
+.operators-title {
+  color: #00ff99;
+  margin-bottom: 0.55rem;
+  font-weight: 800;
+}
+
+.dorks-intro-card p,
+.operator-desc,
+.quick-example-desc {
+  color: var(--text-secondary);
+  line-height: 1.55;
+}
+
+.dorks-intro-card.warning {
+  border-color: rgba(255, 196, 0, 0.35);
+  background: linear-gradient(
+    180deg,
+    rgba(255, 196, 0, 0.05),
+    rgba(255, 196, 0, 0.025)
+  );
+  box-shadow: 0 0 18px rgba(255, 196, 0, 0.05);
+}
+
+/* =========================
+   BOXES PREMIUM
+========================= */
+
+.premium-box,
+.dorks-operators-box {
+  padding: 1.15rem;
+  border-radius: 20px;
+}
+
+.box-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.95rem;
+}
+
+/* =========================
+   OPERADORES
+========================= */
+
+.dorks-operators-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 0.95rem;
+  margin-top: 0.75rem;
+}
+
+.operator-card {
+  padding: 0.95rem;
+  border-radius: 16px;
+  transition: all 0.22s ease;
+}
+
+.operator-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(0, 255, 153, 0.45);
+  box-shadow: 0 0 22px rgba(0, 255, 153, 0.1);
+}
+
+.operator-code {
+  display: inline-block;
+  margin-bottom: 0.45rem;
+  color: #00ff99;
+  font-weight: 800;
+  font-size: 0.98rem;
+}
+
+/* =========================
+   EJEMPLOS RÁPIDOS
+========================= */
+
+.dorks-examples-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.quick-example-card {
+  padding: 1rem;
+  border-radius: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+  transition: all 0.22s ease;
+}
+
+.quick-example-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(0, 255, 153, 0.45);
+  box-shadow: 0 0 24px rgba(0, 255, 153, 0.12);
+}
+
+.quick-example-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.quick-example-title {
+  color: var(--text-primary);
+  font-weight: 800;
+}
+
+.quick-example-query {
+  padding: 0.78rem;
+  border-radius: 14px;
+  background: rgba(0, 0, 0, 0.28);
+  border: 1px solid rgba(0, 255, 153, 0.12);
+  overflow-x: auto;
+}
+
+.quick-example-query code {
+  color: #c7ffe7;
+  font-size: 0.9rem;
+  white-space: nowrap;
+}
+
+.quick-example-btn {
+  margin-top: auto;
+  border: 1px solid rgba(0, 255, 153, 0.28);
+  background: rgba(0, 255, 153, 0.08);
+  color: #00ff99;
+  border-radius: 12px;
+  padding: 0.72rem 0.95rem;
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.quick-example-btn:hover {
+  background: rgba(0, 255, 153, 0.14);
+  border-color: #00ff99;
+  box-shadow: 0 0 18px rgba(0, 255, 153, 0.14);
+}
+
+/* =========================
+   VISTA DE CATEGORÍAS
+========================= */
+
 .dorks-categories-view {
   width: 100%;
 }
 
 .dorks-categories-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 1.5rem;
-  margin-top: 2rem;
+  grid-template-columns: repeat(auto-fit, minmax(270px, 1fr));
+  gap: 1.2rem;
+  margin-top: 1.75rem;
 }
 
 .dork-category-card {
-  background: var(--bg-card);
-  border: 1px solid var(--border-color);
-  border-radius: 12px;
-  padding: 2rem;
+  border-radius: 18px;
+  padding: 1.5rem;
   cursor: pointer;
-  transition: all 0.3s ease;
-  text-align: center;
+  transition: all 0.25s ease;
+  text-align: left;
   position: relative;
   overflow: hidden;
 }
@@ -3781,85 +4189,105 @@ body.light-theme .ambient-glow {
 .dork-category-card::before {
   content: '';
   position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(0, 255, 153, 0.1), transparent);
-  transition: left 0.5s ease;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(0, 255, 153, 0.08),
+    transparent
+  );
+  transform: translateX(-100%);
+  transition: transform 0.6s ease;
+  pointer-events: none;
 }
 
 .dork-category-card:hover::before {
-  left: 100%;
+  transform: translateX(100%);
 }
 
 .dork-category-card:hover {
   border-color: #00ff99;
-  transform: translateY(-5px);
-  box-shadow: 0 0 25px rgba(0, 255, 153, 0.3);
+  transform: translateY(-4px);
+  box-shadow: 0 0 24px rgba(0, 255, 153, 0.16);
 }
 
-.category-icon-large {
-  font-size: 4rem;
-  margin-bottom: 1rem;
-  filter: drop-shadow(0 0 20px rgba(0, 255, 153, 0.5));
+.category-icon-large,
+.dork-category-icon {
+  font-size: 2.2rem;
+  margin-bottom: 0.85rem;
+  filter: drop-shadow(0 0 14px rgba(0, 255, 153, 0.25));
 }
 
-.category-title {
+.category-title,
+.dork-category-card h3 {
   color: var(--text-primary);
-  font-size: 1.5rem;
-  font-weight: 600;
-  margin-bottom: 0.8rem;
+  font-size: 1.2rem;
+  font-weight: 700;
+  margin-bottom: 0.6rem;
 }
 
-.category-desc {
+.category-desc,
+.dork-category-card p {
   color: var(--text-secondary);
-  font-size: 1rem;
-  line-height: 1.5;
+  font-size: 0.97rem;
+  line-height: 1.55;
   margin-bottom: 1rem;
 }
 
-.category-count {
-  display: inline-block;
-  padding: 0.4rem 1rem;
-  background: rgba(0, 255, 153, 0.1);
-  color: #00ff99;
-  border: 1px solid rgba(0, 255, 153, 0.3);
-  border-radius: 20px;
-  font-size: 0.85rem;
-  font-weight: 500;
-}
+/* =========================
+   VISTA DE LISTA DE DORKS
+========================= */
 
-/* Vista de lista de dorks */
 .dorks-list-view {
   width: 100%;
 }
 
 .dorks-header {
-  margin-bottom: 2rem;
+  margin-bottom: 1.8rem;
 }
 
 .back-btn-dorks {
-  padding: 0.7rem 1.2rem;
+  padding: 0.78rem 1.2rem;
   background: transparent;
   color: #00ff99;
   border: 1px solid rgba(0, 255, 153, 0.3);
-  border-radius: 6px;
+  border-radius: 12px;
   font-family: 'Rajdhani', sans-serif;
   font-size: 1rem;
-  font-weight: 500;
+  font-weight: 600;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all 0.22s ease;
   display: inline-flex;
   align-items: center;
-  gap: 0.5rem;
-  margin-bottom: 1.5rem;
+  gap: 0.55rem;
+  margin-bottom: 1.4rem;
 }
 
 .back-btn-dorks:hover {
   background: rgba(0, 255, 153, 0.1);
   border-color: #00ff99;
-  box-shadow: 0 0 15px rgba(0, 255, 153, 0.2);
+  box-shadow: 0 0 18px rgba(0, 255, 153, 0.18);
+}
+
+.back-btn-dorks.intro-cta-btn,
+.intro-cta-btn {
+  min-width: 210px;
+  justify-content: center;
+  font-weight: 700;
+  background: rgba(0, 255, 153, 0.09);
+  box-shadow: 0 0 18px rgba(0, 255, 153, 0.12);
+}
+
+.back-btn-dorks.intro-cta-btn:hover,
+.intro-cta-btn:hover {
+  background: rgba(0, 255, 153, 0.15);
+  box-shadow: 0 0 24px rgba(0, 255, 153, 0.2);
+}
+
+.dorks-intro-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 0.45rem;
 }
 
 .dorks-input-section {
@@ -3868,21 +4296,21 @@ body.light-theme .ambient-glow {
 
 .dorks-input {
   width: 100%;
-  padding: 1rem 1.5rem;
-  background: rgba(0, 0, 0, 0.5);
-  border: 2px solid rgba(0, 255, 153, 0.3);
-  border-radius: 8px;
+  padding: 1rem 1.2rem;
+  background: rgba(0, 0, 0, 0.45);
+  border: 1.5px solid rgba(0, 255, 153, 0.28);
+  border-radius: 14px;
   color: white;
   font-family: 'Rajdhani', sans-serif;
   font-size: 1rem;
-  transition: all 0.3s ease;
+  transition: all 0.22s ease;
   margin-bottom: 0.5rem;
 }
 
 .dorks-input:focus {
   outline: none;
   border-color: #00ff99;
-  box-shadow: 0 0 20px rgba(0, 255, 153, 0.3);
+  box-shadow: 0 0 18px rgba(0, 255, 153, 0.22);
 }
 
 .dorks-input::placeholder {
@@ -3890,52 +4318,54 @@ body.light-theme .ambient-glow {
 }
 
 .input-hint {
-  color: #888;
-  font-size: 0.85rem;
+  color: #8a8a8a;
+  font-size: 0.86rem;
   font-style: italic;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
 }
 
 .dorks-list {
   display: flex;
   flex-direction: column;
-  gap: 1.2rem;
+  gap: 1rem;
 }
 
 .dork-item {
-  background: var(--bg-card);
-  border: 1px solid var(--border-color);
-  border-radius: 8px;
-  padding: 1.5rem;
-  transition: all 0.3s ease;
+  border-radius: 18px;
+  padding: 1.35rem;
+  transition: all 0.22s ease;
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  gap: 1.5rem;
+  gap: 1.25rem;
 }
 
 .dork-item:hover {
   border-color: #00ff99;
-  box-shadow: 0 0 20px rgba(0, 255, 153, 0.2);
-  transform: translateX(5px);
+  box-shadow: 0 0 20px rgba(0, 255, 153, 0.13);
+  transform: translateX(4px);
 }
 
 .dork-content {
   flex: 1;
+  min-width: 0;
 }
 
 .dork-title {
   color: var(--text-primary);
-  font-size: 1.2rem;
-  font-weight: 600;
-  margin-bottom: 0.8rem;
+  font-size: 1.15rem;
+  font-weight: 700;
+  margin-bottom: 0.75rem;
 }
 
 .dork-query {
-  background: rgba(0, 0, 0, 0.6);
+  background: rgba(0, 0, 0, 0.45);
   border-left: 3px solid #00ff99;
-  padding: 0.8rem 1rem;
+  padding: 0.85rem 1rem;
   margin-bottom: 0.8rem;
-  border-radius: 4px;
+  border-radius: 10px;
   overflow-x: auto;
 }
 
@@ -3943,133 +4373,116 @@ body.light-theme .ambient-glow {
   color: #00ff99;
   font-family: 'Courier New', monospace;
   font-size: 0.9rem;
-  word-break: break-all;
+  word-break: break-word;
 }
 
 .dork-description {
   color: var(--text-secondary);
   font-size: 0.95rem;
-  line-height: 1.5;
+  line-height: 1.55;
 }
 
 .dork-actions {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
-  min-width: 120px;
+  gap: 0.55rem;
+  min-width: 130px;
 }
 
 .dork-btn {
-  padding: 0.7rem 1.2rem;
-  background: rgba(0, 255, 153, 0.1);
-  border: 1px solid rgba(0, 255, 153, 0.3);
-  border-radius: 6px;
+  padding: 0.74rem 1rem;
+  background: rgba(0, 255, 153, 0.08);
+  border: 1px solid rgba(0, 255, 153, 0.28);
+  border-radius: 12px;
   color: #00ff99;
   font-family: 'Rajdhani', sans-serif;
   font-size: 0.95rem;
-  font-weight: 500;
+  font-weight: 600;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all 0.22s ease;
   white-space: nowrap;
 }
 
 .dork-btn:hover {
-  background: rgba(0, 255, 153, 0.2);
+  background: rgba(0, 255, 153, 0.16);
   border-color: #00ff99;
-  box-shadow: 0 0 10px rgba(0, 255, 153, 0.3);
+  box-shadow: 0 0 14px rgba(0, 255, 153, 0.2);
 }
 
-.copy-btn:active {
-  transform: scale(0.95);
+.copy-btn:active,
+.search-btn-dork:active,
+.quick-example-btn:active {
+  transform: scale(0.98);
 }
 
-.dorks-intro-view {
-  display: flex;
-  flex-direction: column;
-  gap: 1.25rem;
+/* =========================
+   RESPONSIVE
+========================= */
+
+@media (max-width: 1200px) {
+  .dorks-hero-content {
+    grid-template-columns: 1fr;
+  }
+
+  .dorks-intro-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .dorks-examples-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
-.dorks-intro-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
-  gap: 1rem;
+@media (max-width: 900px) {
+  .dork-item {
+    flex-direction: column;
+  }
+
+  .dork-actions {
+    width: 100%;
+    min-width: 0;
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+
+  .dork-btn {
+    flex: 1;
+    min-width: 140px;
+  }
 }
 
-.dorks-intro-card,
-.operator-card,
-.dorks-operators-box {
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid var(--border-color);
-  border-radius: 18px;
-}
+@media (max-width: 768px) {
+  .dorks-categories-grid,
+  .dorks-intro-grid,
+  .dorks-examples-grid {
+    grid-template-columns: 1fr;
+  }
 
-.dorks-intro-card {
-  padding: 1.1rem;
-}
+  .box-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
 
-.dorks-intro-card h3,
-.operators-title {
-  color: var(--accent-color, #00f5a0);
-  margin-bottom: 0.55rem;
-  font-weight: 800;
-}
+  .back-btn-dorks.intro-cta-btn,
+  .intro-cta-btn {
+    width: 100%;
+  }
 
-.dorks-intro-card p,
-.operator-desc {
-  color: var(--text-secondary);
-  line-height: 1.5;
-}
+  .dorks-hero-panel {
+    padding: 1.15rem;
+  }
 
-.dorks-intro-card.warning {
-  border-color: rgba(255, 196, 0, 0.35);
-  background: rgba(255, 196, 0, 0.04);
-}
+  .dorks-input {
+    padding: 0.9rem 1rem;
+  }
 
-.dorks-operators-box {
-  padding: 1.1rem;
-}
-
-.dorks-operators-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-  gap: 0.9rem;
-  margin-top: 0.75rem;
-}
-
-.operator-card {
-  padding: 0.9rem;
-}
-
-.operator-code {
-  display: inline-block;
-  margin-bottom: 0.45rem;
-  color: var(--accent-color, #00f5a0);
-  font-weight: 800;
-  font-size: 0.95rem;
-}
-
-.dorks-intro-actions {
-  display: flex;
-  justify-content: flex-end;
-}
-
-.dorks-intro-actions {
-  display: flex;
-  justify-content: flex-end;
-  margin-top: 0.5rem;
-}
-
-.intro-cta-btn {
-  min-width: 190px;
-  justify-content: center;
-  font-weight: 700;
-  background: rgba(0, 245, 160, 0.08);
-  box-shadow: 0 0 18px rgba(0, 245, 160, 0.12);
-}
-
-.intro-cta-btn:hover {
-  background: rgba(0, 245, 160, 0.14);
-  box-shadow: 0 0 24px rgba(0, 245, 160, 0.2);
+  .dork-item,
+  .dork-category-card,
+  .quick-example-card,
+  .operator-card,
+  .dorks-intro-card {
+    padding: 1rem;
+  }
 }
 
 /* NOTIFICATION CSS */
