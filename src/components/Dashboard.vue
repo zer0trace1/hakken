@@ -700,7 +700,17 @@
                         </div>
                       </div>
                     </div>
-
+                    <div class="email-powered-by">
+                      Powered by
+                      <a
+                        href="https://leakcheck.io/"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        class="email-powered-link"
+                      >
+                        LeakCheck
+                      </a>
+                    </div>
                   </div>
                 </template>
 
@@ -4893,5 +4903,25 @@ button:disabled{ opacity:.6; cursor:not-allowed; }
   .email-stats-grid {
     grid-template-columns: 1fr;
   }
+}
+
+/* POWERED BY CSS */
+.email-powered-by {
+  margin-top: 0.25rem;
+  text-align: right;
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  opacity: 0.9;
+}
+
+.email-powered-link {
+  color: var(--accent-color, #00f5a0);
+  font-weight: 700;
+  text-decoration: none;
+  margin-left: 0.25rem;
+}
+
+.email-powered-link:hover {
+  text-decoration: underline;
 }
 </style>
