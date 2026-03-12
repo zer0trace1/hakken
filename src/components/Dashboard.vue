@@ -394,7 +394,9 @@
 
           <div class="dorks-categories-grid">
             <div class="dork-category-card" @click="selectedDorkCategory = 'username'">
-              <div class="dork-category-icon">👤</div>
+              <div class="dork-category-icon">
+                <img src="@/assets/hakken-logo-usuario" alt="logo-usuario">
+              </div>
               <h3>Username</h3>
               <p>Búsquedas orientadas a alias, perfiles y reutilización de nombre de usuario.</p>
             </div>
