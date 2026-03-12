@@ -247,89 +247,94 @@
       </section>
 
       <!-- Google Dorks Section - NUEVA -->
-      <section v-else="currentView === 'dorks'" class="dorks-section">
-        <div v-if="!selectedDorkCategory" class="dorks-categories-view">
+      <section v-else-if="currentView === 'dorks'" class="dorks-section">
+        <!-- Pantalla introductoria -->
+        <div v-if="showDorksIntro" class="dorks-intro-view">
           <h1 class="section-title">
             <span class="highlight">Google Dorks</span> OSINT
           </h1>
-          <p class="section-subtitle">Selecciona una categoría para ver las consultas avanzadas</p>
+          <p class="section-subtitle">
+            Consultas avanzadas que permiten afinar búsquedas en Google para encontrar perfiles,
+            documentos, menciones, directorios, paneles y otros activos útiles en investigaciones OSINT.
+          </p>
 
-          <div class="dorks-categories-grid">
-            <!-- Name Category -->
-            <!--<div class="dork-category-card" @click="selectDorkCategory('name')">
-              <img src="@/assets/hakken-logo-usuario.png" alt="Username" class="category-icon-large"/>
-              <h3 class="category-title">Nombre</h3>
-              <p class="category-desc">Dorks para buscar personas en redes sociales y plataformas</p>
-              <div class="category-count">5 dorks disponibles</div>
-            </div>-->
-            
-            <!-- Username Category -->
-            <div class="dork-category-card" @click="selectDorkCategory('username')">
-              <img src="@/assets/hakken-logo-usuario.png" alt="Username" class="category-icon-large"/>
-              <h3 class="category-title">Username</h3>
-              <p class="category-desc">Dorks para buscar usuarios en redes sociales y plataformas</p>
-              <div class="category-count">5 dorks disponibles</div>
+          <div class="dorks-intro-grid">
+            <div class="dorks-intro-card">
+              <h3>¿Qué son?</h3>
+              <p>
+                Son búsquedas avanzadas construidas con operadores de Google. Permiten localizar
+                información pública de forma más precisa que una búsqueda normal.
+              </p>
             </div>
 
-            <!-- Email Category -->
-            <div class="dork-category-card" @click="selectDorkCategory('email')">
-              <img src="@/assets/hakken-logo-email.png" alt="Email" class="category-icon-large"/>
-              <h3 class="category-title">Email</h3>
-              <p class="category-desc">Encuentra emails en documentos, redes y bases de datos</p>
-              <div class="category-count">10 dorks disponibles</div>
+            <div class="dorks-intro-card">
+              <h3>¿Para qué sirven?</h3>
+              <p>
+                Sirven para investigar usernames, emails, teléfonos, dominios, archivos expuestos,
+                perfiles sociales y posibles superficies de exposición en fuentes abiertas.
+              </p>
             </div>
 
-            <!-- Phone Category -->
-            <div class="dork-category-card" @click="selectDorkCategory('phone')">
-              <img src="@/assets/hakken-logo-movil.png" alt="Phone" class="category-icon-large"/>
-              <h3 class="category-title">Teléfono</h3>
-              <p class="category-desc">Busca números telefónicos en directorios y anuncios</p>
-              <div class="category-count">5 dorks disponibles</div>
+            <div class="dorks-intro-card">
+              <h3>Uso recomendado</h3>
+              <p>
+                Úsalos como complemento a los módulos automáticos de HAKKEN para pivotar, validar
+                hallazgos y ampliar el contexto manualmente.
+              </p>
             </div>
 
-            <!-- IP Category -->
-            <div class="dork-category-card" @click="selectDorkCategory('ip')">
-              <img src="@/assets/hakken-logo-ip.png" alt="IP" class="category-icon-large"/>
-              <h3 class="category-title">Dirección IP</h3>
-              <p class="category-desc">Información sobre IPs, servicios y vulnerabilidades</p>
-              <div class="category-count">5 dorks disponibles</div>
+            <div class="dorks-intro-card warning">
+              <h3>Uso responsable</h3>
+              <p>
+                Empléalos únicamente con fines legítimos, defensivos, académicos y de investigación
+                autorizada sobre información pública.
+              </p>
             </div>
+          </div>
 
-            <!-- Domain Category -->
-            <div class="dork-category-card" @click="selectDorkCategory('domain')">
-              <img src="@/assets/hakken-logo-dominio.png" alt="Domain" class="category-icon-large"/>
-              <h3 class="category-title">Dominio</h3>
-              <p class="category-desc">Analiza subdominios, archivos y tecnologías</p>
-              <div class="category-count">5 dorks disponibles</div>
-            </div>
+          <div class="dorks-operators-box">
+            <h3 class="operators-title">Operadores principales</h3>
 
-            <!-- Files Category -->
-            <div class="dork-category-card" @click="selectDorkCategory('files')">
-              <img src="@/assets/hakken-logo-clipboard.png" alt="Files" class="category-icon-large"/>
-              <h3 class="category-title">Archivos</h3>
-              <p class="category-desc">Encuentra documentos, configs y backups expuestos</p>
-              <div class="category-count">5 dorks disponibles</div>
+            <div class="dorks-operators-grid">
+              <div
+                v-for="item in dorkOperators"
+                :key="item.op"
+                class="operator-card"
+              >
+                <code class="operator-code">{{ item.op }}</code>
+                <p class="operator-desc">{{ item.desc }}</p>
+              </div>
             </div>
+          </div>
 
-            <!-- Social Category -->
-            <div class="dork-category-card" @click="selectDorkCategory('social')">
-              <img src="@/assets/hakken-logo-busqueda.png" alt="Social" class="category-icon-large"/>
-              <h3 class="category-title">Redes Sociales</h3>
-              <p class="category-desc">Busca perfiles y contenido en plataformas sociales</p>
-              <div class="category-count">5 dorks disponibles</div>
-            </div>
-
-            <!-- Vulnerabilities Category -->
-            <div class="dork-category-card" @click="selectDorkCategory('vulnerabilities')">
-              <img src="@/assets/hakken-logo-advertencia.png" alt="Vulnerabilities" class="category-icon-large"/>
-              <h3 class="category-title">Vulnerabilidades</h3>
-              <p class="category-desc">Detecta paneles, bases de datos y credenciales</p>
-              <div class="category-count">5 dorks disponibles</div>
-            </div>
+          <div class="dorks-intro-actions">
+            <button class="action-btn primary-btn" @click="openDorksCategories">
+              Ver categorías
+            </button>
           </div>
         </div>
 
-        <!-- Vista de dorks de la categoría seleccionada -->
+        <!-- Pantalla de categorías -->
+        <div v-else-if="!selectedDorkCategory" class="dorks-categories-view">
+          <div class="dorks-header">
+            <button class="back-btn-dorks" @click="showDorksIntro = true">
+              <span class="icon">←</span>
+              Volver a la introducción
+            </button>
+            <h1 class="section-title">
+              <span class="highlight">Google Dorks</span> OSINT
+            </h1>
+            <p class="section-subtitle">
+              Selecciona una categoría para ver consultas avanzadas listas para usar
+            </p>
+          </div>
+
+          <div class="dorks-categories-grid">
+            <!-- aquí mantienes tus cards actuales tal cual -->
+          </div>
+        </div>
+
+        <!-- Pantalla de dorks -->
         <div v-else class="dorks-list-view">
           <div class="dorks-header">
             <button class="back-btn-dorks" @click="selectedDorkCategory = null">
@@ -342,7 +347,6 @@
             <p class="section-subtitle">{{ getCategoryDescription(selectedDorkCategory) }}</p>
           </div>
 
-          <!-- Input para personalizar -->
           <div class="dorks-input-section">
             <input
               v-model="dorkSearchTerm"
@@ -352,30 +356,30 @@
             />
             <small class="input-hint">
               <img src="@/assets/hakken-logo-bombilla.png" alt="hint" class="hint-icon"/>
-              Introduce un término para personalizar los dorks (opcional)
+              Introduce un término para personalizar los dorks
             </small>
           </div>
 
-          <!-- Lista de dorks -->
           <div class="dorks-list">
-            <div 
-              v-for="dork in getFilteredDorks(selectedDorkCategory)" 
+            <div
+              v-for="dork in getFilteredDorks(selectedDorkCategory)"
               :key="dork.id"
               class="dork-item"
             >
               <div class="dork-content">
                 <h4 class="dork-title">{{ dork.title }}</h4>
                 <div class="dork-query">
-                  <code>{{ getDorkWithTerm(dork.query) }}</code>
+                  <code>{{ getDorkWithTerm(dork) }}</code>
                 </div>
                 <p class="dork-description">{{ dork.description }}</p>
               </div>
+
               <div class="dork-actions">
-                <button class="dork-btn copy-btn" @click="copyDork(dork.query)">
+                <button class="dork-btn copy-btn" @click="copyDork(dork)">
                   <img src="@/assets/hakken-logo-papelera.png" alt="copy" class="btn-icon"/>
                   Copiar
                 </button>
-                <button class="dork-btn search-btn-dork" @click="searchWithDork(dork.query)">
+                <button class="dork-btn search-btn-dork" @click="searchWithDork(dork)">
                   <img src="@/assets/hakken-logo-busqueda.png" alt="search" class="btn-icon"/>
                   Buscar
                 </button>
@@ -1913,6 +1917,18 @@ function phoneReputationClass(total) {
 const selectedDorkCategory = ref(null)
 const dorkSearchTerm = ref('')
 const notification = ref({ show: false, message: '' })
+const showDorksIntro = ref(true)
+
+const dorkOperators = [
+  { op: 'site:', desc: 'Limita la búsqueda a un dominio o sitio concreto.' },
+  { op: 'inurl:', desc: 'Busca palabras concretas dentro de la URL.' },
+  { op: 'intitle:', desc: 'Busca términos en el título de la página.' },
+  { op: 'filetype:', desc: 'Filtra por tipo de archivo, como pdf, xls o docx.' },
+  { op: '"texto"', desc: 'Busca una coincidencia exacta entre comillas.' },
+  { op: '-', desc: 'Excluye términos o dominios de la búsqueda.' },
+  { op: 'OR', desc: 'Permite combinar varias alternativas en una misma consulta.' },
+  { op: 'intext:', desc: 'Busca palabras dentro del contenido de la página.' }
+]
 
 // Base de datos de Google Dorks (ACTUALIZADA con tus ejemplos de Email)
 const googleDorks = ref([
@@ -1978,14 +1994,16 @@ const googleDorks = ref([
     category: 'email',
     title: 'Username reutilizado',
     query: '"[TERM]" site:github.com',
-    description: 'Busca si el username del email se usa en GitHub'
+    description: 'Busca si el username del email se usa en GitHub',
+    useEmailUsername: true
   },
   {
     id: 10,
     category: 'email',
     title: 'Username en Twitter',
     query: '"[TERM]" site:twitter.com',
-    description: 'Busca si el username del email está en Twitter'
+    description: 'Busca si el username del email está en Twitter',
+    useEmailUsername: true
   },
 
   // USERNAME DORKS
@@ -2253,6 +2271,12 @@ const openGoogleDorks = () => {
   currentView.value = 'dorks'
   selectedDorkCategory.value = null
   dorkSearchTerm.value = ''
+  showDorksIntro.value = true
+}
+
+const openDorksCategories = () => {
+  showDorksIntro.value = false
+  selectedDorkCategory.value = null
 }
 
 const selectDorkCategory = (category) => {
@@ -2264,24 +2288,26 @@ const getFilteredDorks = (category) => {
   return googleDorks.value.filter(dork => dork.category === category)
 }
 
-const getDorkWithTerm = (query) => {
+const getDorkWithTerm = (dork) => {
   if (dorkSearchTerm.value.trim()) {
-    // Extraer solo el username si es email (parte antes del @)
     let term = dorkSearchTerm.value.trim()
-    if (term.includes('@') && selectedDorkCategory.value === 'email') {
-      const username = term.split('@')[0]
-      // Reemplazar [TERM] con el username cuando el dork lo requiera
-      if (query.includes('Username reutilizado') || query.includes('Username en Twitter')) {
-        return query.replace(/\[TERM\]/g, username)
-      }
+
+    if (
+      term.includes('@') &&
+      selectedDorkCategory.value === 'email' &&
+      dork.useEmailUsername
+    ) {
+      term = term.split('@')[0]
     }
-    return query.replace(/\[TERM\]/g, term)
+
+    return dork.query.replace(/\[TERM\]/g, term)
   }
-  return query
+
+  return dork.query
 }
 
-const copyDork = async (dorkQuery) => {
-  const finalQuery = getDorkWithTerm(dorkQuery)
+const copyDork = async (dork) => {
+  const finalQuery = getDorkWithTerm(dork)
   try {
     await navigator.clipboard.writeText(finalQuery)
     showNotification('Dork copiado al portapapeles', true)
@@ -2291,8 +2317,8 @@ const copyDork = async (dorkQuery) => {
   }
 }
 
-const searchWithDork = (dorkQuery) => {
-  const finalQuery = getDorkWithTerm(dorkQuery)
+const searchWithDork = (dork) => {
+  const finalQuery = getDorkWithTerm(dork)
   const googleSearchUrl = `https://www.google.com/search?q=${encodeURIComponent(finalQuery)}`
   window.open(googleSearchUrl, '_blank')
 }
@@ -3923,7 +3949,77 @@ body.light-theme .ambient-glow {
   transform: scale(0.95);
 }
 
-/* Notification Toast */
+.dorks-intro-view {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.dorks-intro-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: 1rem;
+}
+
+.dorks-intro-card,
+.operator-card,
+.dorks-operators-box {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border-color);
+  border-radius: 18px;
+}
+
+.dorks-intro-card {
+  padding: 1.1rem;
+}
+
+.dorks-intro-card h3,
+.operators-title {
+  color: var(--accent-color, #00f5a0);
+  margin-bottom: 0.55rem;
+  font-weight: 800;
+}
+
+.dorks-intro-card p,
+.operator-desc {
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+.dorks-intro-card.warning {
+  border-color: rgba(255, 196, 0, 0.35);
+  background: rgba(255, 196, 0, 0.04);
+}
+
+.dorks-operators-box {
+  padding: 1.1rem;
+}
+
+.dorks-operators-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 0.9rem;
+  margin-top: 0.75rem;
+}
+
+.operator-card {
+  padding: 0.9rem;
+}
+
+.operator-code {
+  display: inline-block;
+  margin-bottom: 0.45rem;
+  color: var(--accent-color, #00f5a0);
+  font-weight: 800;
+  font-size: 0.95rem;
+}
+
+.dorks-intro-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+/* NOTIFICATION CSS */
 .notification-toast {
   display: flex;
   align-items: center;
