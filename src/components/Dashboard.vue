@@ -391,44 +391,17 @@
               Selecciona una categoría para ver consultas avanzadas listas para usar
             </p>
           </div>
-
           <div class="dorks-categories-grid">
-            <div class="dork-category-card" @click="selectedDorkCategory = 'username'">
-              <div class="dork-category-icon">
-                <img src="@/assets/hakken-logo-usuario" alt="logo-usuario">
-              </div>
-              <h3>Username</h3>
-              <p>Búsquedas orientadas a alias, perfiles y reutilización de nombre de usuario.</p>
-            </div>
+            <div
+              v-for="category in dorkCategories"
+              :key="category.key"
+              class="dork-category-card"
+              @click="selectedDorkCategory = category.key"
+            >
+              <img :src="category.icon" :alt="category.title" class="dork-category-icon-img" />
 
-            <div class="dork-category-card" @click="selectedDorkCategory = 'email'">
-              <div class="dork-category-icon">✉️</div>
-              <h3>Email</h3>
-              <p>Dorks para correos, menciones, perfiles asociados y documentos expuestos.</p>
-            </div>
-
-            <div class="dork-category-card" @click="selectedDorkCategory = 'phone'">
-              <div class="dork-category-icon">📞</div>
-              <h3>Teléfono</h3>
-              <p>Consultas para rastrear números, anuncios, listados y posibles referencias públicas.</p>
-            </div>
-
-            <div class="dork-category-card" @click="selectedDorkCategory = 'domain'">
-              <div class="dork-category-icon">🌐</div>
-              <h3>Dominio</h3>
-              <p>Búsquedas sobre archivos, subdirectorios, documentos y exposición vinculada al dominio.</p>
-            </div>
-
-            <div class="dork-category-card" @click="selectedDorkCategory = 'person'">
-              <div class="dork-category-icon">🧠</div>
-              <h3>Persona</h3>
-              <p>Dorks para nombres y apellidos, perfiles, PDFs, noticias y huella digital pública.</p>
-            </div>
-
-            <div class="dork-category-card" @click="selectedDorkCategory = 'company'">
-              <div class="dork-category-icon">🏢</div>
-              <h3>Empresa</h3>
-              <p>Consultas para activos públicos, documentación, paneles y presencia web corporativa.</p>
+              <h3 class="category-title">{{ category.title }}</h3>
+              <p class="category-desc">{{ category.desc }}</p>
             </div>
           </div>
         </div>
@@ -440,10 +413,14 @@
               <span class="icon">←</span>
               Volver a categorías
             </button>
+
             <h1 class="section-title">
-              {{ getCategoryTitle(selectedDorkCategory) }}
+              <span class="highlight">{{ getCategoryTitle(selectedDorkCategory) }}</span>
             </h1>
-            <p class="section-subtitle">{{ getCategoryDescription(selectedDorkCategory) }}</p>
+
+            <p class="section-subtitle">
+              {{ getCategoryDescription(selectedDorkCategory) }}
+            </p>
           </div>
 
           <div class="dorks-input-section">
@@ -459,7 +436,10 @@
             </small>
           </div>
 
-          <div class="dorks-list">
+          <div
+            v-if="getFilteredDorks(selectedDorkCategory).length"
+            class="dorks-list"
+          >
             <div
               v-for="dork in getFilteredDorks(selectedDorkCategory)"
               :key="dork.id"
@@ -467,22 +447,30 @@
             >
               <div class="dork-content">
                 <h4 class="dork-title">{{ dork.title }}</h4>
+
                 <div class="dork-query">
                   <code>{{ getDorkWithTerm(dork) }}</code>
                 </div>
+
                 <p class="dork-description">{{ dork.description }}</p>
               </div>
 
               <div class="dork-actions">
                 <button class="dork-btn copy-btn" @click="copyDork(dork)">
-                  <img src="@/assets/hakken-logo-papelera.png" alt="copy" class="btn-icon"/>
                   Copiar
                 </button>
                 <button class="dork-btn search-btn-dork" @click="searchWithDork(dork)">
-                  <img src="@/assets/hakken-logo-busqueda.png" alt="search" class="btn-icon"/>
                   Buscar
                 </button>
               </div>
+            </div>
+          </div>
+
+          <div v-else class="dorks-empty-state">
+            <div class="dorks-empty-title">No hay dorks definidos para esta categoría</div>
+            <div class="dorks-empty-text">
+              Revisa que los elementos de <code>googleDorks</code> tengan exactamente
+              <code>category: '{{ selectedDorkCategory }}'</code>.
             </div>
           </div>
         </div>
@@ -1378,6 +1366,12 @@ import { ref, reactive, onMounted, onBeforeUnmount } from 'vue'
 import { useRouter } from 'vue-router'
 import api from '@/services/api'
 import { signOut, getUser } from "@/auth/oidc";
+import iconPerson from '@/assets/hakken-logo-persona.png'
+import iconUsername from '@/assets/hakken-logo-usuario.png'
+import iconEmail from '@/assets/hakken-logo-email.png'
+import iconPhone from '@/assets/hakken-logo-movil.png'
+import iconIP from '@/assets/hakken-logo-ip.png'
+import iconDomain from '@/assets/hakken-logo-dominio.png'
 
 /*
 **************************************************************************
@@ -2018,6 +2012,78 @@ const dorkSearchTerm = ref('')
 const notification = ref({ show: false, message: '' })
 const showDorksIntro = ref(true)
 
+const dorkCategories = [
+  {
+    key: 'person',
+    title: 'Persona',
+    desc: 'Dorks para nombres y apellidos, perfiles, PDFs, noticias y huella digital pública.',
+    icon: iconPerson
+  },
+  {
+    key: 'username',
+    title: 'Username',
+    desc: 'Búsquedas orientadas a alias, perfiles y reutilización de nombre de usuario.',
+    icon: iconUsername
+  },
+  {
+    key: 'email',
+    title: 'Email',
+    desc: 'Dorks para correos, menciones, perfiles asociados y documentos expuestos.',
+    icon: iconEmail
+  },
+  {
+    key: 'phone',
+    title: 'Teléfono',
+    desc: 'Consultas para rastrear números, anuncios, listados y posibles referencias públicas.',
+    icon: iconPhone
+  },
+  {
+    key: 'ip',
+    title: 'IP',
+    desc: 'Consultas para investigar direcciones IP, listados públicos, paneles e indexaciones.',
+    icon: iconIP
+  },
+  {
+    key: 'domain',
+    title: 'Dominio',
+    desc: 'Búsquedas sobre archivos, subdirectorios, documentos y exposición vinculada al dominio.',
+    icon: iconDomain
+  }
+]
+
+const categoryMeta = {
+  person: {
+    title: 'Personas',
+    description: 'Dorks para nombres y apellidos, perfiles, PDFs, noticias y presencia pública.',
+    placeholder: 'Ej: Pablo Infante Fausti'
+  },
+  username: {
+    title: 'Nombres de usuario',
+    description: 'Dorks para alias, perfiles sociales y reutilización de usernames.',
+    placeholder: 'Ej: pabloinfante'
+  },
+  email: {
+    title: 'Emails',
+    description: 'Dorks para correos electrónicos, menciones, perfiles asociados y documentos expuestos.',
+    placeholder: 'Ej: correo@dominio.com'
+  },
+  phone: {
+    title: 'Teléfonos',
+    description: 'Dorks para números de teléfono, anuncios, listados y referencias públicas.',
+    placeholder: 'Ej: +34 600 123 123'
+  },
+  ip: {
+    title: 'IPs',
+    description: 'Dorks para direcciones IP, indexaciones, paneles y activos expuestos.',
+    placeholder: 'Ej: 8.8.8.8'
+  },
+  domain: {
+    title: 'Dominios',
+    description: 'Dorks para dominios, archivos, subdirectorios y exposición documental.',
+    placeholder: 'Ej: empresa.com'
+  }
+}
+
 const dorkOperators = [
   { op: 'site:', desc: 'Limita la búsqueda a un dominio o sitio concreto.' },
   { op: 'inurl:', desc: 'Busca palabras concretas dentro de la URL.' },
@@ -2294,115 +2360,77 @@ const googleDorks = ref([
     description: 'Identifica las tecnologías utilizadas en el sitio'
   },
 
-  // FILES DORKS
-  {
-    id: 31,
-    category: 'files',
-    title: 'Buscar PDFs sensibles',
-    query: 'site:[TERM] filetype:pdf confidential OR private OR secret',
-    description: 'Busca documentos PDF con información sensible'
-  },
-  {
-    id: 32,
-    category: 'files',
-    title: 'Buscar documentos Word',
-    query: 'filetype:doc OR filetype:docx "[TERM]"',
-    description: 'Encuentra documentos de Word relacionados'
-  },
-  {
-    id: 33,
-    category: 'files',
-    title: 'Buscar hojas de cálculo',
-    query: 'filetype:xls OR filetype:xlsx "[TERM]"',
-    description: 'Busca hojas de cálculo expuestas'
-  },
-  {
-    id: 34,
-    category: 'files',
-    title: 'Buscar presentaciones',
-    query: 'filetype:ppt OR filetype:pptx "[TERM]"',
-    description: 'Encuentra presentaciones públicas'
-  },
-  {
-    id: 35,
-    category: 'files',
-    title: 'Buscar archivos de configuración',
-    query: 'filetype:conf OR filetype:config OR filetype:ini "[TERM]"',
-    description: 'Busca archivos de configuración expuestos'
-  },
-
   // SOCIAL DORKS
   {
-    id: 36,
+    id: 31,
     category: 'social',
     title: 'Buscar en Twitter',
     query: 'site:twitter.com "[TERM]"',
     description: 'Busca tweets y perfiles en Twitter'
   },
   {
-    id: 37,
+    id: 32,
     category: 'social',
     title: 'Buscar en Facebook',
     query: 'site:facebook.com "[TERM]"',
     description: 'Encuentra publicaciones y perfiles en Facebook'
   },
   {
-    id: 38,
+    id: 33,
     category: 'social',
     title: 'Buscar en Instagram',
     query: 'site:instagram.com "[TERM]"',
     description: 'Busca perfiles y hashtags en Instagram'
   },
   {
-    id: 39,
+    id: 34,
     category: 'social',
     title: 'Buscar en TikTok',
     query: 'site:tiktok.com "[TERM]"',
     description: 'Encuentra videos y usuarios en TikTok'
   },
   {
-    id: 40,
+    id: 35,
     category: 'social',
     title: 'Buscar en YouTube',
     query: 'site:youtube.com "[TERM]"',
     description: 'Busca videos y canales en YouTube'
   },
 
-  // VULNERABILITIES DORKS
   {
-    id: 41,
-    category: 'vulnerabilities',
-    title: 'Buscar paneles de administración',
-    query: 'intitle:"admin panel" OR intitle:"control panel"',
-    description: 'Encuentra paneles de administración expuestos'
+    id: 36,
+    category: 'person',
+    title: 'LinkedIn exacto',
+    query: 'site:linkedin.com/in "[TERM]"',
+    description: 'Busca perfiles personales en LinkedIn.'
   },
   {
-    id: 42,
-    category: 'vulnerabilities',
-    title: 'Buscar bases de datos expuestas',
-    query: 'intitle:"phpMyAdmin" OR intitle:"MySQL"',
-    description: 'Busca interfaces de bases de datos accesibles'
+    id: 37,
+    category: 'person',
+    title: 'GitHub por nombre',
+    query: 'site:github.com "[TERM]"',
+    description: 'Busca perfiles o menciones del nombre en GitHub.'
   },
   {
-    id: 43,
-    category: 'vulnerabilities',
-    title: 'Buscar cámaras sin contraseña',
-    query: 'inurl:"view/view.shtml" OR inurl:"ViewerFrame?Mode="',
-    description: 'Encuentra cámaras de seguridad vulnerables'
+    id: 38,
+    category: 'person',
+    title: 'PDFs asociados',
+    query: '"[TERM]" filetype:pdf',
+    description: 'Busca documentos PDF donde aparezca el nombre.'
   },
   {
-    id: 44,
-    category: 'vulnerabilities',
-    title: 'Buscar archivos de backup',
-    query: 'filetype:bak OR filetype:old OR filetype:backup',
-    description: 'Busca archivos de respaldo expuestos'
+    id: 39,
+    category: 'person',
+    title: 'Noticias y medios',
+    query: '"[TERM]" site:elpais.com OR site:abc.es OR site:europapress.es',
+    description: 'Busca menciones del nombre en medios.'
   },
   {
-    id: 45,
-    category: 'vulnerabilities',
-    title: 'Buscar credenciales expuestas',
-    query: 'filetype:env "DB_PASSWORD" OR filetype:config "password"',
-    description: 'Busca archivos con posibles credenciales'
+    id: 40,
+    category: 'person',
+    title: 'Research / Scholar',
+    query: '"[TERM]" site:scholar.google.com OR site:researchgate.net OR site:orcid.org',
+    description: 'Busca presencia en entornos académicos.'
   }
 ])
 
@@ -2475,45 +2503,15 @@ const showNotification = (message, isSuccess = true) => {
 }
 
 const getCategoryTitle = (category) => {
-  const titles = {
-    username: 'Google Dorks para Username',
-    email: 'Google Dorks para Email',
-    phone: 'Google Dorks para Teléfono',
-    ip: 'Google Dorks para Dirección IP',
-    domain: 'Google Dorks para Dominio',
-    files: 'Google Dorks para Archivos',
-    social: 'Google Dorks para Redes Sociales',
-    vulnerabilities: 'Google Dorks para Vulnerabilidades'
-  }
-  return titles[category] || category
+  return categoryMeta[category]?.title || category
 }
 
 const getCategoryDescription = (category) => {
-  const descriptions = {
-    username: 'Consultas avanzadas para encontrar usuarios en múltiples plataformas',
-    email: 'Busca emails en redes sociales, documentos y bases de datos públicas',
-    phone: 'Encuentra números telefónicos en directorios, anuncios y documentos',
-    ip: 'Obtén información detallada sobre direcciones IP y servicios',
-    domain: 'Analiza dominios, subdominios y tecnologías web',
-    files: 'Descubre documentos y archivos sensibles expuestos',
-    social: 'Busca perfiles y contenido en redes sociales',
-    vulnerabilities: 'Identifica posibles vulnerabilidades y exposiciones'
-  }
-  return descriptions[category] || ''
+  return categoryMeta[category]?.description || 'Consultas avanzadas listas para usar'
 }
 
 const getCategoryPlaceholder = (category) => {
-  const placeholders = {
-    username: 'Ej: john_doe, usuario123',
-    email: 'Ej: ejemplo@gmail.com',
-    phone: 'Ej: +34600000000, 600000000',
-    ip: 'Ej: 8.8.8.8, 192.168.1.1',
-    domain: 'Ej: example.com',
-    files: 'Ej: confidential, password',
-    social: 'Ej: @usuario, #hashtag',
-    vulnerabilities: 'Ej: admin, login'
-  }
-  return placeholders[category] || 'Introduce un término...'
+  return categoryMeta[category]?.placeholder || 'Introduce un término...'
 }
 
 /*
@@ -4415,6 +4413,55 @@ body.light-theme .ambient-glow {
 .search-btn-dork:active,
 .quick-example-btn:active {
   transform: scale(0.98);
+}
+
+.dork-category-icon-img {
+  width: 54px;
+  height: 54px;
+  object-fit: contain;
+  margin-bottom: 1rem;
+  filter: drop-shadow(0 0 14px rgba(0, 255, 153, 0.18));
+}
+
+.dork-category-card {
+  text-align: left;
+}
+
+.dorks-header .section-title {
+  margin-bottom: 0.45rem;
+}
+
+.dorks-header .section-subtitle {
+  max-width: 900px;
+  line-height: 1.55;
+}
+
+.dorks-empty-state {
+  border: 1px dashed rgba(0, 255, 153, 0.25);
+  border-radius: 18px;
+  padding: 1.25rem;
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.dorks-empty-title {
+  color: var(--text-primary);
+  font-weight: 700;
+  margin-bottom: 0.45rem;
+}
+
+.dorks-empty-text {
+  color: var(--text-secondary);
+  line-height: 1.55;
+}
+
+.dorks-empty-text code {
+  color: #00ff99;
+}
+
+.hint-icon {
+  width: 16px;
+  height: 16px;
+  object-fit: contain;
 }
 
 /* =========================
