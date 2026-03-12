@@ -308,8 +308,8 @@
           </div>
 
           <div class="dorks-intro-actions">
-            <button class="action-btn primary-btn" @click="openDorksCategories">
-              Ver categorías
+            <button class="back-btn-dorks intro-cta-btn" @click="openDorksCategories">
+              Ver categorías →
             </button>
           </div>
         </div>
@@ -330,7 +330,41 @@
           </div>
 
           <div class="dorks-categories-grid">
-            <!-- aquí mantienes tus cards actuales tal cual -->
+            <div class="dork-category-card" @click="selectedDorkCategory = 'username'">
+              <div class="dork-category-icon">👤</div>
+              <h3>Username</h3>
+              <p>Búsquedas orientadas a alias, perfiles y reutilización de nombre de usuario.</p>
+            </div>
+
+            <div class="dork-category-card" @click="selectedDorkCategory = 'email'">
+              <div class="dork-category-icon">✉️</div>
+              <h3>Email</h3>
+              <p>Dorks para correos, menciones, perfiles asociados y documentos expuestos.</p>
+            </div>
+
+            <div class="dork-category-card" @click="selectedDorkCategory = 'phone'">
+              <div class="dork-category-icon">📞</div>
+              <h3>Teléfono</h3>
+              <p>Consultas para rastrear números, anuncios, listados y posibles referencias públicas.</p>
+            </div>
+
+            <div class="dork-category-card" @click="selectedDorkCategory = 'domain'">
+              <div class="dork-category-icon">🌐</div>
+              <h3>Dominio</h3>
+              <p>Búsquedas sobre archivos, subdirectorios, documentos y exposición vinculada al dominio.</p>
+            </div>
+
+            <div class="dork-category-card" @click="selectedDorkCategory = 'person'">
+              <div class="dork-category-icon">🧠</div>
+              <h3>Persona</h3>
+              <p>Dorks para nombres y apellidos, perfiles, PDFs, noticias y huella digital pública.</p>
+            </div>
+
+            <div class="dork-category-card" @click="selectedDorkCategory = 'company'">
+              <div class="dork-category-icon">🏢</div>
+              <h3>Empresa</h3>
+              <p>Consultas para activos públicos, documentación, paneles y presencia web corporativa.</p>
+            </div>
           </div>
         </div>
 
@@ -4017,6 +4051,25 @@ body.light-theme .ambient-glow {
 .dorks-intro-actions {
   display: flex;
   justify-content: flex-end;
+}
+
+.dorks-intro-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 0.5rem;
+}
+
+.intro-cta-btn {
+  min-width: 190px;
+  justify-content: center;
+  font-weight: 700;
+  background: rgba(0, 245, 160, 0.08);
+  box-shadow: 0 0 18px rgba(0, 245, 160, 0.12);
+}
+
+.intro-cta-btn:hover {
+  background: rgba(0, 245, 160, 0.14);
+  box-shadow: 0 0 24px rgba(0, 245, 160, 0.2);
 }
 
 /* NOTIFICATION CSS */
