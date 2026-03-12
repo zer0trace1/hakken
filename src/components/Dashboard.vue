@@ -2055,12 +2055,12 @@ const categoryMeta = {
   person: {
     title: 'Personas',
     description: 'Dorks para nombres y apellidos, perfiles, PDFs, noticias y presencia pública.',
-    placeholder: 'Ej: Pablo Infante Fausti'
+    placeholder: 'Ej: John Doe'
   },
   username: {
     title: 'Nombres de usuario',
     description: 'Dorks para alias, perfiles sociales y reutilización de usernames.',
-    placeholder: 'Ej: pabloinfante'
+    placeholder: 'Ej: @johndoe o johndoe'
   },
   email: {
     title: 'Emails',
