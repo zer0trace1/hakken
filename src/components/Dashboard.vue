@@ -157,11 +157,13 @@
           </div>
 
           <!-- ADVANCED TOOLS: IMAGE SEARCH -->
-          <div class="advanced-tool-panel under-construction" @click="openImageSearch">
+          <div class="advanced-tool-panel under-construction-panel">
+            <div class="construction-ribbon">EN CONSTRUCCIÓN</div>
+
             <div class="advanced-tool-left">
-              <div class="advanced-tool-icon-wrap">
+              <div class="advanced-tool-icon-wrap disabled">
                 <img
-                  src="@/assets/hakken-logo-image.png"
+                  src="@/assets/hakken-logo-imagen.png"
                   alt="Búsqueda inversa de imágenes"
                   class="advanced-tool-icon"
                 />
@@ -171,21 +173,21 @@
                 <div class="advanced-tool-kicker">OSINT visual · análisis local</div>
                 <h3 class="advanced-tool-name">Búsqueda inversa de imágenes</h3>
                 <p class="advanced-tool-description">
-                  Sube una imagen, analiza sus metadatos, calcula hashes y genera pivotes
+                  Próximamente: análisis de imagen, hashes, EXIF y launchers externos
                   para Google, TinEye y Yandex.
                 </p>
 
                 <div class="advanced-tool-tags">
                   <span class="advanced-tool-tag">Imagen</span>
                   <span class="advanced-tool-tag">Launcher</span>
-                  <span class="advanced-tool-tag warning-tag">EN CONSTRUCCIÓN</span>
+                  <span class="advanced-tool-tag warning-tag">Deshabilitado</span>
                 </div>
               </div>
             </div>
 
             <div class="advanced-tool-right">
-              <button class="advanced-tool-btn" @click.stop="openImageSearch">
-                Abrir módulo →
+              <button class="advanced-tool-btn disabled-btn" disabled>
+                Próximamente
               </button>
             </div>
           </div>
@@ -546,7 +548,7 @@
       </section>
       
       <!-- IMAGE TOOL SECTION -->
-      <section v-else-if="currentView === 'image-search'" class="image-search-section">
+      <!--<section v-else-if="currentView === 'image-search'" class="image-search-section">
         <div class="image-search-header">
           <button class="back-btn-dorks" @click="currentView = 'search'">
             <span class="icon">←</span>
@@ -693,7 +695,7 @@
             </div>
           </div>
         </div>
-      </section>
+      </section>-->
 
       <!-- Notificación Toast -->
       <div v-if="notification.show" class="notification-toast" :class="{ 'error': !notification.isSuccess }">
@@ -2860,7 +2862,7 @@ const imageSearchError = ref(null)
 const isImageDragOver = ref(false)
 
 const openImageSearch = () => {
-  currentView.value = 'image-search'
+  showNotification('Módulo en construcción', false)
 }
 
 const triggerImageInput = () => {
@@ -2915,11 +2917,6 @@ const resetImageSearch = () => {
 
 const analyzeImage = async () => {
   if (!selectedImageFile.value) return
-
-  console.log('selectedImageFile:', selectedImageFile.value)
-  console.log('name:', selectedImageFile.value?.name)
-  console.log('type:', selectedImageFile.value?.type)
-  console.log('size:', selectedImageFile.value?.size)
 
   imageSearchLoading.value = true
   imageSearchError.value = null
@@ -6334,5 +6331,55 @@ button:disabled{ opacity:.6; cursor:not-allowed; }
   .image-exif-grid {
     grid-template-columns: 1fr;
   }
+}
+
+.under-construction-panel {
+  position: relative;
+  opacity: 0.72;
+  cursor: not-allowed;
+  pointer-events: none;
+  filter: grayscale(0.15);
+}
+
+.under-construction-panel:hover {
+  transform: none;
+  box-shadow: 0 0 24px rgba(0, 255, 153, 0.06);
+  border-color: rgba(0, 255, 153, 0.18);
+}
+
+.construction-ribbon {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  z-index: 2;
+  padding: 0.38rem 0.8rem;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 800;
+  color: #ffd76a;
+  background: rgba(255, 196, 0, 0.12);
+  border: 1px solid rgba(255, 196, 0, 0.3);
+  box-shadow: 0 0 14px rgba(255, 196, 0, 0.08);
+}
+
+.advanced-tool-icon-wrap.disabled {
+  background: rgba(255, 255, 255, 0.03);
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+.disabled-btn {
+  opacity: 0.65;
+  cursor: not-allowed;
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.08);
+  color: #b8b8b8;
+  box-shadow: none;
+}
+
+.disabled-btn:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.08);
+  color: #b8b8b8;
+  box-shadow: none;
 }
 </style>
