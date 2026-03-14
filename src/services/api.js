@@ -156,7 +156,9 @@ export default {
       formData.append('file', file)
 
       const response = await apiClient.post('/search/image', formData, {
-        headers: {}
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
       })
 
       return response.data
