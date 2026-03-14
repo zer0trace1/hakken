@@ -161,7 +161,7 @@
             <div class="advanced-tool-left">
               <div class="advanced-tool-icon-wrap">
                 <img
-                  src="@/assets/hakken-logo-imagen.png"
+                  src="@/assets/hakken-logo-image.png"
                   alt="Búsqueda inversa de imágenes"
                   class="advanced-tool-icon"
                 />
