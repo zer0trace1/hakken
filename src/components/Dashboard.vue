@@ -117,7 +117,11 @@
         <!-- ADVANCED TOOLS: GOOGLE DORKS -->
         <div class="advanced-tools-section">
           <div class="advanced-tools-header">
-            <h2 class="advanced-tools-title">Herramientas avanzadas</h2>
+            <!--<h2 class="advanced-tools-title">Herramientas avanzadas</h2>-->
+            <h1 class="section-title">
+              <span class="highlight">HERRAMIENTAS</span>
+              Avanzadas
+            </h1>
             <p class="advanced-tools-subtitle">
               Módulos complementarios para exploración manual guiada y pivoteo OSINT.
             </p>
