@@ -582,7 +582,7 @@
             @dragleave.prevent="isImageDragOver = false"
             @drop.prevent="onImageDrop"
           >
-            <img src="@/assets/hakken-logo-imagen.png" alt="image" class="image-dropzone-icon" />
+            <img src="@/assets/hakken-logo-image.png" alt="image" class="image-dropzone-icon" />
             <div class="image-dropzone-title">Arrastra una imagen o haz clic para seleccionarla</div>
             <div class="image-dropzone-subtitle">JPG, PNG o WEBP · máx. 10 MB</div>
           </div>
