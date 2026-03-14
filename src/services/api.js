@@ -167,6 +167,105 @@ export default {
     }
   },
 
+  // ==================== INVESTIGATIONS ====================
+  async listInvestigations() {
+    try {
+      const response = await apiClient.get('/investigations')
+      return response.data
+    } catch (error) {
+      throw error
+    }
+  },
+
+  async createInvestigation(payload) {
+    try {
+      const response = await apiClient.post('/investigations', payload)
+      return response.data
+    } catch (error) {
+      throw error
+    }
+  },
+
+  async getInvestigation(profileId) {
+    try {
+      const safe = encodeURIComponent(profileId)
+      const response = await apiClient.get(`/investigations/${safe}`)
+      return response.data
+    } catch (error) {
+      throw error
+    }
+  },
+
+  async updateInvestigation(profileId, payload) {
+    try {
+      const safe = encodeURIComponent(profileId)
+      const response = await apiClient.patch(`/investigations/${safe}`, payload)
+      return response.data
+    } catch (error) {
+      throw error
+    }
+  },
+
+  async deleteInvestigation(profileId) {
+    try {
+      const safe = encodeURIComponent(profileId)
+      const response = await apiClient.delete(`/investigations/${safe}`)
+      return response.data
+    } catch (error) {
+      throw error
+    }
+  },
+
+  async getInvestigationGraph(profileId) {
+    try {
+      const safe = encodeURIComponent(profileId)
+      const response = await apiClient.get(`/investigations/${safe}/graph`)
+      return response.data
+    } catch (error) {
+      throw error
+    }
+  },
+
+  async listInvestigationNodes(profileId) {
+    try {
+      const safe = encodeURIComponent(profileId)
+      const response = await apiClient.get(`/investigations/${safe}/nodes`)
+      return response.data
+    } catch (error) {
+      throw error
+    }
+  },
+
+  async createInvestigationNode(profileId, payload) {
+    try {
+      const safe = encodeURIComponent(profileId)
+      const response = await apiClient.post(`/investigations/${safe}/nodes`, payload)
+      return response.data
+    } catch (error) {
+      throw error
+    }
+  },
+
+  async listInvestigationEdges(profileId) {
+    try {
+      const safe = encodeURIComponent(profileId)
+      const response = await apiClient.get(`/investigations/${safe}/edges`)
+      return response.data
+    } catch (error) {
+      throw error
+    }
+  },
+
+  async createInvestigationEdge(profileId, payload) {
+    try {
+      const safe = encodeURIComponent(profileId)
+      const response = await apiClient.post(`/investigations/${safe}/edges`, payload)
+      return response.data
+    } catch (error) {
+      throw error
+    }
+  },
+
   // ==================== UTILIDADES ====================
   async healthCheck() {
     try {

@@ -160,6 +160,40 @@
             </div>
           </div>
 
+          <!-- Investigation Profiles -->
+          <div class="advanced-tool-panel" @click="openInvestigations">
+            <div class="advanced-tool-left">
+              <div class="advanced-tool-icon-wrap">
+                <img
+                  src="@/assets/hakken-logo-clipboard.png"
+                  alt="Perfiles de investigación"
+                  class="advanced-tool-icon"
+                />
+              </div>
+
+              <div class="advanced-tool-content">
+                <div class="advanced-tool-kicker">Correlación · profiling · OSINT board</div>
+                <h3 class="advanced-tool-name">Perfiles de investigación</h3>
+                <p class="advanced-tool-description">
+                  Crea perfiles, guarda hallazgos y conecta identidades, usernames, correos,
+                  teléfonos, dominios e IPs dentro de un mismo caso.
+                </p>
+
+                <div class="advanced-tool-tags">
+                  <span class="advanced-tool-tag">Perfiles</span>
+                  <span class="advanced-tool-tag">Correlación</span>
+                  <span class="advanced-tool-tag">Investigación</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="advanced-tool-right">
+              <button class="advanced-tool-btn" @click.stop="openInvestigations">
+                Abrir módulo →
+              </button>
+            </div>
+          </div>
+
           <!-- ADVANCED TOOLS: IMAGE SEARCH -->
           <div class="advanced-tool-panel under-construction-panel">
             <div class="construction-ribbon">EN CONSTRUCCIÓN</div>
@@ -552,6 +586,231 @@
             <div class="dorks-empty-text">
               Revisa que los elementos de <code>googleDorks</code> tengan exactamente
               <code>category: '{{ selectedDorkCategory }}'</code>.
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Investigation Profiles Section -->
+      <section v-else-if="currentView === 'investigations'" class="investigations-section">
+        <div v-if="!selectedInvestigationGraph" class="investigations-list-view">
+          <div class="investigations-header">
+            <button class="back-btn-dorks" @click="currentView = 'search'">
+              <span class="icon">←</span>
+              Volver
+            </button>
+
+            <div class="investigations-header-top">
+              <div>
+                <h1 class="section-title">
+                  <span class="highlight">Perfiles de investigación</span>
+                </h1>
+                <p class="section-subtitle">
+                  Crea casos, organiza hallazgos y empieza a construir el tablero de correlación.
+                </p>
+              </div>
+
+              <button class="advanced-tool-btn" @click="showCreateInvestigationModal = true">
+                Nuevo perfil
+              </button>
+            </div>
+          </div>
+
+          <div v-if="investigationsLoading" class="empty-history">
+            <p>Cargando perfiles...</p>
+          </div>
+
+          <div v-else-if="investigationsError" class="empty-history">
+            <p>{{ investigationsError }}</p>
+          </div>
+
+          <div v-else-if="!investigations.length" class="investigations-empty-state">
+            <div class="investigations-empty-title">Todavía no hay perfiles creados</div>
+            <div class="investigations-empty-text">
+              Crea tu primer perfil para empezar a guardar nodos, relaciones y evidencias.
+            </div>
+            <button class="advanced-tool-btn" @click="showCreateInvestigationModal = true">
+              Crear primer perfil
+            </button>
+          </div>
+
+          <div v-else class="investigations-grid">
+            <div
+              v-for="profile in investigations"
+              :key="profile.id"
+              class="investigation-card"
+              @click="openInvestigation(profile)"
+            >
+              <div class="investigation-card-top">
+                <div class="investigation-status" :class="profile.status">
+                  {{ profile.status || 'open' }}
+                </div>
+              </div>
+
+              <h3 class="investigation-card-title">{{ profile.name }}</h3>
+              <p class="investigation-card-desc">
+                {{ profile.description || 'Sin descripción' }}
+              </p>
+
+              <div v-if="(profile.tags || []).length" class="investigation-tags">
+                <span
+                  v-for="tag in profile.tags"
+                  :key="tag"
+                  class="investigation-tag"
+                >
+                  {{ tag }}
+                </span>
+              </div>
+
+              <div class="investigation-card-meta">
+                <span>{{ formatDate(profile.updated_at) }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div v-else class="investigation-detail-view">
+          <div class="investigations-header">
+            <button class="back-btn-dorks" @click="closeInvestigationDetail">
+              <span class="icon">←</span>
+              Volver a perfiles
+            </button>
+
+            <h1 class="section-title">
+              <span class="highlight">{{ selectedInvestigationGraph.profile?.name }}</span>
+            </h1>
+            <p class="section-subtitle">
+              {{ selectedInvestigationGraph.profile?.description || 'Sin descripción' }}
+            </p>
+          </div>
+
+          <div v-if="investigationGraphLoading" class="empty-history">
+            <p>Cargando perfil...</p>
+          </div>
+
+          <div v-else-if="investigationGraphError" class="empty-history">
+            <p>{{ investigationGraphError }}</p>
+          </div>
+
+          <div v-else class="investigation-detail-layout">
+            <div class="investigation-summary-grid">
+              <div class="investigation-summary-card">
+                <div class="investigation-summary-label">Estado</div>
+                <div class="investigation-summary-value">
+                  {{ selectedInvestigationGraph.profile?.status || 'open' }}
+                </div>
+              </div>
+
+              <div class="investigation-summary-card">
+                <div class="investigation-summary-label">Nodos</div>
+                <div class="investigation-summary-value">
+                  {{ (selectedInvestigationGraph.nodes || []).length }}
+                </div>
+              </div>
+
+              <div class="investigation-summary-card">
+                <div class="investigation-summary-label">Relaciones</div>
+                <div class="investigation-summary-value">
+                  {{ (selectedInvestigationGraph.edges || []).length }}
+                </div>
+              </div>
+            </div>
+
+            <div class="investigation-detail-columns">
+              <div class="investigation-panel">
+                <div class="investigation-panel-title">Nodos</div>
+
+                <div v-if="(selectedInvestigationGraph.nodes || []).length" class="investigation-node-list">
+                  <div
+                    v-for="node in selectedInvestigationGraph.nodes"
+                    :key="node.id"
+                    class="investigation-node-item"
+                  >
+                    <div class="investigation-node-top">
+                      <span class="investigation-node-type">{{ node.node_type }}</span>
+                      <span class="investigation-node-date">{{ formatDate(node.created_at) }}</span>
+                    </div>
+                    <div class="investigation-node-label">{{ node.label }}</div>
+                    <div v-if="node.value" class="investigation-node-value">{{ node.value }}</div>
+                  </div>
+                </div>
+
+                <div v-else class="empty-results">
+                  Este perfil todavía no tiene nodos.
+                </div>
+              </div>
+
+              <div class="investigation-panel">
+                <div class="investigation-panel-title">Relaciones</div>
+
+                <div v-if="(selectedInvestigationGraph.edges || []).length" class="investigation-edge-list">
+                  <div
+                    v-for="edge in selectedInvestigationGraph.edges"
+                    :key="edge.id"
+                    class="investigation-edge-item"
+                  >
+                    <div class="investigation-edge-relation">{{ edge.relation_type }}</div>
+                    <div class="investigation-edge-meta">
+                      {{ edge.from_node_id }} → {{ edge.to_node_id }}
+                    </div>
+                    <div v-if="edge.note" class="investigation-edge-note">{{ edge.note }}</div>
+                  </div>
+                </div>
+
+                <div v-else class="empty-results">
+                  Este perfil todavía no tiene relaciones.
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Modal crear perfil -->
+        <div
+          v-if="showCreateInvestigationModal"
+          class="search-modal"
+          @click.self="showCreateInvestigationModal = false"
+        >
+          <div class="modal-content investigation-modal">
+            <button class="close-btn" @click="showCreateInvestigationModal = false">✕</button>
+
+            <div class="modal-header">
+              <h2 class="modal-title">
+                Crear <span class="highlight">perfil de investigación</span>
+              </h2>
+            </div>
+
+            <div class="modal-body">
+              <div class="investigation-form">
+                <input
+                  v-model="investigationForm.name"
+                  type="text"
+                  class="search-input"
+                  placeholder="Nombre del perfil. Ej: Perfilado John Doe"
+                />
+
+                <textarea
+                  v-model="investigationForm.description"
+                  class="investigation-textarea"
+                  placeholder="Descripción breve del caso"
+                />
+
+                <input
+                  v-model="investigationForm.tags"
+                  type="text"
+                  class="search-input"
+                  placeholder="Tags separados por comas. Ej: john, osint, caso-1"
+                />
+
+                <div class="investigation-form-actions">
+                  <button class="back-btn-dorks" @click="showCreateInvestigationModal = false">
+                    Cancelar
+                  </button>
+                  <button class="advanced-tool-btn" @click="createInvestigationProfile">
+                    Crear perfil
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -1861,7 +2120,8 @@ const getTypeLabel = (type) => {
     phone: 'Teléfono',
     ip: 'Dirección IP',
     domain: 'Dominio',
-    image: 'Imagen'
+    image: 'Imagen',
+    investigation: 'Perfil de investigación'
   }
   return labels[type] || type
 }
@@ -2972,6 +3232,111 @@ const formatBytes = (bytes) => {
 *************************** IMAGE LOGIC **********************************
 **************************************************************************
 */
+
+/*
+**************************************************************************
+********************* INVESTIGATION PROFILES (MVP) ************************
+**************************************************************************
+*/
+
+const investigations = ref([])
+const investigationsLoading = ref(false)
+const investigationsError = ref(null)
+
+const showCreateInvestigationModal = ref(false)
+const selectedInvestigationGraph = ref(null)
+const investigationGraphLoading = ref(false)
+const investigationGraphError = ref(null)
+
+const investigationForm = reactive({
+  name: '',
+  description: '',
+  tags: ''
+})
+
+const resetInvestigationForm = () => {
+  investigationForm.name = ''
+  investigationForm.description = ''
+  investigationForm.tags = ''
+}
+
+const loadInvestigations = async () => {
+  investigationsLoading.value = true
+  investigationsError.value = null
+
+  try {
+    const data = await api.listInvestigations()
+    investigations.value = Array.isArray(data) ? data : []
+  } catch (error) {
+    console.error('Error cargando perfiles:', error)
+    investigationsError.value = error.response?.data?.detail || 'No se pudieron cargar los perfiles'
+    investigations.value = []
+  } finally {
+    investigationsLoading.value = false
+  }
+}
+
+const openInvestigations = async () => {
+  currentView.value = 'investigations'
+  selectedInvestigationGraph.value = null
+  await loadInvestigations()
+}
+
+const createInvestigationProfile = async () => {
+  const name = investigationForm.name.trim()
+  if (!name) {
+    showNotification('Debes indicar un nombre para el perfil', false)
+    return
+  }
+
+  const tags = investigationForm.tags
+    .split(',')
+    .map(tag => tag.trim())
+    .filter(Boolean)
+
+  try {
+    await api.createInvestigation({
+      name,
+      description: investigationForm.description.trim() || null,
+      tags,
+      status: 'open'
+    })
+
+    showNotification('Perfil creado correctamente', true)
+    showCreateInvestigationModal.value = false
+    resetInvestigationForm()
+    await loadInvestigations()
+  } catch (error) {
+    console.error('Error creando perfil:', error)
+    showNotification(
+      error.response?.data?.detail || 'No se pudo crear el perfil',
+      false
+    )
+  }
+}
+
+const openInvestigation = async (profile) => {
+  if (!profile?.id) return
+
+  investigationGraphLoading.value = true
+  investigationGraphError.value = null
+  selectedInvestigationGraph.value = null
+
+  try {
+    const data = await api.getInvestigationGraph(profile.id)
+    selectedInvestigationGraph.value = data
+  } catch (error) {
+    console.error('Error cargando grafo:', error)
+    investigationGraphError.value = error.response?.data?.detail || 'No se pudo cargar el perfil'
+  } finally {
+    investigationGraphLoading.value = false
+  }
+}
+
+const closeInvestigationDetail = () => {
+  selectedInvestigationGraph.value = null
+  investigationGraphError.value = null
+}
 </script>
 
 <style scoped>
@@ -6391,5 +6756,390 @@ button:disabled{ opacity:.6; cursor:not-allowed; }
   border-color: rgba(255, 255, 255, 0.08);
   color: #b8b8b8;
   box-shadow: none;
+}
+
+/*
+**************************************************************************
+*********************** INVESTIGATION PROFILES MVP ************************
+**************************************************************************
+*/
+
+.advanced-tools-section {
+  margin-top: 2.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.advanced-tools-header {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.advanced-tool-panel {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 1.25rem;
+  align-items: center;
+  padding: 1.35rem 1.5rem;
+  border-radius: 20px;
+  border: 1px solid rgba(0, 255, 153, 0.18);
+  background:
+    radial-gradient(circle at top right, rgba(0, 255, 153, 0.08), transparent 28%),
+    linear-gradient(180deg, rgba(255,255,255,0.035), rgba(255,255,255,0.02));
+  box-shadow: 0 0 24px rgba(0, 255, 153, 0.06);
+  transition: all 0.25s ease;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+}
+
+.advanced-tool-panel:hover {
+  border-color: rgba(0, 255, 153, 0.35);
+  box-shadow: 0 0 28px rgba(0, 255, 153, 0.12);
+  transform: translateY(-2px);
+}
+
+.advanced-tool-left {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  min-width: 0;
+}
+
+.advanced-tool-icon-wrap {
+  width: 78px;
+  height: 78px;
+  min-width: 78px;
+  border-radius: 18px;
+  border: 1px solid rgba(0, 255, 153, 0.18);
+  background: rgba(0, 255, 153, 0.04);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.advanced-tool-icon {
+  width: 42px;
+  height: 42px;
+  object-fit: contain;
+  filter: drop-shadow(0 0 16px rgba(0, 255, 153, 0.22));
+}
+
+.advanced-tool-content {
+  min-width: 0;
+}
+
+.advanced-tool-kicker {
+  color: #00ff99;
+  font-size: 0.82rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 0.35rem;
+}
+
+.advanced-tool-name {
+  color: var(--text-primary);
+  font-size: 1.35rem;
+  font-weight: 700;
+  margin: 0 0 0.45rem 0;
+}
+
+.advanced-tool-description {
+  color: var(--text-secondary);
+  font-size: 0.97rem;
+  line-height: 1.6;
+  margin: 0 0 0.8rem 0;
+  max-width: 840px;
+}
+
+.advanced-tool-tags,
+.investigation-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+}
+
+.advanced-tool-tag,
+.investigation-tag {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.3rem 0.75rem;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #00ff99;
+  background: rgba(0, 255, 153, 0.08);
+  border: 1px solid rgba(0, 255, 153, 0.2);
+}
+
+.advanced-tool-right {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.advanced-tool-btn {
+  border: 1px solid rgba(0, 255, 153, 0.3);
+  background: rgba(0, 255, 153, 0.1);
+  color: #00ff99;
+  border-radius: 12px;
+  padding: 0.9rem 1.1rem;
+  min-width: 170px;
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.22s ease;
+}
+
+.advanced-tool-btn:hover {
+  background: rgba(0, 255, 153, 0.16);
+  border-color: #00ff99;
+  box-shadow: 0 0 18px rgba(0, 255, 153, 0.16);
+}
+
+.investigations-section {
+  animation: fadeInUp 0.8s ease-out;
+}
+
+.investigations-header {
+  margin-bottom: 1.6rem;
+}
+
+.investigations-header-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+}
+
+.investigations-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1rem;
+}
+
+.investigation-card,
+.investigation-summary-card,
+.investigation-panel,
+.investigation-modal {
+  background: linear-gradient(180deg, rgba(255,255,255,0.035), rgba(255,255,255,0.02));
+  border: 1px solid var(--border-color);
+  border-radius: 18px;
+  box-shadow: 0 0 18px rgba(0, 255, 153, 0.05);
+}
+
+.investigation-card {
+  padding: 1.15rem;
+  cursor: pointer;
+  transition: all 0.22s ease;
+}
+
+.investigation-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(0, 255, 153, 0.38);
+  box-shadow: 0 0 22px rgba(0, 255, 153, 0.12);
+}
+
+.investigation-card-top {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 0.7rem;
+}
+
+.investigation-status {
+  padding: 0.26rem 0.7rem;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  background: rgba(0, 255, 153, 0.08);
+  border: 1px solid rgba(0, 255, 153, 0.2);
+  color: #00ff99;
+}
+
+.investigation-card-title {
+  color: var(--text-primary);
+  font-size: 1.1rem;
+  font-weight: 700;
+  margin-bottom: 0.55rem;
+}
+
+.investigation-card-desc,
+.investigation-card-meta,
+.investigation-edge-meta,
+.investigation-edge-note,
+.investigation-node-value {
+  color: var(--text-secondary);
+  line-height: 1.55;
+}
+
+.investigation-card-meta {
+  margin-top: 0.85rem;
+  font-size: 0.9rem;
+}
+
+.investigations-empty-state {
+  padding: 1.4rem;
+  border-radius: 18px;
+  border: 1px dashed rgba(0, 255, 153, 0.22);
+  background: rgba(255,255,255,0.02);
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  align-items: flex-start;
+}
+
+.investigations-empty-title {
+  color: var(--text-primary);
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+.investigations-empty-text {
+  color: var(--text-secondary);
+  line-height: 1.55;
+}
+
+.investigation-detail-layout {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.investigation-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.investigation-summary-card {
+  padding: 1rem;
+}
+
+.investigation-summary-label,
+.investigation-node-type {
+  color: #00ff99;
+  font-size: 0.84rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.investigation-summary-value {
+  color: var(--text-primary);
+  font-size: 1.15rem;
+  font-weight: 700;
+  margin-top: 0.3rem;
+}
+
+.investigation-detail-columns {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.investigation-panel {
+  padding: 1rem;
+}
+
+.investigation-panel-title {
+  color: #00ff99;
+  font-size: 1rem;
+  font-weight: 800;
+  margin-bottom: 0.85rem;
+}
+
+.investigation-node-list,
+.investigation-edge-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.investigation-node-item,
+.investigation-edge-item {
+  padding: 0.9rem;
+  border-radius: 14px;
+  background: rgba(255,255,255,0.02);
+  border: 1px solid rgba(0,255,153,0.08);
+}
+
+.investigation-node-top {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.45rem;
+}
+
+.investigation-node-date {
+  color: var(--text-secondary);
+  font-size: 0.82rem;
+}
+
+.investigation-node-label,
+.investigation-edge-relation {
+  color: var(--text-primary);
+  font-weight: 700;
+  margin-bottom: 0.3rem;
+}
+
+.investigation-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.investigation-textarea {
+  min-height: 110px;
+  resize: vertical;
+  width: 100%;
+  padding: 1rem 1.2rem;
+  background: rgba(0, 0, 0, 0.45);
+  border: 1.5px solid rgba(0, 255, 153, 0.28);
+  border-radius: 14px;
+  color: white;
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 1rem;
+}
+
+.investigation-textarea:focus {
+  outline: none;
+  border-color: #00ff99;
+  box-shadow: 0 0 18px rgba(0, 255, 153, 0.22);
+}
+
+.investigation-form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+}
+
+@media (max-width: 980px) {
+  .advanced-tool-panel,
+  .investigation-detail-columns,
+  .investigation-summary-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .advanced-tool-right {
+    justify-content: flex-start;
+  }
+}
+
+@media (max-width: 768px) {
+  .investigations-header-top {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .advanced-tool-btn {
+    width: 100%;
+  }
 }
 </style>
