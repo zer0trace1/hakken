@@ -731,7 +731,19 @@
                       <span class="investigation-node-date">{{ formatDate(node.created_at) }}</span>
                     </div>
                     <div class="investigation-node-label">{{ node.label }}</div>
-                    <div v-if="node.value" class="investigation-node-value">{{ node.value }}</div>
+                    <div
+                      v-if="node.node_type === 'note' && node.metadata?.content"
+                      class="investigation-node-value"
+                    >
+                      {{ node.metadata.content }}
+                    </div>
+
+                    <div
+                      v-else-if="node.value"
+                      class="investigation-node-value"
+                    >
+                      {{ node.value }}
+                    </div>
                   </div>
                 </div>
 
@@ -801,6 +813,91 @@
                   class="search-input"
                   placeholder="Tags separados por comas. Ej: john, osint, caso-1"
                 />
+                <div class="investigation-initial-data">
+                  <div class="investigation-section-title">Datos iniciales</div>
+                  <div class="investigation-section-help">
+                    Introduce un valor por línea en cada bloque. Al crear el perfil se guardarán como nodos iniciales.
+                  </div>
+
+                  <div class="investigation-initial-grid">
+                    <div class="investigation-input-block">
+                      <label class="investigation-label">Persona(s)</label>
+                      <textarea
+                        v-model="investigationForm.persons"
+                        class="investigation-textarea small"
+                        placeholder="Ej:
+                          John Doe
+                          Jane Doe"
+                      />
+                    </div>
+
+                    <div class="investigation-input-block">
+                      <label class="investigation-label">Username(s)</label>
+                      <textarea
+                        v-model="investigationForm.usernames"
+                        class="investigation-textarea small"
+                        placeholder="Ej:
+                          johndoe97
+                          john_d"
+                      />
+                    </div>
+
+                    <div class="investigation-input-block">
+                      <label class="investigation-label">Email(s)</label>
+                      <textarea
+                        v-model="investigationForm.emails"
+                        class="investigation-textarea small"
+                        placeholder="Ej:
+                          john@example.com
+                          jdoe@mail.com"
+                      />
+                    </div>
+
+                    <div class="investigation-input-block">
+                      <label class="investigation-label">Teléfono(s)</label>
+                      <textarea
+                        v-model="investigationForm.phones"
+                        class="investigation-textarea small"
+                        placeholder="Ej:
+                          +34 600 123 123
+                          +1 555 123 4567"
+                      />
+                    </div>
+
+                    <div class="investigation-input-block">
+                      <label class="investigation-label">IP(s)</label>
+                      <textarea
+                        v-model="investigationForm.ips"
+                        class="investigation-textarea small"
+                        placeholder="Ej:
+                          8.8.8.8
+                          1.1.1.1"
+                      />
+                    </div>
+
+                    <div class="investigation-input-block">
+                      <label class="investigation-label">Dominio(s)</label>
+                      <textarea
+                        v-model="investigationForm.domains"
+                        class="investigation-textarea small"
+                        placeholder="Ej:
+                          example.com
+                          acme.org"
+                      />
+                    </div>
+                  </div>
+
+                  <div class="investigation-input-block">
+                    <label class="investigation-label">Nota(s) inicial(es)</label>
+                    <textarea
+                      v-model="investigationForm.notes"
+                      class="investigation-textarea"
+                      placeholder="Una nota por línea. Ej:
+                        Posible alias reutilizado en GitHub
+                        Relacionarlo con dominio example.com"
+                    />
+                  </div>
+                </div>
 
                 <div class="investigation-form-actions">
                   <button class="back-btn-dorks" @click="showCreateInvestigationModal = false">
@@ -3251,13 +3348,105 @@ const investigationGraphError = ref(null)
 const investigationForm = reactive({
   name: '',
   description: '',
-  tags: ''
+  tags: '',
+  persons: '',
+  usernames: '',
+  emails: '',
+  phones: '',
+  ips: '',
+  domains: '',
+  notes: ''
 })
 
 const resetInvestigationForm = () => {
   investigationForm.name = ''
   investigationForm.description = ''
   investigationForm.tags = ''
+  investigationForm.persons = ''
+  investigationForm.usernames = ''
+  investigationForm.emails = ''
+  investigationForm.phones = ''
+  investigationForm.ips = ''
+  investigationForm.domains = ''
+  investigationForm.notes = ''
+}
+
+const parseLines = (value) => {
+  return (value || '')
+    .split('\n')
+    .map(v => v.trim())
+    .filter(Boolean)
+}
+
+const buildInitialInvestigationNodes = () => {
+  const nodes = []
+
+  parseLines(investigationForm.persons).forEach(value => {
+    nodes.push({
+      node_type: 'person',
+      label: value,
+      value,
+      metadata: {}
+    })
+  })
+
+  parseLines(investigationForm.usernames).forEach(value => {
+    nodes.push({
+      node_type: 'username',
+      label: value,
+      value,
+      metadata: {}
+    })
+  })
+
+  parseLines(investigationForm.emails).forEach(value => {
+    nodes.push({
+      node_type: 'email',
+      label: value,
+      value,
+      metadata: {}
+    })
+  })
+
+  parseLines(investigationForm.phones).forEach(value => {
+    nodes.push({
+      node_type: 'phone',
+      label: value,
+      value,
+      metadata: {}
+    })
+  })
+
+  parseLines(investigationForm.ips).forEach(value => {
+    nodes.push({
+      node_type: 'ip',
+      label: value,
+      value,
+      metadata: {}
+    })
+  })
+
+  parseLines(investigationForm.domains).forEach(value => {
+    nodes.push({
+      node_type: 'domain',
+      label: value,
+      value,
+      metadata: {}
+    })
+  })
+
+  parseLines(investigationForm.notes).forEach(value => {
+    nodes.push({
+      node_type: 'note',
+      label: value.length > 80 ? `${value.slice(0, 80)}...` : value,
+      value,
+      metadata: {
+        content: value
+      }
+    })
+  })
+
+  return nodes
 }
 
 const loadInvestigations = async () => {
@@ -3295,14 +3484,36 @@ const createInvestigationProfile = async () => {
     .filter(Boolean)
 
   try {
-    await api.createInvestigation({
+    const profile = await api.createInvestigation({
       name,
       description: investigationForm.description.trim() || null,
       tags,
       status: 'open'
     })
 
-    showNotification('Perfil creado correctamente', true)
+    const initialNodes = buildInitialInvestigationNodes()
+
+    if (initialNodes.length) {
+      const results = await Promise.allSettled(
+        initialNodes.map(node =>
+          api.createInvestigationNode(profile.id, node)
+        )
+      )
+
+      const failed = results.filter(r => r.status === 'rejected').length
+
+      if (failed > 0) {
+        showNotification(
+          `Perfil creado. ${initialNodes.length - failed}/${initialNodes.length} nodos añadidos`,
+          false
+        )
+      } else {
+        showNotification('Perfil y datos iniciales creados correctamente', true)
+      }
+    } else {
+      showNotification('Perfil creado correctamente', true)
+    }
+
     showCreateInvestigationModal.value = false
     resetInvestigationForm()
     await loadInvestigations()
@@ -7140,6 +7351,55 @@ button:disabled{ opacity:.6; cursor:not-allowed; }
 
   .advanced-tool-btn {
     width: 100%;
+  }
+}
+
+.investigation-initial-data {
+  margin-top: 0.5rem;
+  padding-top: 0.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+}
+
+.investigation-section-title {
+  color: #00ff99;
+  font-size: 1rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+}
+
+.investigation-section-help {
+  color: var(--text-secondary);
+  font-size: 0.92rem;
+  line-height: 1.5;
+}
+
+.investigation-initial-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.85rem;
+}
+
+.investigation-input-block {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.investigation-label {
+  color: var(--text-primary);
+  font-size: 0.92rem;
+  font-weight: 700;
+}
+
+.investigation-textarea.small {
+  min-height: 92px;
+}
+
+@media (max-width: 900px) {
+  .investigation-initial-grid {
+    grid-template-columns: 1fr;
   }
 }
 </style>
