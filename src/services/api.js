@@ -155,7 +155,10 @@ export default {
       const formData = new FormData()
       formData.append('file', file)
 
-      const response = await apiClient.post('/search/image', formData)
+      const response = await apiClient.post('/search/image', formData, {
+        headers: {}
+      })
+
       return response.data
     } catch (error) {
       throw error

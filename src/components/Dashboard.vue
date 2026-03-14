@@ -2916,6 +2916,11 @@ const resetImageSearch = () => {
 const analyzeImage = async () => {
   if (!selectedImageFile.value) return
 
+  console.log('selectedImageFile:', selectedImageFile.value)
+  console.log('name:', selectedImageFile.value?.name)
+  console.log('type:', selectedImageFile.value?.type)
+  console.log('size:', selectedImageFile.value?.size)
+
   imageSearchLoading.value = true
   imageSearchError.value = null
 
