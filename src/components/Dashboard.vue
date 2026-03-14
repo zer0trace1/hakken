@@ -323,8 +323,14 @@
 
       <!-- Google Dorks Section - NUEVA -->
       <section v-else-if="currentView === 'dorks'" class="dorks-section">
-        <!-- Pantalla introductoria -->
-        <div v-if="showDorksIntro" class="dorks-intro-view">
+          <!-- Pantalla introductoria -->
+          <div v-if="showDorksIntro" class="dorks-intro-view">
+            <div class="image-search-header">
+            <button class="back-btn-dorks" @click="currentView = 'search'">
+              <span class="icon">←</span>
+              Volver
+            </button>
+          </div>
           <div class="dorks-hero-panel">
             <div class="dorks-hero-top">
               <div class="dorks-badges">
