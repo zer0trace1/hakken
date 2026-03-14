@@ -149,6 +149,19 @@ export default {
     return response.data;
   },
 
+  // ==================== IMAGE ====================
+  async searchImage(file) {
+    try {
+      const formData = new FormData()
+      formData.append('file', file)
+
+      const response = await apiClient.post('/search/image', formData)
+      return response.data
+    } catch (error) {
+      throw error
+    }
+  },
+
   // ==================== UTILIDADES ====================
   async healthCheck() {
     try {

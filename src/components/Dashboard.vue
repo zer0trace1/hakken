@@ -113,7 +113,8 @@
             <div class="card-badge">Dominio/DNS</div>
           </div>
         </div>
-        <!-- Herramientas avanzadas -->
+        
+        <!-- ADVANCED TOOLS: GOOGLE DORKS -->
         <div class="advanced-tools-section">
           <div class="advanced-tools-header">
             <h2 class="advanced-tools-title">Herramientas avanzadas</h2>
@@ -150,6 +151,40 @@
 
             <div class="advanced-tool-right">
               <button class="advanced-tool-btn" @click.stop="openGoogleDorks">
+                Abrir módulo →
+              </button>
+            </div>
+          </div>
+
+          <!-- ADVANCED TOOLS: IMAGE SEARCH -->
+          <div class="advanced-tool-panel under-construction" @click="openImageSearch">
+            <div class="advanced-tool-left">
+              <div class="advanced-tool-icon-wrap">
+                <img
+                  src="@/assets/hakken-logo-imagen.png"
+                  alt="Búsqueda inversa de imágenes"
+                  class="advanced-tool-icon"
+                />
+              </div>
+
+              <div class="advanced-tool-content">
+                <div class="advanced-tool-kicker">OSINT visual · análisis local</div>
+                <h3 class="advanced-tool-name">Búsqueda inversa de imágenes</h3>
+                <p class="advanced-tool-description">
+                  Sube una imagen, analiza sus metadatos, calcula hashes y genera pivotes
+                  para Google, TinEye y Yandex.
+                </p>
+
+                <div class="advanced-tool-tags">
+                  <span class="advanced-tool-tag">Imagen</span>
+                  <span class="advanced-tool-tag">Launcher</span>
+                  <span class="advanced-tool-tag warning-tag">EN CONSTRUCCIÓN</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="advanced-tool-right">
+              <button class="advanced-tool-btn" @click.stop="openImageSearch">
                 Abrir módulo →
               </button>
             </div>
@@ -505,6 +540,156 @@
             <div class="dorks-empty-text">
               Revisa que los elementos de <code>googleDorks</code> tengan exactamente
               <code>category: '{{ selectedDorkCategory }}'</code>.
+            </div>
+          </div>
+        </div>
+      </section>
+      
+      <!-- IMAGE TOOL SECTION -->
+      <section v-else-if="currentView === 'image-search'" class="image-search-section">
+        <div class="image-search-header">
+          <button class="back-btn-dorks" @click="currentView = 'search'">
+            <span class="icon">←</span>
+            Volver
+          </button>
+
+          <h1 class="section-title">
+            <span class="highlight">Búsqueda inversa de imágenes</span>
+          </h1>
+
+          <div class="construction-banner">EN CONSTRUCCIÓN · MVP</div>
+
+          <p class="section-subtitle">
+            Sube una imagen para analizar metadatos, calcular hashes y abrir pivotes
+            externos para investigación OSINT.
+          </p>
+        </div>
+
+        <div class="image-upload-shell">
+          <input
+            ref="imageInputRef"
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            class="hidden-file-input"
+            @change="onImageFileChange"
+          />
+
+          <div
+            class="image-dropzone"
+            :class="{ active: isImageDragOver }"
+            @click="triggerImageInput"
+            @dragover.prevent="isImageDragOver = true"
+            @dragleave.prevent="isImageDragOver = false"
+            @drop.prevent="onImageDrop"
+          >
+            <img src="@/assets/hakken-logo-imagen.png" alt="image" class="image-dropzone-icon" />
+            <div class="image-dropzone-title">Arrastra una imagen o haz clic para seleccionarla</div>
+            <div class="image-dropzone-subtitle">JPG, PNG o WEBP · máx. 10 MB</div>
+          </div>
+
+          <div class="image-search-actions">
+            <button class="advanced-tool-btn" @click="analyzeImage" :disabled="!selectedImageFile || imageSearchLoading">
+              {{ imageSearchLoading ? 'Analizando...' : 'Analizar imagen' }}
+            </button>
+            <button class="back-btn-dorks" @click="resetImageSearch">Limpiar</button>
+          </div>
+        </div>
+
+        <div v-if="imageSearchError" class="error-message" style="margin-top: 1rem;">
+          <span class="error-text">{{ imageSearchError }}</span>
+        </div>
+
+        <div v-if="imagePreviewUrl" class="image-preview-panel">
+          <div class="image-preview-card">
+            <img :src="imagePreviewUrl" alt="preview" class="image-preview-img" />
+          </div>
+        </div>
+
+        <div v-if="imageSearchResults" class="image-results-layout">
+          <div class="image-results-top-grid">
+            <div class="image-result-card">
+              <div class="image-result-label">Archivo</div>
+              <div class="image-result-main">{{ imageSearchResults.file?.original_filename }}</div>
+              <div class="image-result-sub">
+                {{ imageSearchResults.file?.format }} · {{ imageSearchResults.file?.mime_type }}
+              </div>
+            </div>
+
+            <div class="image-result-card">
+              <div class="image-result-label">Resolución</div>
+              <div class="image-result-main">
+                {{ imageSearchResults.file?.width }} × {{ imageSearchResults.file?.height }}
+              </div>
+              <div class="image-result-sub">{{ formatBytes(imageSearchResults.file?.size_bytes) }}</div>
+            </div>
+
+            <div class="image-result-card">
+              <div class="image-result-label">Caché</div>
+              <div class="image-result-main">
+                {{ imageSearchResults.cache?.hit ? 'HIT' : 'MISS' }}
+              </div>
+              <div class="image-result-sub">
+                Expira:
+                {{ imageSearchResults.cache?.expires_at ? formatDate(imageSearchResults.cache.expires_at) : '—' }}
+              </div>
+            </div>
+          </div>
+
+          <div class="image-results-section">
+            <div class="image-section-title">Hashes</div>
+            <div class="image-hash-list">
+              <div class="image-hash-item"><strong>SHA-256:</strong> <code>{{ imageSearchResults.hashes?.sha256 }}</code></div>
+              <div class="image-hash-item"><strong>MD5:</strong> <code>{{ imageSearchResults.hashes?.md5 }}</code></div>
+              <div class="image-hash-item"><strong>pHash:</strong> <code>{{ imageSearchResults.hashes?.phash }}</code></div>
+              <div class="image-hash-item"><strong>dHash:</strong> <code>{{ imageSearchResults.hashes?.dhash }}</code></div>
+            </div>
+          </div>
+
+          <div class="image-results-section">
+            <div class="image-section-title">EXIF y metadatos</div>
+
+            <div v-if="imageSearchResults.exif?.found" class="image-exif-grid">
+              <div
+                v-for="item in (imageSearchResults.exif?.items || [])"
+                :key="item.key"
+                class="image-exif-item"
+              >
+                <div class="image-exif-key">{{ item.key }}</div>
+                <div class="image-exif-value">{{ item.value }}</div>
+              </div>
+            </div>
+
+            <div v-else class="empty-results">
+              No se han encontrado metadatos EXIF relevantes.
+            </div>
+          </div>
+
+          <div class="image-results-section">
+            <div class="image-section-title">Launchers externos</div>
+
+            <div class="launcher-warning">
+              La URL pública se genera para que puedas reutilizar la imagen en motores externos.
+              Úsala solo con imágenes que puedas exponer públicamente.
+            </div>
+
+            <div class="image-launcher-actions">
+              <button class="dork-btn" @click="copyImagePublicUrl">
+                Copiar URL pública
+              </button>
+            </div>
+
+            <div class="image-launchers-grid">
+              <div
+                v-for="engine in (imageSearchResults.launchers?.engines || [])"
+                :key="engine.key"
+                class="image-launcher-card"
+              >
+                <div class="image-launcher-name">{{ engine.label }}</div>
+                <div class="image-launcher-mode">{{ engine.mode }}</div>
+                <button class="advanced-tool-btn" @click="openExternal(engine.url)">
+                  Abrir
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -1509,6 +1694,11 @@ onMounted(async () => {
 onBeforeUnmount(() => {
   window.removeEventListener('scroll', _hideTooltipOnWindowEvent, true)
   window.removeEventListener('resize', _hideTooltipOnWindowEvent)
+
+  // image search service
+  if (imagePreviewUrl.value) {
+    URL.revokeObjectURL(imagePreviewUrl.value)
+  }
 })
 
 async function logout() {
@@ -1658,7 +1848,8 @@ const getTypeLabel = (type) => {
     email: 'Email',
     phone: 'Teléfono',
     ip: 'Dirección IP',
-    domain: 'Dominio'
+    domain: 'Dominio',
+    image: 'Imagen'
   }
   return labels[type] || type
 }
@@ -2651,6 +2842,122 @@ const filteredUsernameResults = computed(() => {
 /*
 **************************************************************************
 *************************** FILTER USERNAME ******************************
+**************************************************************************
+*/
+
+/*
+**************************************************************************
+*************************** IMAGE LOGIC **********************************
+**************************************************************************
+*/
+
+const imageInputRef = ref(null)
+const selectedImageFile = ref(null)
+const imagePreviewUrl = ref(null)
+const imageSearchLoading = ref(false)
+const imageSearchResults = ref(null)
+const imageSearchError = ref(null)
+const isImageDragOver = ref(false)
+
+const openImageSearch = () => {
+  currentView.value = 'image-search'
+}
+
+const triggerImageInput = () => {
+  imageInputRef.value?.click()
+}
+
+const setImageFile = (file) => {
+  if (!file) return
+
+  const allowed = ['image/jpeg', 'image/png', 'image/webp']
+  if (!allowed.includes(file.type)) {
+    showNotification('Formato no permitido. Usa JPG, PNG o WEBP', false)
+    return
+  }
+
+  if (imagePreviewUrl.value) {
+    URL.revokeObjectURL(imagePreviewUrl.value)
+  }
+
+  selectedImageFile.value = file
+  imagePreviewUrl.value = URL.createObjectURL(file)
+  imageSearchResults.value = null
+  imageSearchError.value = null
+}
+
+const onImageFileChange = (event) => {
+  const file = event.target.files?.[0]
+  setImageFile(file)
+}
+
+const onImageDrop = (event) => {
+  isImageDragOver.value = false
+  const file = event.dataTransfer?.files?.[0]
+  setImageFile(file)
+}
+
+const resetImageSearch = () => {
+  selectedImageFile.value = null
+  imageSearchResults.value = null
+  imageSearchError.value = null
+  imageSearchLoading.value = false
+
+  if (imagePreviewUrl.value) {
+    URL.revokeObjectURL(imagePreviewUrl.value)
+    imagePreviewUrl.value = null
+  }
+
+  if (imageInputRef.value) {
+    imageInputRef.value.value = ''
+  }
+}
+
+const analyzeImage = async () => {
+  if (!selectedImageFile.value) return
+
+  imageSearchLoading.value = true
+  imageSearchError.value = null
+
+  try {
+    imageSearchResults.value = await api.searchImage(selectedImageFile.value)
+    showNotification('Imagen analizada correctamente', true)
+  } catch (error) {
+    console.error('Error analizando imagen:', error)
+    imageSearchError.value = error.response?.data?.detail || 'Error al analizar la imagen'
+    imageSearchResults.value = null
+  } finally {
+    imageSearchLoading.value = false
+  }
+}
+
+const copyImagePublicUrl = async () => {
+  const url = imageSearchResults.value?.launchers?.public_image_url
+  if (!url) return
+
+  try {
+    await navigator.clipboard.writeText(url)
+    showNotification('URL pública copiada', true)
+  } catch (err) {
+    showNotification('No se pudo copiar la URL', false)
+  }
+}
+
+const formatBytes = (bytes) => {
+  if (!bytes && bytes !== 0) return '—'
+  const units = ['B', 'KB', 'MB', 'GB']
+  let value = bytes
+  let idx = 0
+  while (value >= 1024 && idx < units.length - 1) {
+    value /= 1024
+    idx++
+  }
+  return `${value.toFixed(value >= 10 || idx === 0 ? 0 : 1)} ${units[idx]}`
+}
+
+/*
+**************************************************************************
+*************************** IMAGE LOGIC **********************************
 **************************************************************************
 */
 </script>
@@ -5781,6 +6088,246 @@ button:disabled{ opacity:.6; cursor:not-allowed; }
 
   .advanced-tool-name {
     font-size: 1.15rem;
+  }
+}
+
+/* IMAGE CSS */
+.image-search-section {
+  animation: fadeInUp 0.8s ease-out;
+}
+
+.construction-banner {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0.5rem 0 0.75rem 0;
+  padding: 0.35rem 0.8rem;
+  border-radius: 999px;
+  font-size: 0.82rem;
+  font-weight: 800;
+  color: #ffd76a;
+  background: rgba(255, 196, 0, 0.1);
+  border: 1px solid rgba(255, 196, 0, 0.28);
+}
+
+.hidden-file-input {
+  display: none;
+}
+
+.image-upload-shell,
+.image-preview-panel,
+.image-results-section,
+.image-result-card,
+.image-launcher-card,
+.image-preview-card {
+  background: linear-gradient(180deg, rgba(255,255,255,0.035), rgba(255,255,255,0.02));
+  border: 1px solid var(--border-color);
+  border-radius: 18px;
+  box-shadow: 0 0 18px rgba(0, 255, 153, 0.05);
+}
+
+.image-upload-shell {
+  padding: 1.2rem;
+  margin-top: 1rem;
+}
+
+.image-dropzone {
+  min-height: 220px;
+  border: 1.5px dashed rgba(0, 255, 153, 0.28);
+  border-radius: 18px;
+  background: rgba(0, 255, 153, 0.03);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.7rem;
+  cursor: pointer;
+  transition: all 0.22s ease;
+  text-align: center;
+  padding: 1.2rem;
+}
+
+.image-dropzone.active,
+.image-dropzone:hover {
+  border-color: #00ff99;
+  background: rgba(0, 255, 153, 0.06);
+  box-shadow: 0 0 20px rgba(0, 255, 153, 0.08);
+}
+
+.image-dropzone-icon {
+  width: 54px;
+  height: 54px;
+  object-fit: contain;
+}
+
+.image-dropzone-title {
+  color: var(--text-primary);
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+
+.image-dropzone-subtitle {
+  color: var(--text-secondary);
+  font-size: 0.92rem;
+}
+
+.image-search-actions {
+  margin-top: 1rem;
+  display: flex;
+  gap: 0.8rem;
+  flex-wrap: wrap;
+}
+
+.image-preview-panel {
+  margin-top: 1rem;
+  padding: 1rem;
+}
+
+.image-preview-card {
+  padding: 1rem;
+  display: flex;
+  justify-content: center;
+}
+
+.image-preview-img {
+  max-width: 100%;
+  max-height: 420px;
+  border-radius: 14px;
+  object-fit: contain;
+}
+
+.image-results-layout {
+  margin-top: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.image-results-top-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.image-result-card {
+  padding: 1rem;
+}
+
+.image-result-label {
+  color: var(--text-secondary);
+  font-size: 0.88rem;
+  margin-bottom: 0.35rem;
+}
+
+.image-result-main {
+  color: var(--text-primary);
+  font-size: 1.12rem;
+  font-weight: 700;
+  word-break: break-word;
+}
+
+.image-result-sub {
+  color: var(--text-secondary);
+  font-size: 0.92rem;
+  margin-top: 0.35rem;
+}
+
+.image-results-section {
+  padding: 1rem;
+}
+
+.image-section-title {
+  color: #00ff99;
+  font-size: 1rem;
+  font-weight: 800;
+  margin-bottom: 0.8rem;
+}
+
+.image-hash-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+}
+
+.image-hash-item code,
+.image-exif-value code {
+  color: #c7ffe7;
+  word-break: break-all;
+}
+
+.image-exif-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.image-exif-item {
+  padding: 0.85rem;
+  border-radius: 14px;
+  background: rgba(255,255,255,0.02);
+  border: 1px solid rgba(0,255,153,0.08);
+}
+
+.image-exif-key {
+  color: #00ff99;
+  font-size: 0.85rem;
+  font-weight: 700;
+  margin-bottom: 0.3rem;
+}
+
+.image-exif-value {
+  color: var(--text-secondary);
+  line-height: 1.45;
+  word-break: break-word;
+}
+
+.launcher-warning {
+  margin-bottom: 0.9rem;
+  padding: 0.8rem 0.95rem;
+  border-radius: 12px;
+  background: rgba(255, 196, 0, 0.06);
+  border: 1px solid rgba(255, 196, 0, 0.22);
+  color: #e7d6a6;
+  line-height: 1.5;
+}
+
+.image-launcher-actions {
+  margin-bottom: 0.9rem;
+}
+
+.image-launchers-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.image-launcher-card {
+  padding: 1rem;
+}
+
+.image-launcher-name {
+  color: var(--text-primary);
+  font-weight: 700;
+  margin-bottom: 0.35rem;
+}
+
+.image-launcher-mode {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  margin-bottom: 0.9rem;
+}
+
+.warning-tag {
+  color: #ffd76a;
+  border-color: rgba(255, 196, 0, 0.25);
+  background: rgba(255, 196, 0, 0.08);
+}
+
+@media (max-width: 980px) {
+  .image-results-top-grid,
+  .image-launchers-grid,
+  .image-exif-grid {
+    grid-template-columns: 1fr;
   }
 }
 </style>
