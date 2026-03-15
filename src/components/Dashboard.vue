@@ -643,7 +643,7 @@
             >
               <div class="investigation-card-top">
                 <div class="investigation-status" :class="profile.status">
-                  {{ profile.status || 'open' }}
+                  {{ getInvestigationStatusLabel(profile?.status) }}
                 </div>
               </div>
 
@@ -718,7 +718,7 @@
               <div class="investigation-summary-card">
                 <div class="investigation-summary-label">Estado</div>
                 <div class="investigation-summary-value">
-                  {{ getInvestigationStatusLabel(profile.status) }}
+                  {{ getInvestigationStatusLabel(selectedInvestigationGraph?.profile?.status) }}
                 </div>
               </div>
 
@@ -843,7 +843,7 @@
 
                   <div class="investigation-initial-grid">
                     <div class="investigation-input-block">
-                      <label class="investigation-label">Persona(s)</label>
+                      <label class="investigation-label">Persona (Nombre y Apellidos)</label>
                       <textarea
                         v-model="investigationForm.persons"
                         class="investigation-textarea small"
@@ -910,7 +910,7 @@
                 </div>
 
                 <div class="investigation-form-actions">
-                  <button class="back-btn-dorks" @click="closeInvestigationModal">
+                  <button class="advanced-tool-btn-cancel" @click="closeInvestigationModal">
                     Cancelar
                   </button>
                   <button class="advanced-tool-btn" @click="createInvestigationProfile">
@@ -3634,10 +3634,16 @@ const openInvestigation = async (profile) => {
 
   try {
     const data = await api.getInvestigationGraph(profile.id)
-    selectedInvestigationGraph.value = data
+
+    selectedInvestigationGraph.value = {
+      profile: data?.profile || profile || null,
+      nodes: Array.isArray(data?.nodes) ? data.nodes : [],
+      edges: Array.isArray(data?.edges) ? data.edges : []
+    }
   } catch (error) {
     console.error('Error cargando grafo:', error)
-    investigationGraphError.value = error.response?.data?.detail || 'No se pudo cargar el perfil'
+    investigationGraphError.value =
+      error.response?.data?.detail || 'No se pudo cargar el perfil'
   } finally {
     investigationGraphLoading.value = false
   }
@@ -3657,7 +3663,7 @@ const getInvestigationStatusLabel = (status) => {
     case 'archived':
       return 'Archivada'
     default:
-      return status || 'Activa'
+      return 'Activa'
   }
 }
 </script>
@@ -6745,7 +6751,21 @@ button:disabled{ opacity:.6; cursor:not-allowed; }
   transition: all 0.22s ease;
 }
 
-.advanced-tool-btn:hover {
+.advanced-tool-btn-cancel {
+  border: 1px solid rgba(0, 255, 153, 0.3);
+  color: #00ff99;
+  border-radius: 12px;
+  padding: 0.9rem 1.1rem;
+  min-width: 170px;
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.22s ease;
+}
+
+.advanced-tool-btn:hover,
+.advanced-tool-btn-cancel:hover {
   background: rgba(0, 255, 153, 0.16);
   border-color: #00ff99;
   box-shadow: 0 0 18px rgba(0, 255, 153, 0.16);
@@ -7456,6 +7476,7 @@ button:disabled{ opacity:.6; cursor:not-allowed; }
   gap: 0.75rem;
   margin-top: 0.5rem;
   padding-top: 1rem;
+  margin-bottom: 0.25rem;
 }
 
 @media (max-width: 980px) {
