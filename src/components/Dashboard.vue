@@ -3392,6 +3392,19 @@ const investigationForm = reactive({
   notes: ''
 })
 
+const resetInvestigationForm = () => {
+  investigationForm.name = ''
+  investigationForm.description = ''
+  investigationForm.tags = ''
+  investigationForm.persons = ''
+  investigationForm.usernames = ''
+  investigationForm.emails = ''
+  investigationForm.phones = ''
+  investigationForm.ips = ''
+  investigationForm.domains = ''
+  investigationForm.notes = ''
+}
+
 const parseLines = (value) => {
   return (value || '')
     .split('\n')
@@ -3470,6 +3483,43 @@ const buildInitialInvestigationNodes = () => {
   return nodes
 }
 
+const managedNodeTypes = ['person', 'username', 'email', 'phone', 'ip', 'domain', 'note']
+
+const getNodeDisplayValue = (node) => {
+  if (!node) return ''
+
+  if (node.node_type === 'note') {
+    return node.metadata?.content || node.value || node.label || ''
+  }
+
+  return node.value || node.label || ''
+}
+
+const nodesToTextareaValue = (nodes = [], type) => {
+  return nodes
+    .filter(node => node.node_type === type)
+    .map(node => getNodeDisplayValue(node))
+    .filter(Boolean)
+    .join('\n')
+}
+
+const populateInvestigationFormFromGraph = (graph) => {
+  const profile = graph?.profile || {}
+  const nodes = graph?.nodes || []
+
+  investigationForm.name = profile.name || ''
+  investigationForm.description = profile.description || ''
+  investigationForm.tags = (profile.tags || []).join(', ')
+
+  investigationForm.persons = nodesToTextareaValue(nodes, 'person')
+  investigationForm.usernames = nodesToTextareaValue(nodes, 'username')
+  investigationForm.emails = nodesToTextareaValue(nodes, 'email')
+  investigationForm.phones = nodesToTextareaValue(nodes, 'phone')
+  investigationForm.ips = nodesToTextareaValue(nodes, 'ip')
+  investigationForm.domains = nodesToTextareaValue(nodes, 'domain')
+  investigationForm.notes = nodesToTextareaValue(nodes, 'note')
+}
+
 const loadInvestigations = async () => {
   investigationsLoading.value = true
   investigationsError.value = null
@@ -3506,21 +3556,49 @@ const createInvestigationProfile = async () => {
 
   try {
     if (isEditingInvestigation.value && editingInvestigationId.value) {
-      await api.updateInvestigation(editingInvestigationId.value, {
+      const profileId = editingInvestigationId.value
+
+      await api.updateInvestigation(profileId, {
         name,
         description: investigationForm.description.trim() || null,
         tags
       })
 
+      const currentGraph =
+        selectedInvestigationGraph.value?.profile?.id === profileId
+          ? selectedInvestigationGraph.value
+          : await api.getInvestigationGraph(profileId)
+
+      const currentNodes = Array.isArray(currentGraph?.nodes) ? currentGraph.nodes : []
+
+      const nodesToDelete = currentNodes.filter(node =>
+        managedNodeTypes.includes(node.node_type)
+      )
+
+      if (nodesToDelete.length) {
+        await Promise.allSettled(
+          nodesToDelete.map(node =>
+            api.deleteInvestigationNode(profileId, node.id)
+          )
+        )
+      }
+
+      const newNodes = buildInitialInvestigationNodes()
+
+      if (newNodes.length) {
+        await Promise.allSettled(
+          newNodes.map(node =>
+            api.createInvestigationNode(profileId, node)
+          )
+        )
+      }
+
+      const updatedGraph = await api.getInvestigationGraph(profileId)
+      selectedInvestigationGraph.value = updatedGraph
+
       showNotification('Perfil actualizado correctamente', true)
       closeInvestigationModal()
       await loadInvestigations()
-
-      if (selectedInvestigationGraph.value?.profile?.id === editingInvestigationId.value) {
-        const updatedGraph = await api.getInvestigationGraph(editingInvestigationId.value)
-        selectedInvestigationGraph.value = updatedGraph
-      }
-
       return
     }
 
@@ -3578,19 +3656,12 @@ const openEditInvestigationModal = (profile) => {
   isEditingInvestigation.value = true
   editingInvestigationId.value = profile.id
 
-  investigationForm.name = profile.name || ''
-  investigationForm.description = profile.description || ''
-  investigationForm.tags = (profile.tags || []).join(', ')
+  const graphSource =
+    selectedInvestigationGraph.value?.profile?.id === profile.id
+      ? selectedInvestigationGraph.value
+      : { profile, nodes: [], edges: [] }
 
-  // En edición, de momento no tocamos nodos iniciales
-  investigationForm.persons = ''
-  investigationForm.usernames = ''
-  investigationForm.emails = ''
-  investigationForm.phones = ''
-  investigationForm.ips = ''
-  investigationForm.domains = ''
-  investigationForm.notes = ''
-
+  populateInvestigationFormFromGraph(graphSource)
   showCreateInvestigationModal.value = true
 }
 
