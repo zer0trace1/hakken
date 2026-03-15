@@ -3484,8 +3484,8 @@ const investigationRelationTypes = [
   { value: 'usa', label: 'usa' },
   { value: 'relacionado_con', label: 'relacionado con' },
   { value: 'aparece_en', label: 'aparece en' },
-  { value: 'registrado_en', label: 'registrado en' },
-  { value: 'expuesto_en', label: 'expuesto en' },
+  //{ value: 'registrado_en', label: 'registrado en' },
+  //{ value: 'expuesto_en', label: 'expuesto en' },
   { value: 'resuelve_a', label: 'resuelve a' },
   { value: 'mencionado_en', label: 'mencionado en' }
 ]
