@@ -738,6 +738,78 @@
               </div>
             </div>
 
+            <div class="investigation-panel full-width">
+              <div class="investigation-panel-title">Panel de conexiones</div>
+
+              <div v-if="(selectedInvestigationGraph?.nodes || []).length" class="graph-board-shell">
+                <div class="graph-board">
+                  <div class="graph-columns">
+                    <div
+                      v-for="type in graphTypeOrder"
+                      :key="type"
+                      class="graph-column-label"
+                      :style="{ left: `${graphTypeX[type]}px` }"
+                    >
+                      {{ graphTypeLabels[type] }}
+                    </div>
+                  </div>
+
+                  <svg
+                    class="graph-svg"
+                    :width="graphWidth"
+                    :height="graphHeight"
+                    :viewBox="`0 0 ${graphWidth} ${graphHeight}`"
+                    preserveAspectRatio="xMinYMin meet"
+                  >
+                    <line
+                      v-for="edge in graphEdges"
+                      :key="edge.id"
+                      :x1="edge.x1"
+                      :y1="edge.y1"
+                      :x2="edge.x2"
+                      :y2="edge.y2"
+                      class="graph-edge-line"
+                    />
+
+                    <g v-for="edge in graphEdges" :key="`${edge.id}-label`">
+                      <rect
+                        :x="edge.mx - 48"
+                        :y="edge.my - 12"
+                        width="96"
+                        height="24"
+                        rx="12"
+                        class="graph-edge-label-bg"
+                      />
+                      <text
+                        :x="edge.mx"
+                        :y="edge.my + 4"
+                        text-anchor="middle"
+                        class="graph-edge-label-text"
+                      >
+                        {{ edge.relation_type }}
+                      </text>
+                    </g>
+                  </svg>
+
+                  <div
+                    v-for="node in graphNodes"
+                    :key="node.id"
+                    class="graph-node-card"
+                    :class="getGraphNodeClass(node.node_type)"
+                    :style="{ left: `${node.x}px`, top: `${node.y}px` }"
+                    :title="node.fullText"
+                  >
+                    <div class="graph-node-type">{{ node.node_type }}</div>
+                    <div class="graph-node-text">{{ node.text }}</div>
+                  </div>
+                </div>
+              </div>
+
+              <div v-else class="empty-results">
+                Este perfil todavía no tiene datos para construir el panel.
+              </div>
+            </div>
+
             <div class="investigation-detail-columns">
               <div class="investigation-panel full-width">
                 <div class="investigation-panel-title">Datos del perfil</div>
@@ -4000,6 +4072,107 @@ const deleteInvestigationEdgeItem = async (edge) => {
   } finally {
     deletingEdge.value = false
   }
+}
+
+/* GRAPH SECTION */
+const graphTypeOrder = ['person', 'username', 'email', 'phone', 'domain', 'ip', 'note']
+
+const graphTypeLabels = {
+  person: 'Personas',
+  username: 'Usernames',
+  email: 'Emails',
+  phone: 'Teléfonos',
+  domain: 'Dominios',
+  ip: 'IPs',
+  note: 'Notas'
+}
+
+const graphTypeX = {
+  person: 90,
+  username: 290,
+  email: 490,
+  phone: 690,
+  domain: 890,
+  ip: 1090,
+  note: 1290
+}
+
+const getGraphNodeText = (node) => {
+  if (!node) return ''
+  if (node.node_type === 'note') {
+    return node.metadata?.content || node.label || 'Nota'
+  }
+  return node.value || node.label || 'Nodo'
+}
+
+const truncateGraphText = (text, max = 26) => {
+  if (!text) return ''
+  return text.length > max ? `${text.slice(0, max)}…` : text
+}
+
+const graphNodes = computed(() => {
+  const nodes = selectedInvestigationGraph.value?.nodes || []
+  const grouped = {}
+
+  graphTypeOrder.forEach(type => {
+    grouped[type] = nodes.filter(node => node.node_type === type)
+  })
+
+  const positioned = []
+  const startY = 90
+  const gapY = 110
+
+  graphTypeOrder.forEach(type => {
+    grouped[type].forEach((node, index) => {
+      positioned.push({
+        ...node,
+        x: graphTypeX[type] || 90,
+        y: startY + index * gapY,
+        text: truncateGraphText(getGraphNodeText(node)),
+        fullText: getGraphNodeText(node)
+      })
+    })
+  })
+
+  return positioned
+})
+
+const graphEdges = computed(() => {
+  const edges = selectedInvestigationGraph.value?.edges || []
+  const nodeMap = new Map(graphNodes.value.map(node => [node.id, node]))
+
+  return edges
+    .map(edge => {
+      const from = nodeMap.get(edge.from_node_id)
+      const to = nodeMap.get(edge.to_node_id)
+      if (!from || !to) return null
+
+      return {
+        ...edge,
+        from,
+        to,
+        x1: from.x + 70,
+        y1: from.y + 26,
+        x2: to.x + 70,
+        y2: to.y + 26,
+        mx: (from.x + to.x) / 2 + 70,
+        my: (from.y + to.y) / 2 + 12
+      }
+    })
+    .filter(Boolean)
+})
+
+const graphHeight = computed(() => {
+  const maxY = graphNodes.value.length
+    ? Math.max(...graphNodes.value.map(node => node.y))
+    : 120
+  return Math.max(420, maxY + 120)
+})
+
+const graphWidth = computed(() => 1450)
+
+const getGraphNodeClass = (type) => {
+  return `graph-node-${type || 'default'}`
 }
 </script>
 
@@ -8078,5 +8251,120 @@ button:disabled{ opacity:.6; cursor:not-allowed; }
 
 .compact-btn{
   margin-bottom: 0.5rem;
+}
+
+/* GRAPH CSS */
+.graph-board-shell {
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding-bottom: 0.5rem;
+}
+
+.graph-board {
+  position: relative;
+  min-width: 1450px;
+  border-radius: 18px;
+  border: 1px solid rgba(0, 255, 153, 0.1);
+  background:
+    linear-gradient(rgba(0,255,153,0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,255,153,0.03) 1px, transparent 1px),
+    rgba(255,255,255,0.015);
+  background-size: 28px 28px, 28px 28px, auto;
+  min-height: 420px;
+}
+
+.graph-columns {
+  position: absolute;
+  inset: 0 auto auto 0;
+  height: 0;
+}
+
+.graph-column-label {
+  position: absolute;
+  top: 18px;
+  transform: translateX(-6px);
+  color: #00ff99;
+  font-size: 0.82rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.graph-svg {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.graph-edge-line {
+  stroke: rgba(0, 255, 153, 0.28);
+  stroke-width: 2;
+}
+
+.graph-edge-label-bg {
+  fill: rgba(0, 0, 0, 0.82);
+  stroke: rgba(0, 255, 153, 0.18);
+  stroke-width: 1;
+}
+
+.graph-edge-label-text {
+  fill: #9ef7d0;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.graph-node-card {
+  position: absolute;
+  width: 140px;
+  min-height: 52px;
+  border-radius: 14px;
+  padding: 0.65rem 0.75rem;
+  border: 1px solid rgba(0,255,153,0.14);
+  background: rgba(7, 15, 18, 0.92);
+  box-shadow: 0 0 18px rgba(0,255,153,0.06);
+}
+
+.graph-node-type {
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 0.25rem;
+  color: #00ff99;
+}
+
+.graph-node-text {
+  color: var(--text-primary);
+  font-size: 0.9rem;
+  line-height: 1.35;
+  word-break: break-word;
+}
+
+.graph-node-person {
+  border-color: rgba(0, 255, 153, 0.22);
+}
+
+.graph-node-username {
+  border-color: rgba(0, 220, 255, 0.25);
+}
+
+.graph-node-email {
+  border-color: rgba(120, 180, 255, 0.25);
+}
+
+.graph-node-phone {
+  border-color: rgba(255, 196, 0, 0.28);
+}
+
+.graph-node-domain {
+  border-color: rgba(0, 255, 180, 0.24);
+}
+
+.graph-node-ip {
+  border-color: rgba(255, 130, 80, 0.25);
+}
+
+.graph-node-note {
+  border-color: rgba(190, 120, 255, 0.25);
 }
 </style>
