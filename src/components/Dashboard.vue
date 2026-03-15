@@ -741,68 +741,8 @@
             <div class="investigation-panel full-width">
               <div class="investigation-panel-title">Panel de conexiones</div>
 
-              <div v-if="(selectedInvestigationGraph?.nodes || []).length" class="graph-board-shell">
-                <div class="graph-board">
-                  <div class="graph-columns">
-                    <div
-                      v-for="type in graphTypeOrder"
-                      :key="type"
-                      class="graph-column-label"
-                      :style="{ left: `${graphTypeX[type]}px` }"
-                    >
-                      {{ graphTypeLabels[type] }}
-                    </div>
-                  </div>
-
-                  <svg
-                    class="graph-svg"
-                    :width="graphWidth"
-                    :height="graphHeight"
-                    :viewBox="`0 0 ${graphWidth} ${graphHeight}`"
-                    preserveAspectRatio="xMinYMin meet"
-                  >
-                    <line
-                      v-for="edge in graphEdges"
-                      :key="edge.id"
-                      :x1="edge.x1"
-                      :y1="edge.y1"
-                      :x2="edge.x2"
-                      :y2="edge.y2"
-                      class="graph-edge-line"
-                    />
-
-                    <g v-for="edge in graphEdges" :key="`${edge.id}-label`">
-                      <rect
-                        :x="edge.mx - 48"
-                        :y="edge.my - 12"
-                        width="96"
-                        height="24"
-                        rx="12"
-                        class="graph-edge-label-bg"
-                      />
-                      <text
-                        :x="edge.mx"
-                        :y="edge.my + 4"
-                        text-anchor="middle"
-                        class="graph-edge-label-text"
-                      >
-                        {{ edge.relation_type }}
-                      </text>
-                    </g>
-                  </svg>
-
-                  <div
-                    v-for="node in graphNodes"
-                    :key="node.id"
-                    class="graph-node-card"
-                    :class="getGraphNodeClass(node.node_type)"
-                    :style="{ left: `${node.x}px`, top: `${node.y}px` }"
-                    :title="node.fullText"
-                  >
-                    <div class="graph-node-type">{{ node.node_type }}</div>
-                    <div class="graph-node-text">{{ node.text }}</div>
-                  </div>
-                </div>
+              <div v-if="(selectedInvestigationGraph?.nodes || []).length">
+                <InvestigationFlowBoard :graph="selectedInvestigationGraph" />
               </div>
 
               <div v-else class="empty-results">
@@ -2151,6 +2091,7 @@ import iconEmail from '@/assets/hakken-logo-email.png'
 import iconPhone from '@/assets/hakken-logo-movil.png'
 import iconIP from '@/assets/hakken-logo-ip.png'
 import iconDomain from '@/assets/hakken-logo-dominio.png'
+import InvestigationFlowBoard from '@/components/InvestigationFlowBoard.vue'
 
 /*
 **************************************************************************
