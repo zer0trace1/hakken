@@ -1,6 +1,6 @@
 <script setup>
 import { ref, watch } from 'vue'
-import { VueFlow } from '@vue-flow/core'
+import { VueFlow, Position } from '@vue-flow/core'
 import { Background } from '@vue-flow/background'
 import { Controls } from '@vue-flow/controls'
 
@@ -64,6 +64,8 @@ const buildFlow = (graph) => {
           x: typeX[type] || 80,
           y: startY + index * gapY
         },
+        sourcePosition: Position.Right,
+        targetPosition: Position.Left,
         draggable: true,
         data: {
           raw: node,
@@ -136,7 +138,7 @@ watch(
         </template>
 
         <Background :gap="28" :size="1" color="rgba(0,255,153,0.08)" />
-        <Controls position="bottom-left" />
+        <!--<Controls position="bottom-left" />-->
     </VueFlow>
   </div>
 </template>
@@ -148,7 +150,10 @@ watch(
   border-radius: 18px;
   overflow: hidden;
   border: 1px solid rgba(0, 255, 153, 0.14);
-  background: rgba(255,255,255,0.015);
+  background:
+    radial-gradient(circle at top right, rgba(0,255,153,0.08), transparent 24%),
+    radial-gradient(circle at bottom left, rgba(0,180,255,0.05), transparent 20%),
+    rgba(255,255,255,0.015)
 }
 
 :deep(.hakken-flow) {
@@ -164,36 +169,43 @@ watch(
   padding: 10px 12px;
   background: rgba(7, 15, 18, 0.96);
   color: #fff;
-  box-shadow: 0 0 18px rgba(0,255,153,0.06);
+  box-shadow: 0 0 22px rgba(0,255,153,0.10);
   border: 1px solid rgba(0,255,153,0.14);
 }
 
 :deep(.vue-flow__node.hakken-flow-node-person) {
-  border-color: rgba(0,255,153,0.28);
+  border-color: rgba(0,255,153,0.38);
+  box-shadow: 0 0 18px rgba(0,255,153,0.12);
 }
 
 :deep(.vue-flow__node.hakken-flow-node-username) {
-  border-color: rgba(0,220,255,0.28);
+  border-color: rgba(0,220,255,0.40);
+  box-shadow: 0 0 18px rgba(0,220,255,0.10);
 }
 
 :deep(.vue-flow__node.hakken-flow-node-email) {
-  border-color: rgba(90,160,255,0.28);
+  border-color: rgba(90,160,255,0.40);
+  box-shadow: 0 0 18px rgba(90,160,255,0.10);
 }
 
 :deep(.vue-flow__node.hakken-flow-node-phone) {
-  border-color: rgba(255,196,0,0.30);
+  border-color: rgba(255,196,0,0.42);
+  box-shadow: 0 0 18px rgba(255,196,0,0.10);
 }
 
 :deep(.vue-flow__node.hakken-flow-node-domain) {
-  border-color: rgba(0,255,180,0.28);
+  border-color: rgba(0,255,180,0.40);
+  box-shadow: 0 0 18px rgba(0,255,180,0.10);
 }
 
 :deep(.vue-flow__node.hakken-flow-node-ip) {
-  border-color: rgba(255,130,80,0.28);
+  border-color: rgba(255,130,80,0.40);
+  box-shadow: 0 0 18px rgba(255,130,80,0.10);
 }
 
 :deep(.vue-flow__node.hakken-flow-node-note) {
-  border-color: rgba(180,120,255,0.28);
+  border-color: rgba(180,120,255,0.40);
+  box-shadow: 0 0 18px rgba(180,120,255,0.10);
 }
 
 :deep(.vue-flow__node-default) {
@@ -229,15 +241,23 @@ watch(
   stroke-width: 2;
 }
 
+:deep(.vue-flow__edge-path) {
+  stroke: rgba(0,255,153,0.55);
+  stroke-width: 2.5;
+  filter: drop-shadow(0 0 6px rgba(0,255,153,0.22));
+}
+
 :deep(.vue-flow__edge-textbg) {
-  fill: rgba(0,0,0,0.82);
-  stroke: rgba(0,255,153,0.16);
+  fill: rgba(5, 10, 12, 0.92);
+  stroke: rgba(0,255,153,0.28);
+  stroke-width: 1.2;
 }
 
 :deep(.vue-flow__edge-text) {
-  fill: #9ef7d0;
+  fill: #baffea;
   font-size: 11px;
-  font-weight: 700;
+  font-weight: 800;
+  letter-spacing: 0.04em;
 }
 
 :deep(.vue-flow__controls) {
