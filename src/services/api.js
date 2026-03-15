@@ -266,6 +266,33 @@ export default {
     }
   },
 
+  async updateInvestigationNode(profileId, nodeId, payload) {
+    try {
+      const safeProfile = encodeURIComponent(profileId)
+      const safeNode = encodeURIComponent(nodeId)
+      const response = await apiClient.patch(
+        `/investigations/${safeProfile}/nodes/${safeNode}`,
+        payload
+      )
+      return response.data
+    } catch (error) {
+      throw error
+    }
+  },
+
+  async deleteInvestigationNode(profileId, nodeId) {
+    try {
+      const safeProfile = encodeURIComponent(profileId)
+      const safeNode = encodeURIComponent(nodeId)
+      const response = await apiClient.delete(
+        `/investigations/${safeProfile}/nodes/${safeNode}`
+      )
+      return response.data
+    } catch (error) {
+      throw error
+    }
+  },
+
   // ==================== UTILIDADES ====================
   async healthCheck() {
     try {

@@ -688,7 +688,7 @@
 
               <div class="investigation-detail-actions">
                 <button
-                  class="back-btn-dorks"
+                  class="edit-btn-investigations"
                   @click="openEditInvestigationModal(selectedInvestigationGraph.profile)"
                 >
                   Editar perfil
@@ -738,38 +738,73 @@
             </div>
 
             <div class="investigation-detail-columns">
-              <div class="investigation-panel">
-                <div class="investigation-panel-title">Nodos</div>
-
-                <div v-if="(selectedInvestigationGraph.nodes || []).length" class="investigation-node-list">
-                  <div
-                    v-for="node in selectedInvestigationGraph.nodes"
-                    :key="node.id"
-                    class="investigation-node-item"
-                  >
-                    <div class="investigation-node-top">
-                      <span class="investigation-node-type">{{ node.node_type }}</span>
-                      <span class="investigation-node-date">{{ formatDate(node.created_at) }}</span>
-                    </div>
-                    <div class="investigation-node-label">{{ node.label }}</div>
-                    <div
-                      v-if="node.node_type === 'note' && node.metadata?.content"
-                      class="investigation-node-value"
-                    >
-                      {{ node.metadata.content }}
-                    </div>
-
-                    <div
-                      v-else-if="node.value"
-                      class="investigation-node-value"
-                    >
-                      {{ node.value }}
-                    </div>
-                  </div>
+              <div class="investigation-panel full-width">
+                <div class="investigation-panel-header">
+                  <div class="investigation-panel-title">Datos del perfil</div>
+                  <button class="advanced-tool-btn compact-btn" @click="openCreateNodeModal('person')">
+                    Añadir dato
+                  </button>
                 </div>
 
-                <div v-else class="empty-results">
-                  Este perfil todavía no tiene nodos.
+                <div class="investigation-data-groups">
+                  <div
+                    v-for="section in investigationNodeSections"
+                    :key="section.key"
+                    class="investigation-data-group"
+                  >
+                    <div class="investigation-data-group-top">
+                      <div class="investigation-data-group-title">{{ section.label }}</div>
+                      <button class="mini-add-btn" @click="openCreateNodeModal(section.key)">
+                        + Añadir
+                      </button>
+                    </div>
+
+                    <div
+                      v-if="groupInvestigationNodes(selectedInvestigationGraph?.nodes || [])[section.key]?.length"
+                      class="investigation-data-list"
+                    >
+                      <div
+                        v-for="node in groupInvestigationNodes(selectedInvestigationGraph?.nodes || [])[section.key]"
+                        :key="node.id"
+                        class="investigation-data-item"
+                      >
+                        <div class="investigation-data-main">
+                          <div class="investigation-data-label">{{ node.label }}</div>
+
+                          <div
+                            v-if="node.node_type === 'note' && node.metadata?.content"
+                            class="investigation-data-value"
+                          >
+                            {{ node.metadata.content }}
+                          </div>
+
+                          <div
+                            v-else-if="node.value"
+                            class="investigation-data-value"
+                          >
+                            {{ node.value }}
+                          </div>
+
+                          <div class="investigation-data-date">
+                            {{ formatDate(node.created_at) }}
+                          </div>
+                        </div>
+
+                        <div class="investigation-data-actions">
+                          <button class="mini-action-btn" @click="openEditNodeModal(node)">
+                            Editar
+                          </button>
+                          <button class="mini-action-btn danger" @click="deleteInvestigationNodeItem(node)">
+                            Eliminar
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div v-else class="empty-results">
+                      No hay datos en esta categoría.
+                    </div>
+                  </div>
                 </div>
               </div>
 
@@ -915,6 +950,60 @@
                   </button>
                   <button class="advanced-tool-btn" @click="createInvestigationProfile">
                     {{ isEditingInvestigation ? 'Guardar cambios' : 'Crear perfil' }}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div
+          v-if="showNodeModal"
+          class="search-modal"
+          @click.self="closeNodeModal"
+        >
+          <div class="modal-content investigation-modal small-modal">
+            <button class="close-btn" @click="closeNodeModal">✕</button>
+
+            <div class="modal-header">
+              <h2 class="modal-title">
+                {{ isEditingNode ? 'Editar' : 'Añadir' }}
+                <span class="highlight">dato del perfil</span>
+              </h2>
+            </div>
+
+            <div class="modal-body">
+              <div class="investigation-form">
+                <select v-model="investigationNodeForm.node_type" class="search-input">
+                  <option value="person">Persona</option>
+                  <option value="username">Username</option>
+                  <option value="email">Email</option>
+                  <option value="phone">Teléfono</option>
+                  <option value="ip">IP</option>
+                  <option value="domain">Dominio</option>
+                  <option value="note">Nota</option>
+                </select>
+
+                <input
+                  v-model="investigationNodeForm.label"
+                  type="text"
+                  class="search-input"
+                  placeholder="Label del dato"
+                />
+
+                <textarea
+                  v-model="investigationNodeForm.value"
+                  class="investigation-textarea"
+                  :placeholder="investigationNodeForm.node_type === 'note'
+                    ? 'Contenido de la nota'
+                    : 'Valor del dato'"
+                />
+
+                <div class="investigation-form-actions">
+                  <button class="back-btn-dorks" @click="closeNodeModal">
+                    Cancelar
+                  </button>
+                  <button class="advanced-tool-btn" @click="saveInvestigationNode">
+                    {{ isEditingNode ? 'Guardar cambios' : 'Guardar dato' }}
                   </button>
                 </div>
               </div>
@@ -3359,6 +3448,17 @@ const isEditingInvestigation = ref(false)
 const editingInvestigationId = ref(null)
 const deletingInvestigation = ref(false)
 
+const showNodeModal = ref(false)
+const isEditingNode = ref(false)
+const editingNodeId = ref(null)
+const deletingNode = ref(false)
+
+const investigationNodeForm = reactive({
+  node_type: 'person',
+  label: '',
+  value: ''
+})
+
 const investigationForm = reactive({
   name: '',
   description: '',
@@ -3664,6 +3764,154 @@ const getInvestigationStatusLabel = (status) => {
       return 'Archivada'
     default:
       return 'Activa'
+  }
+}
+
+const investigationNodeSections = [
+  { key: 'person', label: 'Personas' },
+  { key: 'username', label: 'Usernames' },
+  { key: 'email', label: 'Emails' },
+  { key: 'phone', label: 'Teléfonos' },
+  { key: 'ip', label: 'IPs' },
+  { key: 'domain', label: 'Dominios' },
+  { key: 'note', label: 'Notas' }
+]
+
+const groupInvestigationNodes = (nodes = []) => {
+  const groups = {
+    person: [],
+    username: [],
+    email: [],
+    phone: [],
+    ip: [],
+    domain: [],
+    note: []
+  }
+
+  nodes.forEach(node => {
+    if (groups[node.node_type]) {
+      groups[node.node_type].push(node)
+    }
+  })
+
+  return groups
+}
+
+const resetInvestigationNodeForm = () => {
+  investigationNodeForm.node_type = 'person'
+  investigationNodeForm.label = ''
+  investigationNodeForm.value = ''
+}
+
+const openCreateNodeModal = (nodeType = 'person') => {
+  isEditingNode.value = false
+  editingNodeId.value = null
+  resetInvestigationNodeForm()
+  investigationNodeForm.node_type = nodeType
+  showNodeModal.value = true
+}
+
+const openEditNodeModal = (node) => {
+  if (!node) return
+
+  isEditingNode.value = true
+  editingNodeId.value = node.id
+  investigationNodeForm.node_type = node.node_type || 'person'
+  investigationNodeForm.label = node.label || ''
+  investigationNodeForm.value =
+    node.node_type === 'note'
+      ? (node.metadata?.content || node.value || '')
+      : (node.value || '')
+  showNodeModal.value = true
+}
+
+const closeNodeModal = () => {
+  showNodeModal.value = false
+  isEditingNode.value = false
+  editingNodeId.value = null
+  resetInvestigationNodeForm()
+}
+
+const refreshSelectedInvestigationGraph = async () => {
+  const profileId = selectedInvestigationGraph.value?.profile?.id
+  if (!profileId) return
+  const updatedGraph = await api.getInvestigationGraph(profileId)
+  selectedInvestigationGraph.value = {
+    profile: updatedGraph?.profile || selectedInvestigationGraph.value?.profile || null,
+    nodes: Array.isArray(updatedGraph?.nodes) ? updatedGraph.nodes : [],
+    edges: Array.isArray(updatedGraph?.edges) ? updatedGraph.edges : []
+  }
+}
+
+const saveInvestigationNode = async () => {
+  const profileId = selectedInvestigationGraph.value?.profile?.id
+  if (!profileId) return
+
+  const label = investigationNodeForm.label.trim()
+  const value = investigationNodeForm.value.trim()
+
+  if (!label) {
+    showNotification('Debes indicar un label para el dato', false)
+    return
+  }
+
+  try {
+    const payload =
+      investigationNodeForm.node_type === 'note'
+        ? {
+            node_type: 'note',
+            label,
+            value,
+            metadata: { content: value || label }
+          }
+        : {
+            node_type: investigationNodeForm.node_type,
+            label,
+            value: value || label,
+            metadata: {}
+          }
+
+    if (isEditingNode.value && editingNodeId.value) {
+      await api.updateInvestigationNode(profileId, editingNodeId.value, payload)
+      showNotification('Dato actualizado correctamente', true)
+    } else {
+      await api.createInvestigationNode(profileId, payload)
+      showNotification('Dato añadido correctamente', true)
+    }
+
+    closeNodeModal()
+    await refreshSelectedInvestigationGraph()
+  } catch (error) {
+    console.error('Error guardando nodo:', error)
+    showNotification(
+      error.response?.data?.detail || 'No se pudo guardar el dato',
+      false
+    )
+  }
+}
+
+const deleteInvestigationNodeItem = async (node) => {
+  const profileId = selectedInvestigationGraph.value?.profile?.id
+  if (!profileId || !node?.id || deletingNode.value) return
+
+  const confirmed = window.confirm(
+    `¿Seguro que quieres eliminar este dato (${node.label})?`
+  )
+  if (!confirmed) return
+
+  deletingNode.value = true
+  try {
+    await api.deleteInvestigationNode(profileId, node.id)
+    showNotification('Dato eliminado correctamente', true)
+    await refreshSelectedInvestigationGraph()
+  } catch (error) {
+    console.error('Error eliminando nodo:', error)
+    showNotification(
+      error.response?.data?.detail || 'No se pudo eliminar el dato',
+      false
+    )
+  } finally {
+    deletingNode.value = false
   }
 }
 </script>
@@ -7578,6 +7826,22 @@ button:disabled{ opacity:.6; cursor:not-allowed; }
   transition: all 0.22s ease;
 }
 
+.edit-btn-investigations {
+  padding: 0.78rem 1.2rem;
+  background: transparent;
+  color: #00ff99;
+  border: 1px solid rgba(0, 255, 153, 0.3);
+  border-radius: 12px;
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.22s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+}
+
 .danger-btn:hover:not(:disabled) {
   background: rgba(255, 80, 80, 0.14);
   border-color: rgba(255, 80, 80, 0.55);
@@ -7597,6 +7861,137 @@ button:disabled{ opacity:.6; cursor:not-allowed; }
   .investigation-detail-actions .back-btn-dorks,
   .investigation-detail-actions .danger-btn {
     width: 100%;
+  }
+}
+
+.full-width {
+  grid-column: 1 / -1;
+}
+
+.investigation-panel-header,
+.investigation-data-group-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.85rem;
+}
+
+.compact-btn {
+  min-width: auto;
+  padding: 0.7rem 0.95rem;
+  font-size: 0.92rem;
+}
+
+.investigation-data-groups {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.investigation-data-group {
+  padding: 0.95rem;
+  border-radius: 16px;
+  background: rgba(255,255,255,0.02);
+  border: 1px solid rgba(0,255,153,0.08);
+}
+
+.investigation-data-group-title {
+  color: #00ff99;
+  font-size: 0.95rem;
+  font-weight: 800;
+}
+
+.mini-add-btn,
+.mini-action-btn {
+  border: 1px solid rgba(0,255,153,0.22);
+  background: rgba(0,255,153,0.06);
+  color: #00ff99;
+  border-radius: 10px;
+  padding: 0.45rem 0.7rem;
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 0.88rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.mini-add-btn:hover,
+.mini-action-btn:hover {
+  background: rgba(0,255,153,0.12);
+}
+
+.mini-action-btn.danger {
+  color: #ff9e9e;
+  border-color: rgba(255,80,80,0.24);
+  background: rgba(255,80,80,0.06);
+}
+
+.mini-action-btn.danger:hover {
+  background: rgba(255,80,80,0.12);
+}
+
+.investigation-data-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.investigation-data-item {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.8rem;
+  border-radius: 12px;
+  background: rgba(255,255,255,0.02);
+  border: 1px solid rgba(0,255,153,0.06);
+}
+
+.investigation-data-main {
+  min-width: 0;
+  flex: 1;
+}
+
+.investigation-data-label {
+  color: var(--text-primary);
+  font-weight: 700;
+  margin-bottom: 0.25rem;
+}
+
+.investigation-data-value {
+  color: var(--text-secondary);
+  line-height: 1.5;
+  word-break: break-word;
+}
+
+.investigation-data-date {
+  color: var(--text-secondary);
+  font-size: 0.82rem;
+  margin-top: 0.35rem;
+}
+
+.investigation-data-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.small-modal {
+  width: min(720px, 92vw);
+}
+
+@media (max-width: 900px) {
+  .investigation-data-groups {
+    grid-template-columns: 1fr;
+  }
+
+  .investigation-data-item {
+    flex-direction: column;
+  }
+
+  .investigation-data-actions {
+    flex-direction: row;
+    flex-wrap: wrap;
   }
 }
 </style>
