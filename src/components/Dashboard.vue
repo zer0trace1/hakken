@@ -6756,6 +6756,7 @@ button:disabled{ opacity:.6; cursor:not-allowed; }
   color: #00ff99;
   border-radius: 12px;
   padding: 0.9rem 1.1rem;
+  background: transparent;
   min-width: 170px;
   font-family: 'Rajdhani', sans-serif;
   font-size: 1rem;
