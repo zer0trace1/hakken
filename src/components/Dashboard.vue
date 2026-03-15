@@ -610,7 +610,7 @@
                 </p>
               </div>
 
-              <button class="advanced-tool-btn" @click="showCreateInvestigationModal = true">
+              <button class="advanced-tool-btn" @click="openCreateInvestigationModal">
                 Nuevo perfil
               </button>
             </div>
@@ -676,12 +676,33 @@
               Volver a perfiles
             </button>
 
-            <h1 class="section-title">
-              <span class="highlight">{{ selectedInvestigationGraph.profile?.name }}</span>
-            </h1>
-            <p class="section-subtitle">
-              {{ selectedInvestigationGraph.profile?.description || 'Sin descripción' }}
-            </p>
+            <div class="investigations-header-top">
+              <div>
+                <h1 class="section-title">
+                  <span class="highlight">{{ selectedInvestigationGraph.profile?.name }}</span>
+                </h1>
+                <p class="section-subtitle">
+                  {{ selectedInvestigationGraph.profile?.description || 'Sin descripción' }}
+                </p>
+              </div>
+
+              <div class="investigation-detail-actions">
+                <button
+                  class="back-btn-dorks"
+                  @click="openEditInvestigationModal(selectedInvestigationGraph.profile)"
+                >
+                  Editar perfil
+                </button>
+
+                <button
+                  class="danger-btn"
+                  @click="deleteInvestigationProfile(selectedInvestigationGraph.profile)"
+                  :disabled="deletingInvestigation"
+                >
+                  {{ deletingInvestigation ? 'Eliminando...' : 'Eliminar perfil' }}
+                </button>
+              </div>
+            </div>
           </div>
 
           <div v-if="investigationGraphLoading" class="empty-history">
@@ -697,7 +718,7 @@
               <div class="investigation-summary-card">
                 <div class="investigation-summary-label">Estado</div>
                 <div class="investigation-summary-value">
-                  {{ selectedInvestigationGraph.profile?.status || 'open' }}
+                  {{ getInvestigationStatusLabel(profile.status) }}
                 </div>
               </div>
 
@@ -784,11 +805,12 @@
           @click.self="showCreateInvestigationModal = false"
         >
           <div class="modal-content investigation-modal">
-            <button class="close-btn" @click="showCreateInvestigationModal = false">✕</button>
+            <button class="close-btn" @click="closeInvestigationModal">✕</button>
 
             <div class="modal-header">
               <h2 class="modal-title">
-                Crear <span class="highlight">perfil de investigación</span>
+                {{ isEditingInvestigation ? 'Editar' : 'Crear' }}
+                <span class="highlight">perfil de investigación</span>
               </h2>
             </div>
 
@@ -825,20 +847,16 @@
                       <textarea
                         v-model="investigationForm.persons"
                         class="investigation-textarea small"
-                        placeholder="Ej:
-                          John Doe
-                          Jane Doe"
+                        placeholder="Un valor por línea"
                       />
                     </div>
 
                     <div class="investigation-input-block">
-                      <label class="investigation-label">Username(s)</label>
+                      <label class="investigation-label">Nombre(s) de usuario</label>
                       <textarea
                         v-model="investigationForm.usernames"
                         class="investigation-textarea small"
-                        placeholder="Ej:
-                          johndoe97
-                          john_d"
+                        placeholder="Un valor por línea"
                       />
                     </div>
 
@@ -847,9 +865,7 @@
                       <textarea
                         v-model="investigationForm.emails"
                         class="investigation-textarea small"
-                        placeholder="Ej:
-                          john@example.com
-                          jdoe@mail.com"
+                        placeholder="Un valor por línea"
                       />
                     </div>
 
@@ -858,9 +874,7 @@
                       <textarea
                         v-model="investigationForm.phones"
                         class="investigation-textarea small"
-                        placeholder="Ej:
-                          +34 600 123 123
-                          +1 555 123 4567"
+                        placeholder="Un valor por línea"
                       />
                     </div>
 
@@ -869,9 +883,7 @@
                       <textarea
                         v-model="investigationForm.ips"
                         class="investigation-textarea small"
-                        placeholder="Ej:
-                          8.8.8.8
-                          1.1.1.1"
+                        placeholder="Un valor por línea"
                       />
                     </div>
 
@@ -880,9 +892,7 @@
                       <textarea
                         v-model="investigationForm.domains"
                         class="investigation-textarea small"
-                        placeholder="Ej:
-                          example.com
-                          acme.org"
+                        placeholder="Un valor por línea"
                       />
                     </div>
                   </div>
@@ -900,11 +910,11 @@
                 </div>
 
                 <div class="investigation-form-actions">
-                  <button class="back-btn-dorks" @click="showCreateInvestigationModal = false">
+                  <button class="back-btn-dorks" @click="closeInvestigationModal">
                     Cancelar
                   </button>
                   <button class="advanced-tool-btn" @click="createInvestigationProfile">
-                    Crear perfil
+                    {{ isEditingInvestigation ? 'Guardar cambios' : 'Crear perfil' }}
                   </button>
                 </div>
               </div>
@@ -3345,6 +3355,10 @@ const selectedInvestigationGraph = ref(null)
 const investigationGraphLoading = ref(false)
 const investigationGraphError = ref(null)
 
+const isEditingInvestigation = ref(false)
+const editingInvestigationId = ref(null)
+const deletingInvestigation = ref(false)
+
 const investigationForm = reactive({
   name: '',
   description: '',
@@ -3484,6 +3498,25 @@ const createInvestigationProfile = async () => {
     .filter(Boolean)
 
   try {
+    if (isEditingInvestigation.value && editingInvestigationId.value) {
+      await api.updateInvestigation(editingInvestigationId.value, {
+        name,
+        description: investigationForm.description.trim() || null,
+        tags
+      })
+
+      showNotification('Perfil actualizado correctamente', true)
+      closeInvestigationModal()
+      await loadInvestigations()
+
+      if (selectedInvestigationGraph.value?.profile?.id === editingInvestigationId.value) {
+        const updatedGraph = await api.getInvestigationGraph(editingInvestigationId.value)
+        selectedInvestigationGraph.value = updatedGraph
+      }
+
+      return
+    }
+
     const profile = await api.createInvestigation({
       name,
       description: investigationForm.description.trim() || null,
@@ -3514,15 +3547,81 @@ const createInvestigationProfile = async () => {
       showNotification('Perfil creado correctamente', true)
     }
 
-    showCreateInvestigationModal.value = false
-    resetInvestigationForm()
+    closeInvestigationModal()
     await loadInvestigations()
   } catch (error) {
-    console.error('Error creando perfil:', error)
+    console.error('Error guardando perfil:', error)
     showNotification(
-      error.response?.data?.detail || 'No se pudo crear el perfil',
+      error.response?.data?.detail || 'No se pudo guardar el perfil',
       false
     )
+  }
+}
+
+const openCreateInvestigationModal = () => {
+  isEditingInvestigation.value = false
+  editingInvestigationId.value = null
+  resetInvestigationForm()
+  showCreateInvestigationModal.value = true
+}
+
+const openEditInvestigationModal = (profile) => {
+  if (!profile) return
+
+  isEditingInvestigation.value = true
+  editingInvestigationId.value = profile.id
+
+  investigationForm.name = profile.name || ''
+  investigationForm.description = profile.description || ''
+  investigationForm.tags = (profile.tags || []).join(', ')
+
+  // En edición, de momento no tocamos nodos iniciales
+  investigationForm.persons = ''
+  investigationForm.usernames = ''
+  investigationForm.emails = ''
+  investigationForm.phones = ''
+  investigationForm.ips = ''
+  investigationForm.domains = ''
+  investigationForm.notes = ''
+
+  showCreateInvestigationModal.value = true
+}
+
+const closeInvestigationModal = () => {
+  showCreateInvestigationModal.value = false
+  isEditingInvestigation.value = false
+  editingInvestigationId.value = null
+  resetInvestigationForm()
+}
+
+const deleteInvestigationProfile = async (profile) => {
+  if (!profile?.id || deletingInvestigation.value) return
+
+  const confirmed = window.confirm(
+    `¿Seguro que quieres eliminar el perfil "${profile.name}"? Esta acción no se puede deshacer.`
+  )
+
+  if (!confirmed) return
+
+  deletingInvestigation.value = true
+
+  try {
+    await api.deleteInvestigation(profile.id)
+    showNotification('Perfil eliminado correctamente', true)
+
+    if (selectedInvestigationGraph.value?.profile?.id === profile.id) {
+      selectedInvestigationGraph.value = null
+    }
+
+    await loadInvestigations()
+  } catch (error) {
+    console.error('Error eliminando perfil:', error)
+    showNotification(
+      error.response?.data?.detail || 'No se pudo eliminar el perfil',
+      false
+    )
+  } finally {
+    deletingInvestigation.value = false
   }
 }
 
@@ -3547,6 +3646,19 @@ const openInvestigation = async (profile) => {
 const closeInvestigationDetail = () => {
   selectedInvestigationGraph.value = null
   investigationGraphError.value = null
+}
+
+const getInvestigationStatusLabel = (status) => {
+  switch (status) {
+    case 'open':
+      return 'Activa'
+    case 'closed':
+      return 'Cerrada'
+    case 'archived':
+      return 'Archivada'
+    default:
+      return status || 'Activa'
+  }
 }
 </script>
 
@@ -7143,6 +7255,12 @@ button:disabled{ opacity:.6; cursor:not-allowed; }
   border-radius: 18px;
   box-shadow: 0 0 18px rgba(0, 255, 153, 0.05);
 }
+.investigation-modal{
+  width: min(1100px, 92vw);
+  max-height: 88vh;
+  overflow-y: auto;
+  padding: 1.5rem;
+}
 
 .investigation-card {
   padding: 1.15rem;
@@ -7303,13 +7421,15 @@ button:disabled{ opacity:.6; cursor:not-allowed; }
   display: flex;
   flex-direction: column;
   gap: 0.85rem;
+  padding-bottom: 0.5rem;
 }
 
 .investigation-textarea {
   min-height: 110px;
   resize: vertical;
   width: 100%;
-  padding: 1rem 1.2rem;
+  line-height: 1.45;
+  padding: 0.95rem 1rem;
   background: rgba(0, 0, 0, 0.45);
   border: 1.5px solid rgba(0, 255, 153, 0.28);
   border-radius: 14px;
@@ -7324,11 +7444,21 @@ button:disabled{ opacity:.6; cursor:not-allowed; }
   box-shadow: 0 0 18px rgba(0, 255, 153, 0.22);
 }
 
+.investigation-textarea::placeholder,
+.search-input::placeholder {
+  color: #6f6f6f;
+  line-height: 1.35;
+}
+
 .investigation-form-actions {
   display: flex;
   justify-content: flex-end;
   gap: 0.75rem;
   margin-top: 0.5rem;
+  position: sticky;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.92);
+  padding-top: 1rem;
 }
 
 @media (max-width: 980px) {
@@ -7394,12 +7524,60 @@ button:disabled{ opacity:.6; cursor:not-allowed; }
 }
 
 .investigation-textarea.small {
-  min-height: 92px;
+  min-height: 72px;
+  max-height: 72px;
+  resize: none;
+  overflow-y: auto;
+  line-height: 1.45;
+  padding: 0.9rem 1rem;
 }
 
 @media (max-width: 900px) {
   .investigation-initial-grid {
     grid-template-columns: 1fr;
+  }
+}
+
+.investigation-detail-actions {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.danger-btn {
+  border: 1px solid rgba(255, 80, 80, 0.35);
+  background: rgba(255, 80, 80, 0.08);
+  color: #ff9e9e;
+  border-radius: 12px;
+  padding: 0.9rem 1.1rem;
+  min-width: 170px;
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.22s ease;
+}
+
+.danger-btn:hover:not(:disabled) {
+  background: rgba(255, 80, 80, 0.14);
+  border-color: rgba(255, 80, 80, 0.55);
+  box-shadow: 0 0 18px rgba(255, 80, 80, 0.14);
+}
+
+.danger-btn:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+@media (max-width: 768px) {
+  .investigation-detail-actions {
+    width: 100%;
+  }
+
+  .investigation-detail-actions .back-btn-dorks,
+  .investigation-detail-actions .danger-btn {
+    width: 100%;
   }
 }
 </style>
