@@ -835,47 +835,6 @@
                 <div v-else class="empty-results">
                   Este perfil todavía no tiene relaciones.
                 </div>
-              </div><div class="investigation-panel">
-                <div class="investigation-panel-header">
-                  <div class="investigation-panel-title">Relaciones</div>
-                  <button class="advanced-tool-btn compact-btn" @click="openCreateEdgeModal">
-                    Nueva relación
-                  </button>
-                </div>
-
-                <div v-if="(selectedInvestigationGraph?.edges || []).length" class="investigation-edge-list">
-                  <div
-                    v-for="edge in selectedInvestigationGraph.edges"
-                    :key="edge.id"
-                    class="investigation-edge-item"
-                  >
-                    <div class="investigation-edge-main">
-                      <div class="investigation-edge-relation-line">
-                        <span class="edge-node">{{ getNodeNameById(edge.from_node_id) }}</span>
-                        <span class="edge-relation-tag">{{ edge.relation_type }}</span>
-                        <span class="edge-node">{{ getNodeNameById(edge.to_node_id) }}</span>
-                      </div>
-
-                      <div v-if="edge.note" class="investigation-edge-note">
-                        {{ edge.note }}
-                      </div>
-
-                      <div class="investigation-edge-meta">
-                        {{ formatDate(edge.created_at) }}
-                      </div>
-                    </div>
-
-                    <div class="investigation-edge-actions">
-                      <button class="mini-action-btn danger" @click="deleteInvestigationEdgeItem(edge)">
-                        Eliminar
-                      </button>
-                    </div>
-                  </div>
-                </div>
-
-                <div v-else class="empty-results">
-                  Este perfil todavía no tiene relaciones.
-                </div>
               </div>
             </div>
           </div>
