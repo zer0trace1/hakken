@@ -266,6 +266,19 @@ export default {
     }
   },
 
+  async deleteInvestigationEdge(profileId, edgeId) {
+    try {
+      const safeProfile = encodeURIComponent(profileId)
+      const safeEdge = encodeURIComponent(edgeId)
+      const response = await apiClient.delete(
+        `/investigations/${safeProfile}/edges/${safeEdge}`
+      )
+      return response.data
+    } catch (error) {
+      throw error
+    }
+  },
+
   async updateInvestigationNode(profileId, nodeId, payload) {
     try {
       const safeProfile = encodeURIComponent(profileId)

@@ -183,6 +183,7 @@
                   <span class="advanced-tool-tag">Perfiles</span>
                   <span class="advanced-tool-tag">Correlación</span>
                   <span class="advanced-tool-tag">Investigación</span>
+                  <span class="advanced-tool-tag">BETA v.1</span>
                 </div>
               </div>
             </div>
@@ -794,19 +795,81 @@
               </div>
 
               <div class="investigation-panel">
-                <div class="investigation-panel-title">Relaciones</div>
+                <div class="investigation-panel-header">
+                  <div class="investigation-panel-title">Relaciones</div>
+                  <button class="advanced-tool-btn compact-btn" @click="openCreateEdgeModal">
+                    Nueva relación
+                  </button>
+                </div>
 
-                <div v-if="(selectedInvestigationGraph.edges || []).length" class="investigation-edge-list">
+                <div v-if="(selectedInvestigationGraph?.edges || []).length" class="investigation-edge-list">
                   <div
                     v-for="edge in selectedInvestigationGraph.edges"
                     :key="edge.id"
                     class="investigation-edge-item"
                   >
-                    <div class="investigation-edge-relation">{{ edge.relation_type }}</div>
-                    <div class="investigation-edge-meta">
-                      {{ edge.from_node_id }} → {{ edge.to_node_id }}
+                    <div class="investigation-edge-main">
+                      <div class="investigation-edge-relation-line">
+                        <span class="edge-node">{{ getNodeNameById(edge.from_node_id) }}</span>
+                        <span class="edge-relation-tag">{{ edge.relation_type }}</span>
+                        <span class="edge-node">{{ getNodeNameById(edge.to_node_id) }}</span>
+                      </div>
+
+                      <div v-if="edge.note" class="investigation-edge-note">
+                        {{ edge.note }}
+                      </div>
+
+                      <div class="investigation-edge-meta">
+                        {{ formatDate(edge.created_at) }}
+                      </div>
                     </div>
-                    <div v-if="edge.note" class="investigation-edge-note">{{ edge.note }}</div>
+
+                    <div class="investigation-edge-actions">
+                      <button class="mini-action-btn danger" @click="deleteInvestigationEdgeItem(edge)">
+                        Eliminar
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <div v-else class="empty-results">
+                  Este perfil todavía no tiene relaciones.
+                </div>
+              </div><div class="investigation-panel">
+                <div class="investigation-panel-header">
+                  <div class="investigation-panel-title">Relaciones</div>
+                  <button class="advanced-tool-btn compact-btn" @click="openCreateEdgeModal">
+                    Nueva relación
+                  </button>
+                </div>
+
+                <div v-if="(selectedInvestigationGraph?.edges || []).length" class="investigation-edge-list">
+                  <div
+                    v-for="edge in selectedInvestigationGraph.edges"
+                    :key="edge.id"
+                    class="investigation-edge-item"
+                  >
+                    <div class="investigation-edge-main">
+                      <div class="investigation-edge-relation-line">
+                        <span class="edge-node">{{ getNodeNameById(edge.from_node_id) }}</span>
+                        <span class="edge-relation-tag">{{ edge.relation_type }}</span>
+                        <span class="edge-node">{{ getNodeNameById(edge.to_node_id) }}</span>
+                      </div>
+
+                      <div v-if="edge.note" class="investigation-edge-note">
+                        {{ edge.note }}
+                      </div>
+
+                      <div class="investigation-edge-meta">
+                        {{ formatDate(edge.created_at) }}
+                      </div>
+                    </div>
+
+                    <div class="investigation-edge-actions">
+                      <button class="mini-action-btn danger" @click="deleteInvestigationEdgeItem(edge)">
+                        Eliminar
+                      </button>
+                    </div>
                   </div>
                 </div>
 
@@ -935,6 +998,74 @@
                   </button>
                   <button class="advanced-tool-btn" @click="createInvestigationProfile">
                     {{ isEditingInvestigation ? 'Guardar cambios' : 'Crear perfil' }}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div
+          v-if="showEdgeModal"
+          class="search-modal"
+          @click.self="closeEdgeModal"
+        >
+          <div class="modal-content investigation-modal small-modal">
+            <button class="close-btn" @click="closeEdgeModal">✕</button>
+
+            <div class="modal-header">
+              <h2 class="modal-title">
+                Crear <span class="highlight">relación</span>
+              </h2>
+            </div>
+
+            <div class="modal-body">
+              <div class="investigation-form">
+                <label class="investigation-label">Origen</label>
+                <select v-model="investigationEdgeForm.from_node_id" class="search-input">
+                  <option
+                    v-for="node in (selectedInvestigationGraph?.nodes || [])"
+                    :key="node.id"
+                    :value="node.id"
+                  >
+                    {{ getNodeDisplayName(node) }}
+                  </option>
+                </select>
+
+                <label class="investigation-label">Tipo de relación</label>
+                <select v-model="investigationEdgeForm.relation_type" class="search-input">
+                  <option
+                    v-for="rel in investigationRelationTypes"
+                    :key="rel.value"
+                    :value="rel.value"
+                  >
+                    {{ rel.label }}
+                  </option>
+                </select>
+
+                <label class="investigation-label">Destino</label>
+                <select v-model="investigationEdgeForm.to_node_id" class="search-input">
+                  <option
+                    v-for="node in (selectedInvestigationGraph?.nodes || [])"
+                    :key="node.id"
+                    :value="node.id"
+                  >
+                    {{ getNodeDisplayName(node) }}
+                  </option>
+                </select>
+
+                <label class="investigation-label">Nota opcional</label>
+                <textarea
+                  v-model="investigationEdgeForm.note"
+                  class="investigation-textarea"
+                  placeholder="Ej: este username parece pertenecer a esta persona"
+                />
+
+                <div class="investigation-form-actions">
+                  <button class="back-btn-dorks" @click="closeEdgeModal">
+                    Cancelar
+                  </button>
+                  <button class="advanced-tool-btn" @click="saveInvestigationEdge">
+                    {{ savingEdge ? 'Guardando...' : 'Guardar relación' }}
                   </button>
                 </div>
               </div>
@@ -3379,6 +3510,27 @@ const isEditingInvestigation = ref(false)
 const editingInvestigationId = ref(null)
 const deletingInvestigation = ref(false)
 
+const showEdgeModal = ref(false)
+const savingEdge = ref(false)
+const deletingEdge = ref(false)
+
+const investigationEdgeForm = reactive({
+  from_node_id: '',
+  to_node_id: '',
+  relation_type: 'relacionado_con',
+  note: ''
+})
+
+const investigationRelationTypes = [
+  { value: 'usa', label: 'usa' },
+  { value: 'relacionado_con', label: 'relacionado con' },
+  { value: 'aparece_en', label: 'aparece en' },
+  { value: 'registrado_en', label: 'registrado en' },
+  { value: 'expuesto_en', label: 'expuesto en' },
+  { value: 'resuelve_a', label: 'resuelve a' },
+  { value: 'mencionado_en', label: 'mencionado en' }
+]
+
 const investigationForm = reactive({
   name: '',
   description: '',
@@ -3773,6 +3925,122 @@ const groupInvestigationNodes = (nodes = []) => {
   })
 
   return groups
+}
+
+const resetInvestigationEdgeForm = () => {
+  investigationEdgeForm.from_node_id = ''
+  investigationEdgeForm.to_node_id = ''
+  investigationEdgeForm.relation_type = 'relacionado_con'
+  investigationEdgeForm.note = ''
+}
+
+const getNodeDisplayName = (node) => {
+  if (!node) return 'Nodo'
+  if (node.node_type === 'note') {
+    return node.metadata?.content || node.label || 'Nota'
+  }
+  return node.value || node.label || 'Nodo'
+}
+
+const getNodeById = (nodeId) => {
+  return (selectedInvestigationGraph.value?.nodes || []).find(node => node.id === nodeId)
+}
+
+const getNodeNameById = (nodeId) => {
+  return getNodeDisplayName(getNodeById(nodeId))
+}
+
+const openCreateEdgeModal = () => {
+  const nodes = selectedInvestigationGraph.value?.nodes || []
+
+  if (nodes.length < 2) {
+    showNotification('Necesitas al menos 2 datos para crear una relación', false)
+    return
+  }
+
+  resetInvestigationEdgeForm()
+  investigationEdgeForm.from_node_id = nodes[0]?.id || ''
+  investigationEdgeForm.to_node_id = nodes[1]?.id || ''
+  showEdgeModal.value = true
+}
+
+const closeEdgeModal = () => {
+  showEdgeModal.value = false
+  resetInvestigationEdgeForm()
+}
+
+const refreshSelectedInvestigationGraph = async () => {
+  const profileId = selectedInvestigationGraph.value?.profile?.id
+  if (!profileId) return
+
+  const updatedGraph = await api.getInvestigationGraph(profileId)
+  selectedInvestigationGraph.value = {
+    profile: updatedGraph?.profile || selectedInvestigationGraph.value?.profile || null,
+    nodes: Array.isArray(updatedGraph?.nodes) ? updatedGraph.nodes : [],
+    edges: Array.isArray(updatedGraph?.edges) ? updatedGraph.edges : []
+  }
+}
+
+const saveInvestigationEdge = async () => {
+  const profileId = selectedInvestigationGraph.value?.profile?.id
+  if (!profileId) return
+
+  if (!investigationEdgeForm.from_node_id || !investigationEdgeForm.to_node_id) {
+    showNotification('Debes seleccionar origen y destino', false)
+    return
+  }
+
+  if (investigationEdgeForm.from_node_id === investigationEdgeForm.to_node_id) {
+    showNotification('El origen y el destino no pueden ser el mismo', false)
+    return
+  }
+
+  savingEdge.value = true
+
+  try {
+    await api.createInvestigationEdge(profileId, {
+      from_node_id: investigationEdgeForm.from_node_id,
+      to_node_id: investigationEdgeForm.to_node_id,
+      relation_type: investigationEdgeForm.relation_type,
+      note: investigationEdgeForm.note.trim() || null
+    })
+
+    showNotification('Relación creada correctamente', true)
+    closeEdgeModal()
+    await refreshSelectedInvestigationGraph()
+  } catch (error) {
+    console.error('Error creando relación:', error)
+    showNotification(
+      error.response?.data?.detail || 'No se pudo crear la relación',
+      false
+    )
+  } finally {
+    savingEdge.value = false
+  }
+}
+
+const deleteInvestigationEdgeItem = async (edge) => {
+  const profileId = selectedInvestigationGraph.value?.profile?.id
+  if (!profileId || !edge?.id || deletingEdge.value) return
+
+  const confirmed = window.confirm('¿Seguro que quieres eliminar esta relación?')
+  if (!confirmed) return
+
+  deletingEdge.value = true
+
+  try {
+    await api.deleteInvestigationEdge(profileId, edge.id)
+    showNotification('Relación eliminada correctamente', true)
+    await refreshSelectedInvestigationGraph()
+  } catch (error) {
+    console.error('Error eliminando relación:', error)
+    showNotification(
+      error.response?.data?.detail || 'No se pudo eliminar la relación',
+      false
+    )
+  } finally {
+    deletingEdge.value = false
+  }
 }
 </script>
 
@@ -7786,6 +8054,66 @@ button:disabled{ opacity:.6; cursor:not-allowed; }
 @media (max-width: 900px) {
   .investigation-data-groups {
     grid-template-columns: 1fr;
+  }
+}
+
+.investigation-edge-item {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.9rem;
+  border-radius: 14px;
+  background: rgba(255,255,255,0.02);
+  border: 1px solid rgba(0,255,153,0.08);
+}
+
+.investigation-edge-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.investigation-edge-relation-line {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+  align-items: center;
+  margin-bottom: 0.35rem;
+}
+
+.edge-node {
+  color: var(--text-primary);
+  font-weight: 700;
+}
+
+.edge-relation-tag {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.22rem 0.6rem;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #00ff99;
+  background: rgba(0,255,153,0.08);
+  border: 1px solid rgba(0,255,153,0.18);
+}
+
+.investigation-edge-actions {
+  display: flex;
+  align-items: flex-start;
+}
+
+@media (max-width: 900px) {
+  .investigation-edge-item {
+    flex-direction: column;
+  }
+
+  .investigation-edge-actions {
+    width: 100%;
+  }
+
+  .investigation-edge-actions .mini-action-btn {
+    width: 100%;
   }
 }
 </style>
