@@ -7455,9 +7455,6 @@ button:disabled{ opacity:.6; cursor:not-allowed; }
   justify-content: flex-end;
   gap: 0.75rem;
   margin-top: 0.5rem;
-  position: sticky;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.92);
   padding-top: 1rem;
 }
 
