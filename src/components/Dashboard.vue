@@ -825,7 +825,7 @@
                     </div>
 
                     <div class="investigation-edge-actions">
-                      <button class="mini-action-btn danger" @click="deleteInvestigationEdgeItem(edge)">
+                      <button class="mini-action-btn danger-btn" @click="deleteInvestigationEdgeItem(edge)">
                         Eliminar
                       </button>
                     </div>
@@ -8074,5 +8074,9 @@ button:disabled{ opacity:.6; cursor:not-allowed; }
   .investigation-edge-actions .mini-action-btn {
     width: 100%;
   }
+}
+
+.compact-btn{
+  margin-bottom: 0.5rem;
 }
 </style>
