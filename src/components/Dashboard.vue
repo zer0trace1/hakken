@@ -689,7 +689,7 @@
 
               <div class="investigation-detail-actions">
                 <button
-                  class="edit-btn-investigations"
+                  class="advanced-tool-btn"
                   @click="openEditInvestigationModal(selectedInvestigationGraph.profile)"
                 >
                   Editar perfil
