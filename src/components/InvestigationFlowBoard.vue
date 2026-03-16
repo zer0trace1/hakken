@@ -6,6 +6,7 @@ import { Controls } from '@vue-flow/controls'
 
 import '@vue-flow/core/dist/style.css'
 import '@vue-flow/core/dist/theme-default.css'
+import HakkenFlowNode from '@/components/HakkenFlowNode.vue'
 
 const props = defineProps({
   graph: {
@@ -16,6 +17,10 @@ const props = defineProps({
 
 const nodes = ref([])
 const edges = ref([])
+
+const nodeTypes = {
+  hakken: HakkenFlowNode
+}
 
 const typeOrder = ['person', 'username', 'email', 'phone', 'domain', 'ip', 'note']
 
@@ -59,7 +64,7 @@ const buildFlow = (graph) => {
     grouped[type].forEach((node, index) => {
       flowNodes.push({
         id: node.id,
-        type: 'default',
+        type: 'hakken',
         position: {
           x: typeX[type] || 80,
           y: startY + index * gapY
@@ -114,29 +119,15 @@ watch(
 <template>
   <div class="flow-shell">
     <VueFlow
-    v-model:nodes="nodes"
-    v-model:edges="edges"
-    fit-view-on-init
-    class="hakken-flow"
-    :min-zoom="0.2"
-    :max-zoom="1.5"
-    :default-viewport="{ zoom: 0.75 }"
+      v-model:nodes="nodes"
+      v-model:edges="edges"
+      :node-types="nodeTypes"
+      fit-view-on-init
+      class="hakken-flow"
+      :min-zoom="0.2"
+      :max-zoom="1.5"
+      :default-viewport="{ zoom: 0.75 }"
     >
-        <template #node-default="nodeProps">
-            <div
-            class="hakken-flow-node"
-            :class="`hakken-flow-node-${nodeProps.data.raw.node_type}`"
-            :title="nodeProps.data.fullText"
-            >
-                <div class="hakken-flow-node-title">
-                    {{ nodeProps.data.raw.node_type.toUpperCase() }}
-                </div>
-                <div class="hakken-flow-node-text">
-                    {{ nodeProps.data.text }}
-                </div>
-            </div>
-        </template>
-
         <Background :gap="28" :size="1" color="rgba(0,255,153,0.08)" />
         <!--<Controls position="bottom-left" />-->
     </VueFlow>
