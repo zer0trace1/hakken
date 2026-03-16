@@ -12,7 +12,14 @@ defineProps({
 <template>
   <div
     class="hakken-node-card"
-    :class="`hakken-node-card-${data.raw.node_type}`"
+    :class="[
+        `hakken-node-card-${data.raw.node_type}`,
+        {
+            'is-selected': data.selected,
+            'is-connected': data.connected,
+            'is-dimmed': data.dimmed
+        }
+    ]"
     :title="data.fullText"
   >
     <Handle
@@ -119,5 +126,33 @@ defineProps({
 .hakken-node-card-note {
   border-color: rgba(180,120,255,0.40);
   box-shadow: 0 0 18px rgba(180,120,255,0.10);
+}
+
+.hakken-node-card {
+  transition:
+    box-shadow 0.2s ease,
+    border-color 0.2s ease,
+    opacity 0.2s ease,
+    transform 0.2s ease,
+    filter 0.2s ease;
+  cursor: pointer;
+}
+
+.hakken-node-card.is-selected {
+  transform: scale(1.03);
+  box-shadow:
+    0 0 0 1px rgba(255,255,255,0.08),
+    0 0 28px rgba(0,255,153,0.28);
+  filter: brightness(1.08);
+}
+
+.hakken-node-card.is-connected {
+  box-shadow: 0 0 22px rgba(0,255,153,0.16);
+  filter: brightness(1.02);
+}
+
+.hakken-node-card.is-dimmed {
+  opacity: 0.32;
+  filter: saturate(0.7);
 }
 </style>

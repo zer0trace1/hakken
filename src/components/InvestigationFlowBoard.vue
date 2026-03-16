@@ -18,6 +18,7 @@ const props = defineProps({
 const nodes = ref([])
 const edges = ref([])
 const { updateNodeInternals } = useVueFlow()
+const selectedNodeId = ref(null)
 
 const nodeTypes = {
   hakken: HakkenFlowNode
@@ -46,6 +47,68 @@ const getNodeText = (node) => {
 const truncate = (text, max = 28) => {
   if (!text) return ''
   return text.length > max ? `${text.slice(0, max)}…` : text
+}
+
+const resetHighlightState = () => {
+  nodes.value = nodes.value.map(node => ({
+    ...node,
+    data: {
+      ...node.data,
+      selected: false,
+      connected: false,
+      dimmed: false
+    }
+  }))
+
+  edges.value = edges.value.map(edge => ({
+    ...edge,
+    class: 'hakken-flow-edge',
+    animated: false
+  }))
+}
+
+const applyHighlightState = () => {
+  if (!selectedNodeId.value) {
+    resetHighlightState()
+    return
+  }
+
+  const connectedEdgeIds = new Set()
+  const connectedNodeIds = new Set([selectedNodeId.value])
+
+  edges.value.forEach(edge => {
+    if (edge.source === selectedNodeId.value || edge.target === selectedNodeId.value) {
+      connectedEdgeIds.add(edge.id)
+      connectedNodeIds.add(edge.source)
+      connectedNodeIds.add(edge.target)
+    }
+  })
+
+  nodes.value = nodes.value.map(node => ({
+    ...node,
+    data: {
+      ...node.data,
+      selected: node.id === selectedNodeId.value,
+      connected: node.id !== selectedNodeId.value && connectedNodeIds.has(node.id),
+      dimmed: !connectedNodeIds.has(node.id)
+    }
+  }))
+
+  edges.value = edges.value.map(edge => ({
+    ...edge,
+    class: connectedEdgeIds.has(edge.id)
+      ? 'hakken-flow-edge is-active'
+      : 'hakken-flow-edge is-dimmed',
+    animated: connectedEdgeIds.has(edge.id)
+  }))
+}
+
+const onNodeClick = ({ node }) => {
+  selectedNodeId.value = node?.id || null
+}
+
+const onPaneClick = () => {
+  selectedNodeId.value = null
 }
 
 const buildFlow = async (graph) => {
@@ -109,6 +172,7 @@ const buildFlow = async (graph) => {
 
   await nextTick()
   updateNodeInternals(flowNodes.map(node => node.id))
+  applyHighlightState()
 }
 
 watch(
@@ -118,6 +182,10 @@ watch(
   },
   { immediate: true, deep: true }
 )
+
+watch(selectedNodeId, () => {
+  applyHighlightState()
+})
 </script>
 
 <template>
@@ -131,6 +199,8 @@ watch(
       :min-zoom="0.2"
       :max-zoom="1.5"
       :default-viewport="{ zoom: 0.75 }"
+      @node-click="onNodeClick"
+      @pane-click="onPaneClick"
     >
         <Background :gap="28" :size="1" color="rgba(0,255,153,0.08)" />
         <!--<Controls position="bottom-left" />-->
@@ -252,5 +322,37 @@ watch(
   background: transparent !important;
   border: none !important;
   box-shadow: none !important;
+}
+
+:deep(.vue-flow__edge-path) {
+  transition:
+    stroke 0.2s ease,
+    opacity 0.2s ease,
+    filter 0.2s ease,
+    stroke-width 0.2s ease;
+}
+
+:deep(.hakken-flow-edge.is-active .vue-flow__edge-path) {
+  stroke: rgba(0,255,153,0.85);
+  stroke-width: 3;
+  filter: drop-shadow(0 0 8px rgba(0,255,153,0.35));
+}
+
+:deep(.hakken-flow-edge.is-dimmed .vue-flow__edge-path) {
+  opacity: 0.16;
+  stroke: rgba(0,255,153,0.18);
+}
+
+:deep(.hakken-flow-edge.is-dimmed .vue-flow__edge-text),
+:deep(.hakken-flow-edge.is-dimmed .vue-flow__edge-textbg) {
+  opacity: 0.18;
+}
+
+:deep(.hakken-flow-edge.is-active .vue-flow__edge-textbg) {
+  stroke: rgba(0,255,153,0.35);
+}
+
+:deep(.hakken-flow-edge.is-active .vue-flow__edge-text) {
+  fill: #d6fff0;
 }
 </style>
