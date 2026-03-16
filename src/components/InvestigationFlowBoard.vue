@@ -1,6 +1,6 @@
 <script setup>
-import { ref, watch } from 'vue'
-import { VueFlow, Position } from '@vue-flow/core'
+import { ref, watch, nextTick } from 'vue'
+import { VueFlow, Position, useVueFlow } from '@vue-flow/core'
 import { Background } from '@vue-flow/background'
 import { Controls } from '@vue-flow/controls'
 
@@ -17,6 +17,7 @@ const props = defineProps({
 
 const nodes = ref([])
 const edges = ref([])
+const { updateNodeInternals } = useVueFlow()
 
 const nodeTypes = {
   hakken: HakkenFlowNode
@@ -47,7 +48,7 @@ const truncate = (text, max = 28) => {
   return text.length > max ? `${text.slice(0, max)}…` : text
 }
 
-const buildFlow = (graph) => {
+const buildFlow = async (graph) => {
   const rawNodes = graph?.nodes || []
   const rawEdges = graph?.edges || []
 
@@ -105,12 +106,15 @@ const buildFlow = (graph) => {
 
   nodes.value = flowNodes
   edges.value = flowEdges
+
+  await nextTick()
+  updateNodeInternals(flowNodes.map(node => node.id))
 }
 
 watch(
   () => props.graph,
-  (graph) => {
-    buildFlow(graph)
+  async (graph) => {
+    await buildFlow(graph)
   },
   { immediate: true, deep: true }
 )
@@ -153,17 +157,6 @@ watch(
     rgba(255,255,255,0.01);
 }
 
-:deep(.vue-flow__node.hakken-flow-node) {
-  min-width: 170px;
-  max-width: 220px;
-  border-radius: 14px;
-  padding: 10px 12px;
-  background: rgba(7, 15, 18, 0.96);
-  color: #fff;
-  box-shadow: 0 0 22px rgba(0,255,153,0.10);
-  border: 1px solid rgba(0,255,153,0.14);
-}
-
 :deep(.vue-flow__node.hakken-flow-node-person) {
   border-color: rgba(0,255,153,0.38);
   box-shadow: 0 0 18px rgba(0,255,153,0.12);
@@ -197,12 +190,6 @@ watch(
 :deep(.vue-flow__node.hakken-flow-node-note) {
   border-color: rgba(180,120,255,0.40);
   box-shadow: 0 0 18px rgba(180,120,255,0.10);
-}
-
-:deep(.vue-flow__node-default) {
-  padding: 0;
-  background: transparent;
-  border: none;
 }
 
 :deep(.vue-flow__node-default .vue-flow__node-default-label) {
@@ -264,18 +251,10 @@ watch(
   border-bottom: 1px solid rgba(0,255,153,0.08);
 }
 
-:deep(.hakken-flow-node-title) {
-  margin-bottom: 4px;
-  font-size: 11px;
-  font-weight: 800;
-  letter-spacing: 0.04em;
-  color: #00ff99;
-}
-
-:deep(.hakken-flow-node-text) {
-  color: var(--text-primary, #ffffff);
-  font-size: 14px;
-  line-height: 1.35;
-  word-break: break-word;
+:deep(.vue-flow__node-hakken) {
+  padding: 0 !important;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
 }
 </style>

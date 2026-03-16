@@ -54,8 +54,9 @@ defineProps({
 }
 
 .hakken-node-card {
-  min-width: 170px;
-  max-width: 220px;
+  width: 180px;
+  min-height: 58px;
+  box-sizing: border-box;
   border-radius: 14px;
   padding: 10px 12px;
   background: rgba(7, 15, 18, 0.96);
