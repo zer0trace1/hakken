@@ -742,7 +742,10 @@
               <div class="investigation-panel-title">Panel de conexiones</div>
 
               <div v-if="(selectedInvestigationGraph?.nodes || []).length">
-                <InvestigationFlowBoard :graph="selectedInvestigationGraph" />
+                <InvestigationFlowBoard
+                  :graph="selectedInvestigationGraph"
+                  @persist-node-position="persistInvestigationNodePosition"
+                />
               </div>
 
               <div v-else class="empty-results">
@@ -4114,6 +4117,43 @@ const graphWidth = computed(() => 1450)
 
 const getGraphNodeClass = (type) => {
   return `graph-node-${type || 'default'}`
+}
+
+const persistInvestigationNodePosition = async ({ nodeId, position }) => {
+  const profileId = selectedInvestigationGraph.value?.profile?.id
+  if (!profileId || !nodeId || !position) return
+
+  const rawNode = (selectedInvestigationGraph.value?.nodes || []).find(node => node.id === nodeId)
+  if (!rawNode) return
+
+  const mergedMetadata = {
+    ...(rawNode.metadata || {}),
+    graph_position: {
+      x: position.x,
+      y: position.y
+    }
+  }
+
+  try {
+    await api.updateInvestigationNode(profileId, nodeId, {
+      metadata: mergedMetadata
+    })
+
+    // sincroniza el estado local para no depender de recarga
+    selectedInvestigationGraph.value = {
+      ...selectedInvestigationGraph.value,
+      nodes: (selectedInvestigationGraph.value.nodes || []).map(node =>
+        node.id === nodeId
+          ? {
+              ...node,
+              metadata: mergedMetadata
+            }
+          : node
+      )
+    }
+  } catch (error) {
+    console.error('Error guardando posición del nodo:', error)
+  }
 }
 </script>
 

@@ -20,6 +20,8 @@ const edges = ref([])
 const { updateNodeInternals } = useVueFlow()
 const selectedNodeId = ref(null)
 
+const emit = defineEmits(['persist-node-position'])
+
 const nodeTypes = {
   hakken: HakkenFlowNode
 }
@@ -180,8 +182,8 @@ const buildFlow = async (graph) => {
         id: node.id,
         type: 'hakken',
         position: {
-          x: typeX[type] || 80,
-          y: startY + index * gapY
+          x: node.metadata?.graph_position?.x ?? (typeX[type] || 80),
+          y: node.metadata?.graph_position?.y ?? (startY + index * gapY)
         },
         sourcePosition: Position.Right,
         targetPosition: Position.Left,
@@ -225,6 +227,18 @@ const buildFlow = async (graph) => {
   applyHighlightState()
 }
 
+const handleNodeDragStop = ({ node }) => {
+  if (!node?.id || !node?.position) return
+
+  emit('persist-node-position', {
+    nodeId: node.id,
+    position: {
+      x: Math.round(node.position.x),
+      y: Math.round(node.position.y)
+    }
+  })
+}
+
 watch(
   () => props.graph,
   async (graph) => {
@@ -252,6 +266,7 @@ watch(selectedNodeId, () => {
         :default-viewport="{ zoom: 0.75 }"
         @node-click="onNodeClick"
         @pane-click="onPaneClick"
+        @node-drag-stop="handleNodeDragStop"
       >
         <Background :gap="28" :size="1" color="rgba(0,255,153,0.08)" />
       </VueFlow>
