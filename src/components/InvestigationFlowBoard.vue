@@ -206,10 +206,6 @@ watch(
   color: #00ff99;
 }
 
-:deep(.hakken-flow-node) {
-  position: relative;
-}
-
 :deep(.hakken-flow-node) .node-inner-title {
   font-size: 11px;
 }
