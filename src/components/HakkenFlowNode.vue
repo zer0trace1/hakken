@@ -18,7 +18,7 @@ defineProps({
     <Handle
       type="target"
       :position="Position.Left"
-      class="hakken-node-handle"
+      class="hakken-node-handle hakken-node-handle-target"
     />
 
     <div class="hakken-node-title">
@@ -32,24 +32,12 @@ defineProps({
     <Handle
       type="source"
       :position="Position.Right"
-      class="hakken-node-handle"
+      class="hakken-node-handle hakken-node-handle-target"
     />
   </div>
 </template>
 
 <style scoped>
-.hakken-node-card {
-  min-width: 170px;
-  max-width: 220px;
-  border-radius: 14px;
-  padding: 10px 12px;
-  background: rgba(7, 15, 18, 0.96);
-  color: #fff;
-  border: 1px solid rgba(0,255,153,0.14);
-  box-shadow: 0 0 22px rgba(0,255,153,0.10);
-  position: relative;
-}
-
 .hakken-node-title {
   margin-bottom: 4px;
   font-size: 11px;
@@ -65,12 +53,36 @@ defineProps({
   word-break: break-word;
 }
 
+.hakken-node-card {
+  min-width: 170px;
+  max-width: 220px;
+  border-radius: 14px;
+  padding: 10px 12px;
+  background: rgba(7, 15, 18, 0.96);
+  color: #fff;
+  border: 1px solid rgba(0,255,153,0.14);
+  box-shadow: 0 0 22px rgba(0,255,153,0.10);
+  position: relative;
+  overflow: visible;
+}
+
 .hakken-node-handle {
   width: 10px;
   height: 10px;
   background: #00ff99;
-  border: 2px solid rgba(0, 0, 0, 0.85);
+  border: 2px solid rgba(0, 0, 0, 0.9);
   box-shadow: 0 0 10px rgba(0,255,153,0.35);
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 20;
+}
+
+.hakken-node-handle-target {
+  left: -7px;
+}
+
+.hakken-node-handle-source {
+  right: -7px;
 }
 
 .hakken-node-card-person {
