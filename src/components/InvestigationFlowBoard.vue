@@ -1,5 +1,5 @@
 <script setup>
-import { ref, watch, nextTick } from 'vue'
+import { ref, watch, nextTick, computed } from 'vue'
 import { VueFlow, Position, useVueFlow } from '@vue-flow/core'
 import { Background } from '@vue-flow/background'
 import { Controls } from '@vue-flow/controls'
@@ -111,6 +111,56 @@ const onPaneClick = () => {
   selectedNodeId.value = null
 }
 
+const getRawNodeById = (nodeId) => {
+  return (props.graph?.nodes || []).find(node => node.id === nodeId) || null
+}
+
+const formatGraphDate = (value) => {
+  if (!value) return 'Sin fecha'
+  try {
+    return new Date(value).toLocaleString('es-ES', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    })
+  } catch {
+    return value
+  }
+}
+
+const selectedRawNode = computed(() => {
+  if (!selectedNodeId.value) return null
+  return getRawNodeById(selectedNodeId.value)
+})
+
+const selectedNodeRelations = computed(() => {
+  if (!selectedNodeId.value) return []
+
+  const rawEdges = props.graph?.edges || []
+
+  return rawEdges
+    .filter(edge =>
+      edge.from_node_id === selectedNodeId.value ||
+      edge.to_node_id === selectedNodeId.value
+    )
+    .map(edge => {
+      const isOutgoing = edge.from_node_id === selectedNodeId.value
+      const otherNodeId = isOutgoing ? edge.to_node_id : edge.from_node_id
+      const otherNode = getRawNodeById(otherNodeId)
+
+      return {
+        id: edge.id,
+        relation: edge.relation_type || 'relacionado_con',
+        direction: isOutgoing ? 'salida' : 'entrada',
+        otherNodeType: otherNode?.node_type || 'nodo',
+        otherNodeText: getNodeText(otherNode),
+        note: edge.note || ''
+      }
+    })
+})
+
 const buildFlow = async (graph) => {
   const rawNodes = graph?.nodes || []
   const rawEdges = graph?.edges || []
@@ -189,26 +239,102 @@ watch(selectedNodeId, () => {
 </script>
 
 <template>
-  <div class="flow-shell">
-    <VueFlow
-      v-model:nodes="nodes"
-      v-model:edges="edges"
-      :node-types="nodeTypes"
-      fit-view-on-init
-      class="hakken-flow"
-      :min-zoom="0.2"
-      :max-zoom="1.5"
-      :default-viewport="{ zoom: 0.75 }"
-      @node-click="onNodeClick"
-      @pane-click="onPaneClick"
-    >
+  <div class="flow-layout">
+    <div class="flow-shell">
+      <VueFlow
+        v-model:nodes="nodes"
+        v-model:edges="edges"
+        :node-types="nodeTypes"
+        fit-view-on-init
+        class="hakken-flow"
+        :min-zoom="0.2"
+        :max-zoom="1.5"
+        :default-viewport="{ zoom: 0.75 }"
+        @node-click="onNodeClick"
+        @pane-click="onPaneClick"
+      >
         <Background :gap="28" :size="1" color="rgba(0,255,153,0.08)" />
-        <!--<Controls position="bottom-left" />-->
-    </VueFlow>
+      </VueFlow>
+    </div>
+
+    <aside class="flow-sidepanel" :class="{ empty: !selectedRawNode }">
+      <template v-if="selectedRawNode">
+        <div class="flow-sidepanel-kicker">Nodo seleccionado</div>
+
+        <div class="flow-sidepanel-type">
+          {{ selectedRawNode.node_type.toUpperCase() }}
+        </div>
+
+        <div class="flow-sidepanel-value">
+          {{ getNodeText(selectedRawNode) }}
+        </div>
+
+        <div v-if="selectedRawNode.node_type === 'note' && selectedRawNode.metadata?.content" class="flow-sidepanel-note">
+          {{ selectedRawNode.metadata.content }}
+        </div>
+
+        <div class="flow-sidepanel-meta">
+          Creado: {{ formatGraphDate(selectedRawNode.created_at) }}
+        </div>
+
+        <div class="flow-sidepanel-section-title">
+          Relaciones conectadas
+        </div>
+
+        <div v-if="selectedNodeRelations.length" class="flow-sidepanel-relations">
+          <div
+            v-for="relation in selectedNodeRelations"
+            :key="relation.id"
+            class="flow-sidepanel-relation-item"
+          >
+            <div class="flow-sidepanel-relation-top">
+              <span class="flow-sidepanel-direction">
+                {{ relation.direction === 'salida' ? '→' : '←' }}
+              </span>
+              <span class="flow-sidepanel-relation-tag">
+                {{ relation.relation }}
+              </span>
+            </div>
+
+            <div class="flow-sidepanel-relation-node-type">
+              {{ relation.otherNodeType.toUpperCase() }}
+            </div>
+
+            <div class="flow-sidepanel-relation-node-text">
+              {{ relation.otherNodeText }}
+            </div>
+
+            <div v-if="relation.note" class="flow-sidepanel-relation-note">
+              {{ relation.note }}
+            </div>
+          </div>
+        </div>
+
+        <div v-else class="flow-sidepanel-empty-inner">
+          Este nodo no tiene relaciones todavía.
+        </div>
+      </template>
+
+      <template v-else>
+        <div class="flow-sidepanel-empty">
+          <div class="flow-sidepanel-empty-title">Panel lateral</div>
+          <div class="flow-sidepanel-empty-text">
+            Haz clic en un nodo del grafo para ver sus detalles y sus conexiones.
+          </div>
+        </div>
+      </template>
+    </aside>
   </div>
 </template>
 
 <style scoped>
+.flow-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 320px;
+  gap: 1rem;
+  align-items: stretch;
+}
+
 .flow-shell {
   width: 100%;
   height: 620px;
@@ -218,7 +344,157 @@ watch(selectedNodeId, () => {
   background:
     radial-gradient(circle at top right, rgba(0,255,153,0.08), transparent 24%),
     radial-gradient(circle at bottom left, rgba(0,180,255,0.05), transparent 20%),
-    rgba(255,255,255,0.015)
+    rgba(255,255,255,0.015);
+}
+
+.flow-sidepanel {
+  height: 620px;
+  overflow-y: auto;
+  border-radius: 18px;
+  border: 1px solid rgba(0,255,153,0.14);
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.035), rgba(255,255,255,0.02));
+  padding: 1rem;
+  box-sizing: border-box;
+}
+
+.flow-sidepanel-kicker {
+  color: #00ff99;
+  font-size: 0.8rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.55rem;
+}
+
+.flow-sidepanel-type {
+  color: var(--text-primary, #fff);
+  font-size: 1.1rem;
+  font-weight: 800;
+  margin-bottom: 0.5rem;
+}
+
+.flow-sidepanel-value {
+  color: #ffffff;
+  font-size: 1rem;
+  line-height: 1.5;
+  word-break: break-word;
+  margin-bottom: 0.75rem;
+}
+
+.flow-sidepanel-note {
+  color: var(--text-secondary, #b7b7b7);
+  line-height: 1.55;
+  margin-bottom: 0.75rem;
+  padding: 0.75rem;
+  border-radius: 12px;
+  background: rgba(180,120,255,0.06);
+  border: 1px solid rgba(180,120,255,0.16);
+}
+
+.flow-sidepanel-meta {
+  color: var(--text-secondary, #a1a1a1);
+  font-size: 0.88rem;
+  margin-bottom: 1rem;
+}
+
+.flow-sidepanel-section-title {
+  color: #00ff99;
+  font-size: 0.92rem;
+  font-weight: 800;
+  margin-bottom: 0.75rem;
+}
+
+.flow-sidepanel-relations {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.flow-sidepanel-relation-item {
+  padding: 0.8rem;
+  border-radius: 14px;
+  background: rgba(255,255,255,0.02);
+  border: 1px solid rgba(0,255,153,0.08);
+}
+
+.flow-sidepanel-relation-top {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin-bottom: 0.4rem;
+}
+
+.flow-sidepanel-direction {
+  color: #9ef7d0;
+  font-weight: 800;
+}
+
+.flow-sidepanel-relation-tag {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.76rem;
+  font-weight: 800;
+  color: #00ff99;
+  background: rgba(0,255,153,0.08);
+  border: 1px solid rgba(0,255,153,0.16);
+}
+
+.flow-sidepanel-relation-node-type {
+  color: #9ef7d0;
+  font-size: 0.76rem;
+  font-weight: 800;
+  margin-bottom: 0.25rem;
+}
+
+.flow-sidepanel-relation-node-text {
+  color: #ffffff;
+  line-height: 1.45;
+  word-break: break-word;
+}
+
+.flow-sidepanel-relation-note {
+  color: var(--text-secondary, #a1a1a1);
+  font-size: 0.88rem;
+  margin-top: 0.45rem;
+}
+
+.flow-sidepanel-empty,
+.flow-sidepanel-empty-inner {
+  color: var(--text-secondary, #a1a1a1);
+  line-height: 1.55;
+}
+
+.flow-sidepanel-empty {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.flow-sidepanel-empty-title {
+  color: #00ff99;
+  font-size: 1rem;
+  font-weight: 800;
+  margin-bottom: 0.5rem;
+}
+
+.flow-sidepanel-empty-text {
+  color: var(--text-secondary, #a1a1a1);
+}
+
+@media (max-width: 1100px) {
+  .flow-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .flow-sidepanel {
+    height: auto;
+    min-height: 240px;
+  }
 }
 
 :deep(.hakken-flow) {
