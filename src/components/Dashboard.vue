@@ -696,6 +696,13 @@
                 </button>
 
                 <button
+                  class="advanced-tool-btn"
+                  @click="exportInvestigationToJson"
+                >
+                  Exportar JSON
+                </button>
+
+                <button
                   class="danger-btn"
                   @click="deleteInvestigationProfile(selectedInvestigationGraph.profile)"
                   :disabled="deletingInvestigation"
@@ -4154,6 +4161,49 @@ const persistInvestigationNodePosition = async ({ nodeId, position }) => {
   } catch (error) {
     console.error('Error guardando posición del nodo:', error)
   }
+}
+
+const exportInvestigationToJson = () => {
+  const graph = selectedInvestigationGraph.value
+  if (!graph?.profile) {
+    showNotification('No hay ninguna investigación cargada para exportar', false)
+    return
+  }
+
+  const safeName = (graph.profile.name || 'investigation')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+
+  const now = new Date()
+  const stamp = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}_${String(now.getHours()).padStart(2, '0')}-${String(now.getMinutes()).padStart(2, '0')}`
+
+  const payload = {
+    exported_at: now.toISOString(),
+    format_version: '1.0',
+    source: 'HAKKEN',
+    profile: graph.profile,
+    nodes: graph.nodes || [],
+    edges: graph.edges || []
+  }
+
+  const blob = new Blob(
+    [JSON.stringify(payload, null, 2)],
+    { type: 'application/json;charset=utf-8' }
+  )
+
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = `${safeName || 'investigation'}_${stamp}.json`
+  document.body.appendChild(a)
+  a.click()
+  document.body.removeChild(a)
+  URL.revokeObjectURL(url)
+
+  showNotification('Investigación exportada a JSON', true)
 }
 </script>
 
