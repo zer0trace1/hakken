@@ -695,12 +695,23 @@
                   Editar perfil
                 </button>
 
-                <button
-                  class="advanced-tool-btn"
-                  @click="exportInvestigationToJson"
-                >
-                  Exportar JSON
-                </button>
+                <div class="export-dropdown" @click.stop>
+                  <button
+                    class="advanced-tool-btn"
+                    @click="toggleExportMenu"
+                  >
+                    Exportar
+                  </button>
+
+                  <div v-if="showExportMenu" class="export-dropdown-menu">
+                    <button class="export-dropdown-item" @click="exportInvestigationToJson">
+                      JSON
+                    </button>
+                    <button class="export-dropdown-item" @click="exportInvestigationToPdf">
+                      PDF
+                    </button>
+                  </div>
+                </div>
 
                 <button
                   class="danger-btn"
@@ -721,7 +732,7 @@
             <p>{{ investigationGraphError }}</p>
           </div>
 
-          <div v-else class="investigation-detail-layout">
+          <div v-else class="investigation-detail-layout" @click="closeExportMenu">
             <div class="investigation-summary-grid">
               <div class="investigation-summary-card">
                 <div class="investigation-summary-label">Estado</div>
@@ -2102,6 +2113,8 @@ import iconPhone from '@/assets/hakken-logo-movil.png'
 import iconIP from '@/assets/hakken-logo-ip.png'
 import iconDomain from '@/assets/hakken-logo-dominio.png'
 import InvestigationFlowBoard from '@/components/InvestigationFlowBoard.vue'
+import { jsPDF } from 'jspdf'
+import autoTable from 'jspdf-autotable';
 
 /*
 **************************************************************************
@@ -3495,6 +3508,7 @@ const deletingInvestigation = ref(false)
 const showEdgeModal = ref(false)
 const savingEdge = ref(false)
 const deletingEdge = ref(false)
+const showExportMenu = ref(false)
 
 const investigationEdgeForm = reactive({
   from_node_id: '',
@@ -4204,6 +4218,225 @@ const exportInvestigationToJson = () => {
   URL.revokeObjectURL(url)
 
   showNotification('Investigación exportada a JSON', true)
+  closeExportMenu()
+}
+
+const exportInvestigationToPdf = () => {
+  const graph = selectedInvestigationGraph.value
+  if (!graph?.profile) {
+    showNotification('No hay ninguna investigación cargada para exportar', false)
+    return
+  }
+
+  const profile = graph.profile
+  const nodes = graph.nodes || []
+  const edges = graph.edges || []
+
+  const safeName = (profile.name || 'investigation')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+
+  const now = new Date()
+  const stamp = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}_${String(now.getHours()).padStart(2, '0')}-${String(now.getMinutes()).padStart(2, '0')}`
+
+  const doc = new jsPDF({
+    orientation: 'p',
+    unit: 'mm',
+    format: 'a4'
+  })
+
+  const grouped = groupNodesForExport(nodes)
+  const marginX = 14
+  let y = 18
+
+  const pageWidth = doc.internal.pageSize.getWidth()
+
+  const addSectionTitle = (title) => {
+    if (y > 260) {
+      doc.addPage()
+      y = 18
+    }
+
+    doc.setFont('helvetica', 'bold')
+    doc.setFontSize(13)
+    doc.text(title, marginX, y)
+    y += 6
+  }
+
+  const addParagraph = (text) => {
+    if (!text) return
+    doc.setFont('helvetica', 'normal')
+    doc.setFontSize(10)
+    const lines = doc.splitTextToSize(String(text), pageWidth - marginX * 2)
+    doc.text(lines, marginX, y)
+    y += lines.length * 5 + 2
+  }
+
+  const addSimpleMetaLine = (label, value) => {
+    doc.setFont('helvetica', 'bold')
+    doc.setFontSize(10)
+    doc.text(`${label}:`, marginX, y)
+
+    doc.setFont('helvetica', 'normal')
+    const text = value ? String(value) : '—'
+    doc.text(text, marginX + 28, y)
+    y += 6
+  }
+
+  const addTable = (title, rows, columns = ['Valor', 'Fecha']) => {
+    if (!rows.length) return
+
+    addSectionTitle(title)
+
+    autoTable(doc, {
+      startY: y,
+      head: [columns],
+      body: rows,
+      theme: 'grid',
+      styles: {
+        fontSize: 9,
+        cellPadding: 2.5,
+        overflow: 'linebreak',
+        lineColor: [220, 220, 220],
+        lineWidth: 0.1
+      },
+      headStyles: {
+        fillColor: [15, 15, 15],
+        textColor: [255, 255, 255],
+        fontStyle: 'bold'
+      },
+      margin: { left: marginX, right: marginX }
+    })
+
+    y = (doc.lastAutoTable?.finalY || y) + 8
+  }
+
+  doc.setFont('helvetica', 'bold')
+  doc.setFontSize(18)
+  doc.text(profile.name || 'Investigación', marginX, y)
+  y += 8
+
+  doc.setFont('helvetica', 'normal')
+  doc.setFontSize(10)
+  doc.text(`Exportado desde HAKKEN · ${now.toLocaleString('es-ES')}`, marginX, y)
+  y += 8
+
+  addSimpleMetaLine('Estado', getInvestigationStatusLabel(profile.status))
+  addSimpleMetaLine('Tags', (profile.tags || []).join(', ') || '—')
+
+  if (profile.description) {
+    addSectionTitle('Descripción')
+    addParagraph(profile.description)
+  }
+
+  addSectionTitle('Resumen')
+  addParagraph(`Nodos: ${nodes.length} · Relaciones: ${edges.length}`)
+
+  addTable(
+    'Nombres y apellidos',
+    grouped.person.map(node => [getNodeExportValue(node), formatDate(node.created_at)])
+  )
+
+  addTable(
+    'Usernames',
+    grouped.username.map(node => [getNodeExportValue(node), formatDate(node.created_at)])
+  )
+
+  addTable(
+    'Emails',
+    grouped.email.map(node => [getNodeExportValue(node), formatDate(node.created_at)])
+  )
+
+  addTable(
+    'Teléfonos',
+    grouped.phone.map(node => [getNodeExportValue(node), formatDate(node.created_at)])
+  )
+
+  addTable(
+    'IPs',
+    grouped.ip.map(node => [getNodeExportValue(node), formatDate(node.created_at)])
+  )
+
+  addTable(
+    'Dominios',
+    grouped.domain.map(node => [getNodeExportValue(node), formatDate(node.created_at)])
+  )
+
+  addTable(
+    'Notas',
+    grouped.note.map(node => [getNodeExportValue(node), formatDate(node.created_at)])
+  )
+
+  if (edges.length) {
+    addSectionTitle('Relaciones')
+
+    const edgeRows = edges.map(edge => {
+      const fromNode = nodes.find(n => n.id === edge.from_node_id)
+      const toNode = nodes.find(n => n.id === edge.to_node_id)
+
+      return [
+        getNodeExportValue(fromNode),
+        edge.relation_type || 'relacionado_con',
+        getNodeExportValue(toNode),
+        edge.note || '—'
+      ]
+    })
+
+    autoTable(doc, {
+      startY: y,
+      head: [['Origen', 'Relación', 'Destino', 'Nota']],
+      body: edgeRows,
+      theme: 'grid',
+      styles: {
+        fontSize: 9,
+        cellPadding: 2.5,
+        overflow: 'linebreak',
+        lineColor: [220, 220, 220],
+        lineWidth: 0.1
+      },
+      headStyles: {
+        fillColor: [15, 15, 15],
+        textColor: [255, 255, 255],
+        fontStyle: 'bold'
+      },
+      margin: { left: marginX, right: marginX }
+    })
+  }
+
+  doc.save(`${safeName || 'investigation'}_${stamp}.pdf`)
+  showNotification('Investigación exportada a PDF', true)
+  closeExportMenu()
+}
+
+const toggleExportMenu = () => {
+  showExportMenu.value = !showExportMenu.value
+}
+
+const closeExportMenu = () => {
+  showExportMenu.value = false
+}
+
+const getNodeExportValue = (node) => {
+  if (!node) return ''
+  if (node.node_type === 'note') {
+    return node.metadata?.content || node.value || node.label || ''
+  }
+  return node.value || node.label || ''
+}
+
+const groupNodesForExport = (nodes = []) => {
+  return {
+    person: nodes.filter(n => n.node_type === 'person'),
+    username: nodes.filter(n => n.node_type === 'username'),
+    email: nodes.filter(n => n.node_type === 'email'),
+    phone: nodes.filter(n => n.node_type === 'phone'),
+    ip: nodes.filter(n => n.node_type === 'ip'),
+    domain: nodes.filter(n => n.node_type === 'domain'),
+    note: nodes.filter(n => n.node_type === 'note')
+  }
 }
 </script>
 
@@ -8397,5 +8630,41 @@ button:disabled{ opacity:.6; cursor:not-allowed; }
 
 .graph-node-note {
   border-color: rgba(190, 120, 255, 0.25);
+}
+
+.export-dropdown {
+  position: relative;
+}
+
+.export-dropdown-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  min-width: 170px;
+  z-index: 30;
+  border-radius: 14px;
+  border: 1px solid rgba(0, 255, 153, 0.18);
+  background: rgba(7, 15, 18, 0.98);
+  box-shadow: 0 0 24px rgba(0, 255, 153, 0.08);
+  overflow: hidden;
+}
+
+.export-dropdown-item {
+  width: 100%;
+  padding: 0.8rem 1rem;
+  text-align: left;
+  border: none;
+  background: transparent;
+  color: var(--text-primary);
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 0.96rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.18s ease, color 0.18s ease;
+}
+
+.export-dropdown-item:hover {
+  background: rgba(0, 255, 153, 0.08);
+  color: #00ff99;
 }
 </style>
